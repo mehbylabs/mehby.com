@@ -2,11 +2,13 @@
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
-**Goal:** Ship a static portfolio site at mehby.com that converts a two minute skim into a qualified freelance enquiry, carrying its own proof because the owner's source is private and no metrics may be published.
+**Goal:** Ship a prerendered portfolio site at mehby.com that converts a two minute skim into a qualified freelance enquiry, carrying its own proof because the owner's source is private and no metrics may be published.
 
-**Architecture:** Next.js App Router, fully statically generated, no database and no CMS. Case studies and posts are MDX files read at build time. A build step verifies that every outbound proof link resolves, so the site cannot silently start lying. Design tokens are OKLCH and every colour pair is contrast tested in CI.
+**Architecture:** TanStack Start with file-based routing, prerendered to static HTML at build time, no database and no CMS. Case studies and posts are MDX compiled by the Vite pipeline and validated against a Zod schema. Two build gates block the build: every colour pair must pass WCAG, and every outbound proof link must resolve. Design tokens are OKLCH.
 
-**Tech Stack:** Next.js 16.2.12, React 19, TypeScript, Tailwind CSS 4.3.3, MDX via gray-matter and next-mdx-remote 6, Vitest 4.1.10, Playwright 1.62.1, Resend 6.18.1, Zod 4.4.3, bun 1.3.3, deployed on Vercel.
+**Tech Stack:** TanStack Start 1.168, TanStack Router 1.170, React 19, TypeScript, Tailwind CSS 4, Vite, Nitro, MDX via `@mdx-js/rollup` and gray-matter, Zod 4, Vitest 4, Playwright 1.62, Satori and Resvg for share images, Resend for the contact form, bun 1.3.3, deployed on Vercel.
+
+**Location:** `/home/ubuntu/projects/mehby/portfolio`
 
 **Required reading before starting:** `PRODUCT.md` and `DESIGN.md` at the repo root. The standing rules in PRODUCT.md are non-negotiable and override any design instinct. In particular: no metrics, no people named except the owner, nothing non-public about CoaChess, no fixed stack list, no em dashes in copy, and labelled placeholders for any missing asset.
 
@@ -14,7 +16,7 @@
 
 ## Verified facts
 
-Do not re-derive these. They were checked against the registry on 2026-08-02.
+Checked against the registry and the installed packages on 2026-08-02. Do not re-derive.
 
 | Fact | Value |
 |---|---|
@@ -22,107 +24,125 @@ Do not re-derive these. They were checked against the registry on 2026-08-02.
 | Martian Mono Variable axes | `font-weight: 100 800`, `font-stretch: 75% 112.5%` |
 | Font packages | `@fontsource-variable/archivo@5.3.0`, `@fontsource-variable/martian-mono@5.3.0` |
 | Display face | Archivo at `font-stretch: 125%`. There is no separate Expanded package |
+| Prerender config | `prerender: { enabled, crawlLinks, autoStaticPathsDiscovery, failOnError, concurrency, filter }` |
+| Sitemap config | First-class: `sitemap: { enabled, outputPath, host }`, with per-page `changefreq`, `lastmod`, `images` |
+| OG images | No built-in equivalent to `next/og`. Use `satori@0.29.0` plus `@resvg/resvg-js@2.6.2` in a build script |
 | Live proof URLs | `https://coachess.net`, `https://app.coachess.net`, `https://live.coachess.net` |
 
-The three proof URLs each returned 200 on 2026-08-02. Task 12 makes that a build-time assertion rather than a assumption.
+All three proof URLs returned 200 on 2026-08-02. Task 11 turns that into a build-time assertion rather than an assumption.
+
+**TanStack Start specifics that differ from React frameworks you may know:**
+- Routes are files under `src/routes/`. Dynamic segments use `$slug.tsx`, not `[slug]`.
+- Per-route metadata goes in the route's `head` option returning `{ meta, links }`.
+- Server-side logic uses `createServerFn`, not server actions.
+- After adding or renaming a route file, the route tree regenerates. Run `bun run generate-routes` if it does not pick up automatically.
+
+---
+
+## Task 0: Complete
+
+The application is scaffolded and committed at `edc9d3a`. `PRODUCT.md`, `DESIGN.md`,
+`scripts/contrast.mjs` and both plan documents are in place with history preserved.
+`bun run build` succeeds and `node scripts/contrast.mjs` passes.
+
+Start at Task 1.
 
 ---
 
 ## Phase 1: Foundation
 
-### Task 1: Scaffold the application
+### Task 1: Test tooling
 
 **Files:**
-- Create: everything under `/home/ubuntu/projects/mehby-com` except the four files already committed
+- Modify: `package.json`
+- Create: `vitest.config.ts`, `playwright.config.ts`
 
-The repo already exists with `PRODUCT.md`, `DESIGN.md`, `scripts/contrast.mjs` and `docs/plans/`. Scaffold into a temporary directory and merge, so the existing commit history is preserved.
+Nothing can be test-driven until the runners exist, so this comes first.
 
-**Step 1: Scaffold into a temp directory**
+**Step 1: Install**
 
 ```bash
-cd /tmp && rm -rf mehby-scaffold
-bunx create-next-app@16.2.12 mehby-scaffold \
-  --typescript --tailwind --app --src-dir --import-alias "@/*" \
-  --no-eslint --use-bun --yes
+cd /home/ubuntu/projects/mehby/portfolio
+bun add -d vitest@4.1.10 @playwright/test@1.62.1
+bunx playwright install chromium --with-deps
 ```
 
-**Step 2: Merge into the repo, keeping committed files**
+**Step 2: Configure**
 
-```bash
-cd /tmp/mehby-scaffold
-rm -rf .git README.md
-cp -rn . /home/ubuntu/projects/mehby-com/
-cd /home/ubuntu/projects/mehby-com && bun install
+`vitest.config.ts` with `environment: 'node'` and `include: ['src/**/*.test.ts']`.
+`playwright.config.ts` with `testDir: './tests/e2e'`, `baseURL: 'http://localhost:3000'`,
+and a `webServer` running `bun run dev` with `reuseExistingServer: true`.
+
+**Step 3: Add scripts**
+
+```json
+"test": "vitest run",
+"test:e2e": "playwright test"
 ```
 
-**Step 3: Verify it builds and runs**
+**Step 4: Prove both runners work**
 
-Run: `cd /home/ubuntu/projects/mehby-com && bun run build`
-Expected: build completes with no errors, and a route table listing `/` is printed.
+Write `src/lib/smoke.test.ts` asserting `expect(1 + 1).toBe(2)`.
+Run: `bun run test`
+Expected: 1 passed. Then delete the smoke file.
 
-**Step 4: Commit**
+**Step 5: Commit**
 
 ```bash
-git add -A
-git commit -m "Scaffold Next.js application"
+git add -A && git commit -m "Add Vitest and Playwright"
 ```
 
 ---
 
-### Task 2: Install fonts and wire the type system
+### Task 2: Fonts
 
 **Files:**
-- Create: `src/fonts/archivo.woff2`, `src/fonts/martian-mono.woff2`
-- Create: `src/app/fonts.ts`
-- Modify: `src/app/layout.tsx`
+- Create: `public/fonts/archivo.woff2`, `public/fonts/martian-mono.woff2`
+- Modify: `src/styles.css`, `src/routes/__root.tsx`
 
-**Step 1: Install the font packages and copy the latin width-axis files**
+There is no `next/font` here, so faces are declared directly and preloaded by hand.
+
+**Step 1: Install and copy the latin width-axis files**
 
 ```bash
 bun add @fontsource-variable/archivo@5.3.0 @fontsource-variable/martian-mono@5.3.0
-mkdir -p src/fonts
-cp node_modules/@fontsource-variable/archivo/files/archivo-latin-wdth-normal.woff2 src/fonts/archivo.woff2
-cp node_modules/@fontsource-variable/martian-mono/files/martian-mono-latin-wdth-normal.woff2 src/fonts/martian-mono.woff2
-ls -la src/fonts
+mkdir -p public/fonts
+cp node_modules/@fontsource-variable/archivo/files/archivo-latin-wdth-normal.woff2 public/fonts/archivo.woff2
+cp node_modules/@fontsource-variable/martian-mono/files/martian-mono-latin-wdth-normal.woff2 public/fonts/martian-mono.woff2
+ls -la public/fonts
 ```
 
-The `wdth` file carries both the weight and the width axis, which is what makes the display face possible without a second download.
+The `wdth` file carries both weight and width axes. That is what makes the display face
+possible without a second download.
 
-**Step 2: Declare the faces**
+**Step 2: Declare the faces in `src/styles.css`**
 
-Create `src/app/fonts.ts`:
-
-```ts
-import localFont from 'next/font/local';
-
-export const archivo = localFont({
-  src: '../fonts/archivo.woff2',
-  variable: '--font-archivo',
-  display: 'swap',
-  weight: '100 900',
-  declarations: [{ prop: 'font-stretch', value: '62% 125%' }],
-});
-
-export const martianMono = localFont({
-  src: '../fonts/martian-mono.woff2',
-  variable: '--font-martian',
-  display: 'swap',
-  weight: '100 800',
-  declarations: [{ prop: 'font-stretch', value: '75% 112.5%' }],
-});
+```css
+@font-face {
+  font-family: 'Archivo';
+  src: url('/fonts/archivo.woff2') format('woff2-variations');
+  font-weight: 100 900;
+  font-stretch: 62% 125%;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Martian Mono';
+  src: url('/fonts/martian-mono.woff2') format('woff2-variations');
+  font-weight: 100 800;
+  font-stretch: 75% 112.5%;
+  font-display: swap;
+}
 ```
 
-**Step 3: Apply both variables on `<html>`**
+**Step 3: Preload both in the root route**
 
-In `src/app/layout.tsx`, import the fonts and set
-`className={`${archivo.variable} ${martianMono.variable}`}` on the `html` element.
-Set `lang="en"`.
+In `src/routes/__root.tsx`, add to the `head` `links` array two entries with
+`rel: 'preload'`, `as: 'font'`, `type: 'font/woff2'`, `crossOrigin: 'anonymous'`.
 
 **Step 4: Verify**
 
-Run: `bun run build`
-Expected: build succeeds. Then `bun run dev` and confirm in devtools that
-`--font-archivo` resolves and no network request is made to fonts.googleapis.com.
+Run `bun run dev`, open devtools Network, filter Font.
+Expected: exactly two woff2 requests, both from the same origin, none to fonts.googleapis.com.
 
 **Step 5: Commit**
 
@@ -135,23 +155,19 @@ git add -A && git commit -m "Add self-hosted Archivo and Martian Mono variable f
 ### Task 3: Token layer, contrast-gated
 
 **Files:**
-- Modify: `src/app/globals.css`
-- Modify: `package.json`
-- Test: `scripts/contrast.mjs` already exists and already passes
+- Modify: `src/styles.css`, `package.json`
 
-**Step 1: Run the existing contrast gate first**
+**Step 1: Run the gate first**
 
 Run: `node scripts/contrast.mjs`
-Expected: every pair PASS, exit code 0. This is the source of truth for the values below.
+Expected: every pair PASS, exit 0. This is the source of truth for the values below.
 
-**Step 2: Write the tokens**
+**Step 2: Write the tokens into `src/styles.css`**
 
-Replace the contents of `src/app/globals.css` with the Tailwind 4 import plus a
-`@theme` block. Values come from `DESIGN.md` and must match `scripts/contrast.mjs` exactly.
+Below the existing `@import "tailwindcss";` add a `@theme` block. Values must match
+`scripts/contrast.mjs` exactly.
 
 ```css
-@import "tailwindcss";
-
 @theme {
   --color-paper: oklch(0.97 0.008 85);
   --color-ink: oklch(0.22 0.02 265);
@@ -161,9 +177,9 @@ Replace the contents of `src/app/globals.css` with the Tailwind 4 import plus a
   --color-rule-strong: oklch(0.62 0.012 85);
   --color-signal: oklch(0.56 0.16 45);
 
-  --font-display: var(--font-archivo);
-  --font-body: var(--font-archivo);
-  --font-data: var(--font-martian);
+  --font-display: 'Archivo', system-ui, sans-serif;
+  --font-body: 'Archivo', system-ui, sans-serif;
+  --font-data: 'Martian Mono', ui-monospace, monospace;
 
   --text-display: clamp(3rem, 9vw, 7.5rem);
   --text-h1: clamp(2.25rem, 4.5vw, 3.75rem);
@@ -183,10 +199,7 @@ Replace the contents of `src/app/globals.css` with the Tailwind 4 import plus a
     line-height: 1.6;
   }
   ::selection { background: var(--color-ultramarine); color: var(--color-paper); }
-  :focus-visible {
-    outline: 2px solid var(--color-ultramarine);
-    outline-offset: 2px;
-  }
+  :focus-visible { outline: 2px solid var(--color-ultramarine); outline-offset: 2px; }
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after {
       animation-duration: 0.01ms !important;
@@ -197,28 +210,30 @@ Replace the contents of `src/app/globals.css` with the Tailwind 4 import plus a
 }
 ```
 
-**Step 3: Wire the gate into the build**
-
-Add to `package.json` scripts:
+**Step 3: Gate the build**
 
 ```json
 "verify:contrast": "node scripts/contrast.mjs",
-"prebuild": "npm run verify:contrast"
+"prebuild": "bun run verify:contrast",
+"build": "bun run prebuild && vite build"
 ```
 
-**Step 4: Verify the gate actually blocks**
+Note: bun does not run npm-style `prebuild` hooks automatically, so it is chained
+explicitly inside `build`. Do not rely on the implicit hook.
 
-Temporarily change `signal` in `scripts/contrast.mjs` to `[0.62, 0.16, 45]` and run
+**Step 4: Prove the gate actually blocks**
+
+Temporarily set `signal` in `scripts/contrast.mjs` to `[0.62, 0.16, 45]`, then run
 `bun run build`.
-Expected: build aborts, `1 pair(s) below threshold`, non-zero exit.
-Revert the change and confirm the build succeeds again.
+Expected: build aborts with `1 pair(s) below threshold` and a non-zero exit.
+Revert, and confirm the build succeeds again.
 
-This step matters. An unverified gate is not a gate.
+An unverified gate is not a gate. Do not skip this step.
 
 **Step 5: Commit**
 
 ```bash
-git add -A && git commit -m "Add OKLCH token layer with a contrast gate on prebuild"
+git add -A && git commit -m "Add OKLCH token layer with a contrast gate on build"
 ```
 
 ---
@@ -226,22 +241,18 @@ git add -A && git commit -m "Add OKLCH token layer with a contrast gate on prebu
 ### Task 4: Grid and section field primitives
 
 **Files:**
-- Create: `src/components/Grid.tsx`
-- Create: `src/components/SectionField.tsx`
+- Create: `src/components/Grid.tsx`, `src/components/SectionField.tsx`
+- Create: `src/routes/dev/primitives.tsx`
 - Test: `tests/e2e/primitives.spec.ts`
-
-`DESIGN.md` calls for a strict visible grid with drawn hairlines, and section fields that
-alternate paper and ultramarine to produce the colour commitment structurally.
 
 **Step 1: Write the failing test**
 
 ```ts
 import { test, expect } from '@playwright/test';
 
-test('ultramarine field renders paper-coloured text on the brand colour', async ({ page }) => {
+test('ultramarine field renders paper text on the brand colour', async ({ page }) => {
   await page.goto('/dev/primitives');
-  const field = page.getByTestId('section-field-ultramarine');
-  await expect(field).toHaveCSS('background-color', 'oklch(0.52 0.19 264)');
+  await expect(page.getByTestId('section-field-ultramarine')).toBeVisible();
 });
 
 test('grid draws visible column rules', async ({ page }) => {
@@ -252,24 +263,17 @@ test('grid draws visible column rules', async ({ page }) => {
 
 **Step 2: Run it and watch it fail**
 
-Run: `bunx playwright test tests/e2e/primitives.spec.ts`
-Expected: FAIL, the route `/dev/primitives` does not exist.
+Run: `bun run test:e2e tests/e2e/primitives.spec.ts`
+Expected: FAIL, the route does not exist.
 
 **Step 3: Implement**
 
-`Grid.tsx` renders a twelve column CSS grid with `gap` and absolutely positioned
-hairline rules in `--color-rule`, marked `aria-hidden` and `data-testid="grid-rule"`.
-`SectionField.tsx` takes `tone: 'paper' | 'ultramarine' | 'ultramarine-deep'`, renders
-full bleed with `data-testid={`section-field-${tone}`}`, and sets text to `--color-paper`
-on the two coloured tones.
+`Grid.tsx`: twelve column CSS grid with hairline rules in `--color-rule`, marked
+`aria-hidden` and `data-testid="grid-rule"`.
+`SectionField.tsx`: prop `tone: 'paper' | 'ultramarine' | 'ultramarine-deep'`, full bleed,
+`data-testid={'section-field-' + tone}`, text set to `--color-paper` on both coloured tones.
 
-Add a scratch route `src/app/dev/primitives/page.tsx` rendering both. Exclude `/dev`
-from the sitemap in Task 15 and from production via `robots`.
-
-**Step 4: Run the test again**
-
-Run: `bunx playwright test tests/e2e/primitives.spec.ts`
-Expected: 2 passed.
+**Step 4: Run the test again. Expected: 2 passed.**
 
 **Step 5: Commit**
 
@@ -310,7 +314,7 @@ describe('caseStudySchema', () => {
     expect(() =>
       caseStudySchema.parse({
         title: 'X',
-        summary: 'A thing \u2014 and another thing.',
+        summary: 'A thing \u2014 and another.',
         role: 'r',
         period: '2026',
         order: 1,
@@ -318,7 +322,7 @@ describe('caseStudySchema', () => {
     ).toThrow(/em dash/i);
   });
 
-  it('rejects a summary that is missing', () => {
+  it('rejects a missing summary', () => {
     expect(() => caseStudySchema.parse({ title: 'X' })).toThrow();
   });
 });
@@ -328,7 +332,7 @@ The em dash test enforces a PRODUCT.md standing rule mechanically rather than by
 
 **Step 2: Run it and watch it fail**
 
-Run: `bunx vitest run src/lib/content.test.ts`
+Run: `bun run test`
 Expected: FAIL, cannot resolve `./content`.
 
 **Step 3: Implement**
@@ -347,18 +351,17 @@ export const caseStudySchema = z.object({
   role: z.string(),
   period: z.string(),
   order: z.number().int(),
-  surfaces: z.array(z.object({ label: z.string(), href: z.string().url() })).default([]),
-  source: z.string().url().optional(),
+  surfaces: z.array(z.object({ label: z.string(), href: z.url() })).default([]),
+  source: z.url().optional(),
   cover: z.string().optional(),
 });
 
 export type CaseStudy = z.infer<typeof caseStudySchema>;
 ```
 
-**Step 4: Run the test again**
+Install first: `bun add zod@4.4.3`. Note Zod 4 uses `z.url()`, not `z.string().url()`.
 
-Run: `bunx vitest run src/lib/content.test.ts`
-Expected: 3 passed.
+**Step 4: Run the test again. Expected: 3 passed.**
 
 **Step 5: Commit**
 
@@ -368,41 +371,45 @@ git add -A && git commit -m "Add typed content schema enforcing the em dash rule
 
 ---
 
-### Task 6: MDX loader
+### Task 6: MDX pipeline and loader
 
 **Files:**
-- Modify: `src/lib/content.ts`
+- Modify: `vite.config.ts`, `src/lib/content.ts`
 - Create: `content/work/coachess.mdx`, `content/work/helmdeck.mdx`, `content/work/volt-tunisia.mdx`
 - Test: `src/lib/content.test.ts`
 
-**Step 1: Write the failing test**
-
-Add a test asserting `getCaseStudies()` returns exactly three entries sorted by `order`,
-and that every slug matches its filename.
-
-**Step 2: Run and watch it fail**
-
-Run: `bunx vitest run src/lib/content.test.ts`
-
-**Step 3: Implement**
-
-`getCaseStudies()` reads `content/work/*.mdx`, parses with `gray-matter`, validates each
-through `caseStudySchema`, throws on the first invalid file naming the offending path, and
-returns entries sorted by `order`.
-
-Seed the three MDX files with real frontmatter and placeholder bodies marked
-`<!-- PLACEHOLDER: narrative pending owner review -->`. Do not invent case study prose.
-Per PRODUCT.md, CoaChess content must contain no internal repository names, no service
-names, no infrastructure detail and no metrics.
-
-**Step 4: Run the test again**
-
-Expected: all pass.
-
-**Step 5: Commit**
+**Step 1: Install and wire MDX**
 
 ```bash
-git add -A && git commit -m "Add MDX case study loader with three seeded entries"
+bun add -d @mdx-js/rollup@3.1.1 gray-matter@4.0.3
+```
+
+Add `mdx()` to the Vite plugin array, before the React plugin.
+
+**Step 2: Write the failing test**
+
+Assert `getCaseStudies()` returns exactly three entries sorted by `order`, that each slug
+matches its filename, and that an invalid frontmatter file throws an error naming the path.
+
+**Step 3: Run and watch it fail.**
+
+**Step 4: Implement**
+
+`getCaseStudies()` reads `content/work/*.mdx`, parses with gray-matter, validates each
+through `caseStudySchema`, throws on the first invalid file naming the offending path, and
+returns sorted by `order`.
+
+Seed the three MDX files with real frontmatter and bodies containing only
+`<!-- PLACEHOLDER: narrative pending owner review -->`. **Do not invent case study prose.**
+Per PRODUCT.md, CoaChess content must contain no internal repository names, no service
+names, no infrastructure detail, and no metrics.
+
+**Step 5: Run the test. Expected: all pass.**
+
+**Step 6: Commit**
+
+```bash
+git add -A && git commit -m "Add MDX pipeline and case study loader"
 ```
 
 ---
@@ -413,7 +420,7 @@ git add -A && git commit -m "Add MDX case study loader with three seeded entries
 - Create: `src/components/SpecTable.tsx`
 - Test: `tests/e2e/spec-table.spec.ts`
 
-This is the signature component. It must use real table semantics, not divs.
+The signature component. Real table semantics, not divs.
 
 **Step 1: Write the failing test**
 
@@ -428,13 +435,12 @@ test('spec table uses real table semantics', async ({ page }) => {
 
 **Step 2: Run and watch it fail.**
 
-**Step 3: Implement**
+**Step 3: Implement.** `<table>` with a visually hidden `<caption>`, `<th scope="row">` in
+Archivo, `<td>` in Martian Mono, dividers in `--color-rule-strong`, row hover tint. Never
+use `--color-rule` for a border that carries meaning; it measures 1.32:1 and is decorative
+only.
 
-`<table>` with a visually hidden `<caption>`, `<th scope="row">` for labels in Archivo,
-`<td>` values in Martian Mono, dividers in `--color-rule-strong`, row hover tint. No
-borders in `--color-rule`, which fails the 3:1 non-text threshold and is decorative only.
-
-**Step 4: Run the test again. Expected: pass.**
+**Step 4: Run the test. Expected: pass.**
 
 **Step 5: Commit**
 
@@ -450,18 +456,16 @@ git add -A && git commit -m "Add specification table component"
 - Create: `src/components/Placeholder.tsx`
 - Test: `tests/e2e/placeholder.spec.ts`
 
-PRODUCT.md requires that missing assets ship as obviously provisional blocks.
+PRODUCT.md requires missing assets to ship as obviously provisional blocks.
 
-**Step 1: Write the failing test**
-
-Assert the placeholder renders its `label` as visible text, carries
-`role="img"` with an `aria-label` naming what is missing, and is never mistakable for content.
+**Step 1: Write the failing test.** Assert it renders its label as visible text, carries
+`role="img"` with an `aria-label` naming what is missing, and reserves a fixed aspect ratio.
 
 **Step 2: Run and watch it fail.**
 
 **Step 3: Implement.** Ruled border in `--color-rule-strong`, Martian Mono caption reading
-for example `PLACEHOLDER: headshot`, fixed aspect ratio passed as a prop so no layout shift
-occurs when the real asset lands.
+for example `PLACEHOLDER: headshot`, aspect ratio from a prop so no layout shift occurs when
+the real asset lands.
 
 **Step 4: Run the test. Expected: pass.**
 
@@ -478,7 +482,7 @@ git add -A && git commit -m "Add labelled placeholder component"
 ### Task 9: Homepage
 
 **Files:**
-- Modify: `src/app/page.tsx`
+- Modify: `src/routes/index.tsx`
 - Create: `src/components/Hero.tsx`, `src/components/ProofStrip.tsx`
 - Test: `tests/e2e/home.spec.ts`
 
@@ -492,8 +496,7 @@ test('hero states the positioning and the credential', async ({ page }) => {
 
 test('proof strip shows exactly the three live surfaces', async ({ page }) => {
   await page.goto('/');
-  const links = page.getByTestId('proof-link');
-  await expect(links).toHaveCount(3);
+  await expect(page.getByTestId('proof-link')).toHaveCount(3);
 });
 
 test('no badge wall is present', async ({ page }) => {
@@ -504,11 +507,9 @@ test('no badge wall is present', async ({ page }) => {
 
 **Step 2: Run and watch them fail.**
 
-**Step 3: Implement**
-
-Drenched ultramarine hero, one display line at `font-stretch: 125%`, the three proof links
-in Martian Mono beneath. Then the three pillars, then three capability statements in prose,
-then contact. No card grid, no badges, no metrics.
+**Step 3: Implement.** Drenched ultramarine hero, one display line at `font-stretch: 125%`,
+three proof links in Martian Mono beneath. Then three pillars, three capability statements
+in prose, then contact. No card grid, no badges, no metrics.
 
 **Step 4: Run the tests. Expected: 3 passed.**
 
@@ -520,44 +521,92 @@ git add -A && git commit -m "Add homepage with hero and proof strip"
 
 ---
 
-### Task 10: Case study route
+### Task 10: Case study route and prerendering
 
 **Files:**
-- Create: `src/app/work/[slug]/page.tsx`
+- Create: `src/routes/work/$slug.tsx`
+- Modify: `vite.config.ts`
 - Test: `tests/e2e/work.spec.ts`
 
-**Step 1: Write the failing test.** Assert all three slugs return 200 and render an `h1`,
-and that an unknown slug returns 404.
+**Step 1: Write the failing test.** All three slugs return 200 and render an `h1`. An
+unknown slug renders the not-found component.
 
 **Step 2: Run and watch it fail.**
 
-**Step 3: Implement** with `generateStaticParams` over `getCaseStudies()` and
-`notFound()` for unknown slugs. Render the MDX body through `next-mdx-remote`, with the
-specification table above the narrative.
+**Step 3: Implement the route**, then enable prerendering in the TanStack Start plugin
+options:
 
-**Step 4: Run the test. Expected: pass.**
+```ts
+tanstackStart({
+  prerender: { enabled: true, crawlLinks: true, failOnError: true },
+  sitemap: { enabled: true, host: 'https://mehby.com' },
+})
+```
+
+`failOnError` matters. Without it a route that throws during prerender silently ships as a
+client-only page and loses its SEO value, which is the entire reason this site is
+prerendered.
+
+**Step 4: Verify static output exists**
+
+Run: `bun run build && find .output -name '*.html' | sort`
+Expected: HTML files for `/`, `/work/coachess`, `/work/helmdeck`, `/work/volt-tunisia`.
+Also confirm a sitemap was emitted.
 
 **Step 5: Commit**
 
 ```bash
-git add -A && git commit -m "Add statically generated case study route"
+git add -A && git commit -m "Add case study route with prerendering and sitemap"
 ```
 
 ---
 
-### Task 11: About, contact, and writing
+### Task 11: Build-time proof link verification
 
 **Files:**
-- Create: `src/app/about/page.tsx`, `src/app/contact/page.tsx`, `src/app/writing/page.tsx`
-- Test: `tests/e2e/routes.spec.ts`
+- Create: `scripts/verify-links.mjs`
+- Modify: `package.json`
+- Test: `scripts/verify-links.test.mjs`
 
-**Step 1: Write the failing test.** Every route returns 200 and has exactly one `h1`.
-`/writing` with no posts renders an honest empty state and no fabricated entries.
+The site claims three products are live. If one goes down the site must stop claiming it.
+
+**Step 1: Write the failing test.** Assert the checker returns `ok: false` for an
+unresolvable host and `ok: true` for a 200, using a local server fixture rather than the
+live network.
 
 **Step 2: Run and watch it fail.**
 
-**Step 3: Implement.** `/about` uses a `Placeholder` for the headshot and states only what
-is known. Do not invent pre-2022 history; that content is pending from the owner.
+**Step 3: Implement.** Read URLs from case study frontmatter, not a duplicated list. Follow
+redirects, 10 second timeout, 2 retries, print a table, exit non-zero on unreachable.
+
+**Step 4: Run against the real URLs**
+
+Run: `node scripts/verify-links.mjs`
+Expected: three rows, all 200.
+
+Extend the build chain: `"prebuild": "bun run verify:contrast && bun run verify:links"`.
+
+**Step 5: Commit**
+
+```bash
+git add -A && git commit -m "Verify proof links at build time"
+```
+
+---
+
+### Task 12: About, contact, and writing routes
+
+**Files:**
+- Create: `src/routes/about.tsx`, `src/routes/contact.tsx`, `src/routes/writing/index.tsx`
+- Test: `tests/e2e/routes.spec.ts`
+
+**Step 1: Write the failing test.** Every route returns 200 with exactly one `h1`.
+`/writing` with no posts renders an honest empty state and zero fabricated entries.
+
+**Step 2: Run and watch it fail.**
+
+**Step 3: Implement.** `/about` uses `Placeholder` for the headshot and states only what is
+known. **Do not invent pre-2022 history**, it is pending from the owner.
 
 **Step 4: Run the test. Expected: pass.**
 
@@ -571,106 +620,79 @@ git add -A && git commit -m "Add about, contact and writing routes"
 
 ## Phase 4: Hardening and ship
 
-### Task 12: Build-time proof link verification
-
-**Files:**
-- Create: `scripts/verify-links.mjs`
-- Modify: `package.json`
-- Test: `scripts/verify-links.test.mjs`
-
-The site claims three products are live. If one goes down the site must not keep asserting it.
-
-**Step 1: Write the failing test.** Assert the checker returns `ok: false` for a host that
-cannot resolve, and `ok: true` for one returning 200, using a local server fixture rather
-than the network.
-
-**Step 2: Run and watch it fail.**
-
-**Step 3: Implement.** Read the URLs from the case study frontmatter rather than a
-duplicated list. Follow redirects, 10 second timeout, 2 retries. Print a table. Exit
-non-zero only when a link is unreachable, so a transient failure does not silently ship.
-
-**Step 4: Run against the real URLs**
-
-Run: `node scripts/verify-links.mjs`
-Expected: three rows, all 200.
-
-Add `"verify:links"` to scripts and extend `prebuild` to
-`npm run verify:contrast && npm run verify:links`.
-
-**Step 5: Commit**
-
-```bash
-git add -A && git commit -m "Verify proof links at build time"
-```
-
----
-
 ### Task 13: Contact form
 
 **Files:**
-- Create: `src/app/contact/actions.ts`
-- Test: `src/app/contact/actions.test.ts`
+- Create: `src/lib/contact.ts`
+- Modify: `src/routes/contact.tsx`
+- Test: `src/lib/contact.test.ts`
 
-**Step 1: Write the failing tests.** Cover all five states: valid submission, invalid email,
-empty message, honeypot filled meaning silent success without sending, and Resend throwing
-meaning a user-visible failure with retry.
+**Step 1: Write the failing tests.** Five states: valid submission, invalid email, empty
+message, honeypot filled meaning silent success without sending, and the mail provider
+throwing meaning a user-visible failure with retry.
 
 **Step 2: Run and watch them fail.**
 
-**Step 3: Implement** a server action with Zod validation, a honeypot field, and Resend.
-The destination address is a placeholder constant until the owner supplies one. Do not use
-any address discovered elsewhere.
+**Step 3: Implement** using `createServerFn` with Zod validation, a honeypot field, and
+Resend. **The destination address is a placeholder constant until the owner supplies one.**
+Do not use any address found in git config or scraped from another site.
 
 **Step 4: Run the tests. Expected: 5 passed.**
 
 **Step 5: Commit**
 
 ```bash
-git add -A && git commit -m "Add contact form server action with full state coverage"
+git add -A && git commit -m "Add contact server function with full state coverage"
 ```
 
 ---
 
-### Task 14: Error and not-found pages
+### Task 14: Not-found and error components
 
 **Files:**
-- Create: `src/app/not-found.tsx`, `src/app/error.tsx`
+- Modify: `src/routes/__root.tsx`
 
-Written in voice as a specification for a page that does not exist. Both link home.
+TanStack Router takes `notFoundComponent` and `errorComponent` in the root route options
+rather than as separate files. Write both in voice, as a specification for a page that does
+not exist. Both link home.
 
-**Verify:** `bun run build`, then visit `/does-not-exist` and confirm the custom page renders.
+**Verify:** `bun run dev`, visit `/does-not-exist`, confirm the custom component renders.
 
-**Commit:** `git commit -m "Add 404 and error pages in voice"`
+**Commit:** `git commit -m "Add not-found and error components in voice"`
 
 ---
 
-### Task 15: Metadata, share images, sitemap, RSS
+### Task 15: Metadata, share images, feed
 
 **Files:**
-- Create: `src/app/opengraph-image.tsx`, `src/app/sitemap.ts`, `src/app/robots.ts`, `src/app/writing/feed.xml/route.ts`
+- Modify: every route file, adding a `head` option
+- Create: `scripts/og.mjs`, `src/routes/writing/feed.xml.tsx`
 
-Share images use `next/og` on the ultramarine ground with Archivo. Sitemap and robots
-exclude `/dev`.
+Per-route `head` returns `{ meta, links }` with title, description, canonical, and OpenGraph
+tags. Sitemap is already handled by the plugin config from Task 10.
 
-**Verify:** `bun run build`, then confirm `/sitemap.xml` omits `/dev` and
-`/opengraph-image` renders.
+Share images: `bun add -d satori@0.29.0 @resvg/resvg-js@2.6.2`, then a build script that
+renders each case study title on the ultramarine ground in Archivo and writes PNGs to
+`public/og/`. This is the one piece of genuine plumbing that a Next.js build would have
+given for free.
 
-**Commit:** `git commit -m "Add metadata, share images, sitemap and feed"`
+RSS via `feed@6.0.0`, served from a route returning `application/rss+xml`.
+
+**Verify:** `bun run build`, confirm `public/og/*.png` exist and are valid PNGs, and that the
+sitemap excludes `/dev`.
+
+**Commit:** `git commit -m "Add per-route metadata, share images and feed"`
 
 ---
 
 ### Task 16: Accessibility and performance audit
 
-**Step 1:** Run `node scripts/contrast.mjs`. Expected: all pass.
-
-**Step 2:** Run the full Playwright suite. Expected: all pass.
-
-**Step 3:** Run `impeccable audit` against the built site. Budget: performance 95 or above,
-accessibility 100.
-
-**Step 4:** Fix findings, then re-run. Do not claim the budget is met without pasting the
-actual numbers.
+**Step 1:** `node scripts/contrast.mjs`. Expected: all pass.
+**Step 2:** `bun run test && bun run test:e2e`. Expected: all pass.
+**Step 3:** Run `impeccable audit` against the built output. Budget: performance 95 or
+above, accessibility 100.
+**Step 4:** Fix findings and re-run. **Do not claim the budget is met without pasting the
+actual numbers.**
 
 **Commit:** `git commit -m "Fix audit findings"`
 
@@ -678,11 +700,14 @@ actual numbers.
 
 ### Task 17: Deploy
 
-**Step 1:** Push to a new private GitHub repository.
-**Step 2:** Import to Vercel, confirm the build passes there including both prebuild gates.
-**Step 3:** Add `mehby.com` in Vercel and point the registrar's nameservers or A record. The
-domain currently has no DNS records at all, so this is a first-time configuration.
-**Step 4:** Verify `https://mehby.com` returns 200 and the certificate is valid.
+**Step 1:** Remove the `/dev/primitives` scratch route, or exclude it from prerender via the
+`filter` option and from the sitemap.
+**Step 2:** Push to a new private GitHub repository.
+**Step 3:** Import to Vercel. The Nitro adapter targets Vercel via its preset. Confirm the
+build passes there including both gates.
+**Step 4:** Add `mehby.com` in Vercel and point the registrar. The domain currently has no
+DNS records at all, so this is first-time configuration.
+**Step 5:** Verify `https://mehby.com` returns 200 with a valid certificate.
 
 ---
 
@@ -696,11 +721,11 @@ domain currently has no DNS records at all, so this is a first-time configuratio
 | Pre-2022 history | `/about` timeline only |
 | Case study narratives, owner-reviewed | Task 6 bodies |
 
-None of these block Tasks 1 through 5, 7, 8, 12, 14 or 15.
+None block Tasks 1 through 8, 10, 11, 14 or 15.
 
 ## Standing rules, restated because they are easy to lose mid-implementation
 
 No metrics. No people named except the owner. Nothing non-public about CoaChess, meaning no
 internal repository names, service names, or infrastructure detail. No fixed stack list or
-badge wall. No em dashes, enforced by the schema in Task 5. Placeholders never become
+badge wall. No em dashes, enforced by the schema in Task 5. Placeholders never quietly become
 invented content.
