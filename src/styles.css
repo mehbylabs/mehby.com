@@ -1,5 +1,46 @@
 @import 'tailwindcss';
 
+/* The design system. Values are copied from DESIGN.md; the colours are the same
+   numbers scripts/contrast.mjs measures, and `bun run build` refuses to build if
+   any measured pair drops below its WCAG threshold.
+
+   `static` guarantees every token is emitted to :root even when nothing yet
+   references it. Measured honestly: with tailwindcss 4.1.18 through
+   @tailwindcss/vite it changes nothing — the built stylesheet is byte-identical
+   either way, same content hash. But Tailwind's compiler does drop unreferenced
+   theme variables when driven directly, so the optimisation exists and is a
+   version away from applying here. It is kept because a token that vanishes
+   would not be caught by our tests: they run against the dev server, which
+   never tree-shakes, so a production-only regression would ship green. Zero
+   measured cost, closes a gap the test suite structurally cannot see.
+
+   Naming note for anyone extending this: --color-* and --text-* both produce
+   `text-` utilities, so a colour and a size can never share a name. Likewise
+   --font-* shares `font-` with --font-weight-*. `text-body` is a size,
+   `font-body` is a family. */
+
+@theme static {
+  --color-paper: oklch(0.97 0.008 85);
+  --color-ink: oklch(0.22 0.02 265);
+  --color-ultramarine: oklch(0.52 0.19 264);
+  --color-ultramarine-deep: oklch(0.34 0.15 264);
+  --color-rule: oklch(0.88 0.01 85);
+  --color-rule-strong: oklch(0.62 0.012 85);
+  --color-signal: oklch(0.56 0.16 45);
+
+  --font-display: 'Archivo', system-ui, sans-serif;
+  --font-body: 'Archivo', system-ui, sans-serif;
+  --font-data: 'Martian Mono', ui-monospace, monospace;
+
+  --text-display: clamp(3rem, 9vw, 7.5rem);
+  --text-h1: clamp(2.25rem, 4.5vw, 3.75rem);
+  --text-h2: clamp(1.75rem, 2.8vw, 2.5rem);
+  --text-h3: 1.333rem;
+  --text-body: 1.0625rem;
+  --text-data: 0.9375rem;
+  --text-fine: 0.8125rem;
+}
+
 /* Self-hosted, one file per family. Each file carries BOTH the weight and the
    width axis, so the expanded display cut costs no extra download.
 
@@ -42,4 +83,52 @@ body,
 
 body {
   margin: 0;
+}
+
+@layer base {
+  body {
+    background: var(--color-paper);
+    color: var(--color-ink);
+    font-family: var(--font-body);
+    font-size: var(--text-body);
+    line-height: 1.6;
+  }
+
+  ::selection {
+    background: var(--color-ultramarine);
+    color: var(--color-paper);
+  }
+
+  /* Sits in `base`, so any utility can override it deliberately. See the
+     reduced-motion block below for the case where that is not what we want. */
+  :focus-visible {
+    outline: 2px solid var(--color-ultramarine);
+    outline-offset: 2px;
+  }
+
+  /* Deliberately inside a layer, and deliberately inside `base`.
+     Importance is compared before layer order, so these beat every normal
+     declaration anywhere, including utilities and style attributes. Among
+     important declarations layer order is *reversed*, so `base` — declared
+     before `components` and `utilities` — outranks them and outranks unlayered
+     CSS too. This is the strongest position available to author CSS, which is
+     what an accessibility preference override should have. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      /* Not `animation: none`: durations are collapsed rather than removed so
+         that animationend still fires and JS sequencing does not stall. But an
+         `infinite` animation would then loop at 0.01ms forever, so pin the
+         count. */
+      animation-iteration-count: 1 !important;
+      /* DESIGN.md specifies a staggered hero reveal. A surviving delay would
+         still hold elements back for the length of the stagger. */
+      animation-delay: 0s !important;
+      transition-duration: 0.01ms !important;
+      transition-delay: 0s !important;
+      scroll-behavior: auto !important;
+    }
+  }
 }
