@@ -319,4 +319,134 @@ body {
       display: block;
     }
   }
+
+  /* The second ground-dependent hairline, and the one that carries meaning.
+     --field-rule above is the *decorative* value: on paper it resolves to
+     --color-rule at 1.32, which DESIGN.md permits for grid hatching and
+     explicitly forbids as "a border that carries meaning". A table divider and
+     the edge of a placeholder both carry meaning, so they need their own pair
+     of measured values: --color-rule-strong at 3.34 on paper, --color-rule-on-
+     color at 3.28 on ultramarine, where rule-strong drops to 1.57.
+
+     Same mechanism as --field-rule and --focus-ring, deliberately: an
+     inherited custom property that each ground declares for itself. That is
+     what lets SpecTable and Placeholder be written once with no `tone` prop
+     and no ancestor selectors, and still be correct at any nesting depth.
+
+     Declared beside the tone blocks rather than inside them because those
+     blocks are the pinned record of the three grounds and are not edited by
+     component work. The selectors are identical, so the pair moves together —
+     and the invariant is enforced rather than left to a comment:
+     tests/e2e/spec-table.spec.ts measures every divider on the page against
+     the ground it actually landed on, so a fourth tone that copies one block
+     and not the other fails on the ratio, not on a missing token. */
+  :root {
+    --field-rule-strong: var(--color-rule-strong);
+  }
+
+  .section-field[data-tone='ultramarine'],
+  .section-field[data-tone='ultramarine-deep'] {
+    --field-rule-strong: var(--color-rule-on-color);
+  }
+
+  /* The specification table. Structure lives here rather than in utility
+     classes on the component for the reason the tone blocks give: the divider
+     colour and the two font families are only correct as a set, and a caller
+     assembling them from utilities can apply three of four and still ship
+     something that renders. */
+  .spec-table {
+    width: 100%;
+    /* Collapsed, so one hairline sits between two rows rather than two
+       hairlines sitting a pixel apart. */
+    border-collapse: collapse;
+    border-block-start: 1px solid var(--field-rule-strong);
+    text-align: start;
+  }
+
+  /* Visually hidden, still in the accessibility tree. Clipped rather than
+     `display: none`, which would remove the accessible name the caption exists
+     to give the table. */
+  .spec-caption {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .spec-table th,
+  .spec-table td {
+    border-block-end: 1px solid var(--field-rule-strong);
+    padding-block: 0.7rem;
+    text-align: start;
+    vertical-align: baseline;
+  }
+
+  /* Archivo. The label column is structure, not data, and it shrinks to its
+     own content so the values line up in one column however long the labels
+     get. `width: 1%` is the table-layout idiom for that. */
+  .spec-table th {
+    width: 1%;
+    padding-inline-end: 1.5rem;
+    font-family: var(--font-body);
+    font-size: var(--text-fine);
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  /* Martian Mono, earned by the content rather than worn as a costume:
+     DESIGN.md lists table cells among the places data type belongs. */
+  .spec-table td {
+    font-family: var(--font-data);
+    font-size: var(--text-data);
+  }
+
+  .spec-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  /* Rows tint on hover, which DESIGN.md allows as one of the four motions the
+     site keeps.
+
+     Mixed from currentColor, not from a literal. currentColor is already the
+     ground's own text colour — ink on paper, paper on ultramarine — so the
+     tint darkens a light ground and lightens a dark one with one declaration.
+     A fixed tint can only be right on one of them. */
+  .spec-table tbody tr {
+    transition: background-color 120ms ease-out;
+  }
+
+  .spec-table tbody tr:hover {
+    background-color: color-mix(in oklch, currentColor 8%, transparent);
+  }
+
+  /* The placeholder. A ruled box is a legitimate design element here, so the
+     border alone is not enough to make this unmistakable; the hatch and the
+     printed caption are what stop it reading as an intentionally empty panel.
+
+     Even on all four sides. An uneven one would be the side-stripe accent
+     DESIGN.md bans, and that is a single deleted declaration away. */
+  .placeholder {
+    display: flex;
+    align-items: flex-end;
+    padding: 0.75rem;
+    border: 1px solid var(--field-rule-strong);
+    background-image: repeating-linear-gradient(
+      45deg,
+      transparent 0 10px,
+      color-mix(in oklch, var(--field-rule-strong) 30%, transparent) 10px 11px
+    );
+  }
+
+  .placeholder-caption {
+    font-family: var(--font-data);
+    font-size: var(--text-fine);
+    line-height: 1.2;
+  }
 }
