@@ -10,14 +10,9 @@
    The ranges below are the full axis extents declared in each package's
    metadata.json; keep them in step with the files.
 
-   format('woff2') is deliberate. The legacy format('woff2-variations') string
-   is documented by MDN as the "older non-normalized" spelling of
-   format(woff2) tech(variations), and neither hint buys anything here: there is
-   a single src with no fallback, so a hint the browser fails to recognise can
-   only cost us the face entirely. Plain format('woff2') is the normative
-   keyword, is understood everywhere, and in the hypothetical UA without
-   variable font support degrades to the default instance rather than to no web
-   font at all. */
+   format('woff2') is deliberate. Do not "fix" it to woff2-variations: with one
+   src and no fallback, a hint the browser fails to recognise can only lose us
+   the face. Rationale and browser evidence are in the commit that added this. */
 
 @font-face {
   font-family: 'Archivo';

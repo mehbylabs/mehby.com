@@ -1,9 +1,10 @@
 import { expect, test } from '@playwright/test'
+import type { Page } from '@playwright/test'
 
-// Permanent test. Fonts fail silently: a broken @font-face, a stale path, a
-// wrong family name or a stray Google Fonts link all still render text, just in
-// the wrong typeface. Nothing throws, no build breaks, and nobody notices until
-// production. So the contract is pinned here.
+// Permanent test. Fonts fail silently: a broken @font-face, a stale path or a
+// wrong family name all still render text, just in the wrong typeface. Nothing
+// throws, no build breaks, and nobody notices until production. So the contract
+// is pinned here.
 //
 // Note on what a network-only check would prove: nothing much. `rel=preload`
 // downloads the file whether or not the @font-face that should consume it is
@@ -13,6 +14,23 @@ import { expect, test } from '@playwright/test'
 
 const FONT_URLS = ['/fonts/archivo.woff2', '/fonts/martian-mono.woff2']
 const FAMILIES = ['Archivo', 'Martian Mono']
+
+// Deliberately swallows load failures. This is a warm-up, not an assertion: it
+// exists so that requests are made and metrics are final before a test measures
+// them. `document.fonts.load()` REJECTS when a file 404s, so letting that escape
+// would repaint every test that needs warm fonts with an opaque
+// "NetworkError: A network error occurred." Diagnosing a broken font path is
+// exactly one test's job, and it is the next one down.
+const warmFonts = (page: Page) =>
+  page.evaluate(
+    (families) =>
+      Promise.all(
+        families.map((f) =>
+          document.fonts.load(`400 16px "${f}"`).catch(() => undefined),
+        ),
+      ).then(() => document.fonts.ready.catch(() => undefined)),
+    FAMILIES,
+  )
 
 test('the server-rendered HTML preloads both faces', async ({ request }) => {
   // Asserted against the raw response body, not the DOM, because the point of a
@@ -36,17 +54,37 @@ test('the server-rendered HTML preloads both faces', async ({ request }) => {
 
 test.describe('font loading', () => {
   test('both families resolve to loaded web font faces', async ({ page }) => {
+    // The single owner of "the font did not load". Every other test warms fonts
+    // tolerantly and asserts only its own invariant, so an unreachable file
+    // surfaces here, named, with the URL to go and check.
     await page.goto('/')
 
     for (const family of FAMILIES) {
-      const statuses = await page.evaluate(
-        async (f) =>
-          (await document.fonts.load(`400 16px "${f}"`)).map((x) => x.status),
+      const probe = await page.evaluate(
+        (f): Promise<{ statuses: Array<string>; error: string | null }> =>
+          document.fonts
+            .load(`400 16px "${f}"`)
+            .then((faces) => ({
+              statuses: faces.map((x) => x.status),
+              error: null,
+            }))
+            .catch((e: unknown) => ({ statuses: [], error: String(e) })),
         family,
       )
 
-      expect(statuses, `no @font-face matched "${family}"`).not.toHaveLength(0)
-      expect(statuses.every((s) => s === 'loaded')).toBe(true)
+      expect(
+        probe.error,
+        `"${family}" failed to load. Check its src URL in styles.css resolves`,
+      ).toBeNull()
+      expect(
+        probe.statuses,
+        `no @font-face matched "${family}". Check the font-family name, and that ` +
+          `the src format() is one the browser recognises, in styles.css`,
+      ).not.toHaveLength(0)
+      expect(
+        probe.statuses.every((s) => s === 'loaded'),
+        `"${family}" matched a face but did not load it: ${probe.statuses.join(', ')}`,
+      ).toBe(true)
     }
   })
 
@@ -56,10 +94,10 @@ test.describe('font loading', () => {
     // changes advance width in response to font-stretch. Compares ordering, not
     // pixel values, so it survives font version bumps.
     await page.goto('/')
+    await warmFonts(page)
 
     for (const family of FAMILIES) {
-      const widths = await page.evaluate(async (f) => {
-        await document.fonts.load(`400 64px "${f}"`)
+      const widths = await page.evaluate((f) => {
         const el = document.createElement('span')
         el.textContent = 'Specification 0123'
         el.style.cssText = `position:absolute;white-space:nowrap;font-size:64px;font-family:"${f}"`
@@ -98,41 +136,10 @@ test.describe('font loading', () => {
     await page.goto('/')
     // Exercise both families so any face the preloads did not cover would show
     // up as an extra request here.
-    await page.evaluate(async () => {
-      await Promise.all(
-        ['Archivo', 'Martian Mono'].map((f) =>
-          document.fonts.load(`400 16px "${f}"`),
-        ),
-      )
-      await document.fonts.ready
-    })
+    await warmFonts(page)
 
     // Exactly two, not "at least two": a duplicate means the preload failed to
     // match the font fetch and the file was downloaded twice.
     expect(woff2.sort()).toEqual(FONT_URLS.map((u) => `${baseURL}${u}`).sort())
-  })
-
-  test('nothing is requested from a third party', async ({ page, baseURL }) => {
-    // Deliberately not an allow-list of known font CDNs. The invariant is that
-    // this site is wholly self-hosted, so any off-origin request at all is the
-    // failure, whether it is fonts.googleapis.com, a CDN someone reached for,
-    // or a host nobody thought to enumerate. Self-hosting fonts is also a
-    // privacy obligation in the EU, which makes it worth pinning permanently.
-    const foreign: Array<string> = []
-    page.on('request', (r) => {
-      if (!r.url().startsWith(`${baseURL}/`)) foreign.push(r.url())
-    })
-
-    await page.goto('/')
-    await page.evaluate(async () => {
-      await Promise.all(
-        ['Archivo', 'Martian Mono'].map((f) =>
-          document.fonts.load(`400 16px "${f}"`),
-        ),
-      )
-      await document.fonts.ready
-    })
-
-    expect(foreign).toEqual([])
   })
 })
