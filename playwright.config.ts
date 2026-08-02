@@ -8,6 +8,6 @@ export default defineConfig({
   webServer: {
     command: 'bun run dev',
     url: 'http://localhost:3100',
-    reuseExistingServer: true,
+    reuseExistingServer: !process.env.CI,
   },
 })
