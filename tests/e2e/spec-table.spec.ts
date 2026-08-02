@@ -1,6 +1,12 @@
 import { expect, test } from '@playwright/test'
 import type { Locator, Page } from '@playwright/test'
-import { NON_TEXT, TOKENS, installProbes, styleOf } from './support/probes'
+import {
+  NON_TEXT,
+  TOKENS,
+  hydrated,
+  installProbes,
+  styleOf,
+} from './support/probes'
 
 // The specification table, pinned against a real browser.
 //
@@ -55,6 +61,10 @@ const rowHeaders = (table: Locator) =>
 test.beforeEach(async ({ page }) => {
   await installProbes(page)
   await page.goto('/dev/primitives')
+  // The row hover tests scroll the ultramarine table into view and park the
+  // pointer on it. Scroll restoration fires when hydration lands and would
+  // undo that scroll from under the cursor. See `hydrated` in support/probes.
+  await hydrated(page)
 })
 
 test.describe('semantics', () => {

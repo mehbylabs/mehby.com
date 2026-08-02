@@ -72,6 +72,33 @@ export const installProbes = (page: Page) =>
     }
   })
 
+// Blocks until React has hydrated the document.
+//
+// `page.goto` resolves on the `load` event, and hydration lands after it. The
+// router is created with `scrollRestoration: true` (src/router.tsx), so when
+// hydration does land it restores the scroll position recorded for the entry,
+// which on a fresh navigation is 0. Any scroll a test performed in that window
+// is silently undone, and a test that scrolled an element into view and parked
+// the pointer on it is then measuring whatever the reset moved under the
+// cursor instead.
+//
+// Measured, not assumed. Scrolling to 900 immediately after `goto` and
+// sampling `scrollY` every 50ms:
+//   built server on :3100   reset to 0 within ~50ms of load, 4 runs of 4
+//   dev server, 4 workers   reset to 0 at 450-650ms after load, 14 runs of 16
+// That window is what made spec-table.spec.ts "tints the row under the
+// pointer" fail roughly one run in eight under parallel load: reproduced 3
+// times in 24 at 4 workers, and 0 times in 24 with this barrier in place.
+//
+// The marker is React's own. React attaches `__reactFiber$<id>` to each host
+// node it owns when it commits, so its presence on `document.body` is the
+// commit itself rather than a proxy for it. Verified absent at `load` and
+// present afterwards, so this cannot pass vacuously.
+export const hydrated = (page: Page) =>
+  page.waitForFunction(() =>
+    Object.keys(document.body).some((key) => key.startsWith('__reactFiber$')),
+  )
+
 export const styleOf = (locator: Locator, props: Array<string>) =>
   locator.evaluate((el, names: Array<string>) => {
     const s = getComputedStyle(el)
