@@ -6,10 +6,16 @@ import { expect, test } from '@playwright/test'
 //     listening on the port. Port 3000 on this machine is held by an unrelated
 //     service that returns HTTP 200, so a status-only assertion passes against
 //     the wrong application. Always assert on content only we render.
+//
+// Deliberately thin. Everything about how the home page is built is pinned in
+// tests/e2e/home.spec.ts; this file only answers "is that our server", and it
+// stays answerable in one glance when the port is the thing that is wrong.
 
 test('home page is served by our app', async ({ page }) => {
   await page.goto('/')
 
-  await expect(page.locator('h1')).toHaveText('Welcome to TanStack Start')
-  await expect(page.locator('code')).toHaveText('src/routes/index.tsx')
+  await expect(page.locator('h1')).toHaveText('Mohamed Elhedi Ben Yedder')
+  await expect(page.getByTestId('proof-link').first()).toHaveText(
+    'coachess.net',
+  )
 })

@@ -450,3 +450,418 @@ body {
     line-height: 1.2;
   }
 }
+
+/* Page-level composition: the home page and the case study route.
+   Appended as a second `components` layer block, which merges with the one
+   above rather than replacing it, so the tone and primitive rules keep their
+   position in the cascade.
+
+   Written as CSS classes rather than as utility strings for the same reason
+   the tone blocks are: several of these are sets of declarations that are only
+   correct together, and a utility list lets a caller apply some of them. The
+   clearest case is .hero-display, three properties one of which is invisible
+   when omitted. */
+@layer components {
+  /* Preflight zeroes the margins on headings and paragraphs, so vertical
+     rhythm has to be declared. Owl selectors rather than a margin on every
+     element: the space belongs between siblings, and a rule that puts it on
+     each one has to be undone at the top and bottom of every block.
+     
+     The reset lives HERE, on the container's children, and not as `margin: 0`
+     inside each child's own rule. Both are specificity 0,1,0, so a `margin: 0`
+     written later in the file silently wins and the block collapses to its
+     line boxes. That is not a hypothetical: it is the bug this pair replaced,
+     and it looked like "the design just has tight spacing" rather than like a
+     cascade fault. */
+  .hero > * {
+    margin: 0;
+  }
+
+  .hero > * + * {
+    margin-block-start: 1.5rem;
+  }
+
+  .hero-identity {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.5rem 1.25rem;
+    padding-block-end: 1rem;
+    /* Structural, so the strong token, which each ground redefines for itself.
+       --field-rule would be --color-rule-on-color here and is the decorative
+       value; DESIGN.md forbids it for a border that carries meaning. */
+    border-block-end: 1px solid var(--field-rule-strong);
+  }
+
+  .hero-name {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: var(--text-h3);
+    font-weight: 600;
+    line-height: var(--leading-h2);
+  }
+
+  .hero-credential {
+    margin: 0;
+    font-size: var(--text-fine);
+    line-height: var(--leading-h2);
+  }
+
+  /* The one display-step line on the site, and the three facts that make it
+     one. Size without leading is a 12rem line box at the top of the clamp;
+     leading without the width axis is Archivo's normal cut at a size DESIGN.md
+     reserves for Expanded; either without the family is system-ui. */
+  .hero-display {
+    max-inline-size: 18ch;
+    font-family: var(--font-display);
+    font-size: var(--text-display);
+    font-stretch: 125%;
+    font-weight: 700;
+    line-height: var(--leading-display);
+    letter-spacing: -0.02em;
+    /* Left aligned. DESIGN.md permits this one line to be centred and only if
+       it reads better; inside a strict visible grid it does not. */
+    text-align: start;
+    text-wrap: balance;
+  }
+
+  .hero-subline {
+    max-inline-size: 48ch;
+    font-size: var(--text-body);
+  }
+
+  .hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.75rem 2rem;
+  }
+
+  /* Underlined text, not a filled button. Three or more short enclosed labels
+     sharing a parent is the badge wall PRODUCT.md bans, and pill-shaped
+     actions are the first step toward it. The underline thickens on hover,
+     which is one of the four motions DESIGN.md keeps. */
+  .action {
+    font-weight: 600;
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.35em;
+    transition: text-decoration-thickness 120ms ease-out;
+  }
+
+  .action:hover {
+    text-decoration-thickness: 3px;
+  }
+
+  .action-primary {
+    font-size: var(--text-h3);
+  }
+
+  .proof-strip {
+    margin-block-start: 2.5rem;
+    padding-block-start: 1.25rem;
+    border-block-start: 1px solid var(--field-rule-strong);
+  }
+
+  .proof-label {
+    margin: 0 0 0.75rem;
+    font-size: var(--text-fine);
+    font-weight: 600;
+  }
+
+  .proof-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 2rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  /* Martian Mono, earned by the content: DESIGN.md lists link URLs among the
+     things that are data. No fill and no border, deliberately; see the note in
+     ProofStrip.tsx. */
+  .proof-link {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    font-family: var(--font-data);
+    font-size: var(--text-data);
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.35em;
+    transition: text-decoration-thickness 120ms ease-out;
+  }
+
+  .proof-link:hover {
+    text-decoration-thickness: 3px;
+  }
+
+  /* The dot carries the live signal and the label does not. --signal-on-color
+     reaches 3.50 against ultramarine, which clears the 3.0 non-text threshold
+     and fails the 4.5 body-text one, so a label painted in it would be the
+     unreadable half of a rule DESIGN.md already worked out. */
+  .proof-dot {
+    inline-size: 0.5rem;
+    block-size: 0.5rem;
+    flex: none;
+    border-radius: 50%;
+    background: var(--color-signal-on-color);
+    transform: translateY(-0.05em);
+  }
+
+  .section-heading {
+    margin: 0 0 2rem;
+    font-family: var(--font-display);
+    font-size: var(--text-h2);
+    font-weight: 700;
+    line-height: var(--leading-h2);
+  }
+
+  /* An index entry, not a card. The rule above it is the structure and there
+     is no box, no radius and no shadow; DESIGN.md bans cards as the default
+     container and this is the place they would arrive. */
+  /* The inline padding is not decoration. .grid-field sets column-gap to zero
+     on purpose, because the gutter IS the drawn hairline and a gap would put
+     the line off the track boundary. The consequence is that anything sitting
+     in adjacent tracks butts straight up against its neighbour unless it
+     insets itself, which is what this does. Trailing edge only, so the first
+     column still starts on the field's own inset and the left margin of the
+     page stays one measurement rather than two. */
+  .pillar {
+    display: block;
+    padding-block-start: 1rem;
+    padding-inline-end: 1.5rem;
+    border-block-start: 1px solid var(--field-rule-strong);
+    text-decoration: none;
+  }
+
+  .pillar-title {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: var(--text-h3);
+    font-weight: 700;
+    line-height: var(--leading-h2);
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.2em;
+    transition: text-decoration-thickness 120ms ease-out;
+  }
+
+  .pillar:hover .pillar-title {
+    text-decoration-thickness: 3px;
+  }
+
+  .pillar-meta {
+    margin: 0.5rem 0 0;
+    font-family: var(--font-data);
+    font-size: var(--text-fine);
+  }
+
+  /* No measure cap. The column it sits in is already narrower than 68ch at
+     every breakpoint that puts three of these side by side, and a second
+     constraint on top of that one only ever fights it. */
+  .pillar-summary {
+    margin: 0.75rem 0 0;
+    font-size: var(--text-body);
+  }
+
+  /* A definition row: the statement on the left, the prose on the right. Three
+     of these stacked read as a specification; three of them side by side would
+     be the icon-heading-two-lines grid DESIGN.md bans, whatever the words
+     inside them said. */
+  .capability {
+    padding-block-start: 1.25rem;
+    border-block-start: 1px solid var(--field-rule-strong);
+  }
+
+  .capability + .capability {
+    margin-block-start: 0.5rem;
+  }
+
+  .capability-heading {
+    margin: 0 0 0.5rem;
+    font-family: var(--font-display);
+    font-size: var(--text-h3);
+    font-weight: 600;
+    line-height: var(--leading-h2);
+  }
+
+  .capability-body {
+    margin: 0;
+    max-inline-size: 68ch;
+  }
+
+  @media (width >= 64rem) {
+    .capability {
+      display: grid;
+      /* 3fr / 1fr / 8fr puts the two edges on the 25 percent and 33.3 percent
+         boundaries, which are drawn hairlines in the twelve-column grid. The
+         inner layout lands on the outer one rather than near it. */
+      grid-template-columns: 3fr 1fr 8fr;
+      column-gap: 0;
+    }
+
+    .capability-heading {
+      margin: 0;
+    }
+
+    .capability-body {
+      grid-column: 3;
+    }
+  }
+
+  .contact-body {
+    margin: 0 0 1.5rem;
+    max-inline-size: 52ch;
+  }
+
+  /* The address itself, at heading scale, in Martian Mono because it is the
+     one piece of data on this band. */
+  .contact-address {
+    font-family: var(--font-data);
+    font-size: var(--text-h3);
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.3em;
+    transition: text-decoration-thickness 120ms ease-out;
+  }
+
+  .contact-address:hover {
+    text-decoration-thickness: 3px;
+  }
+
+  .not-found-field {
+    min-block-size: 80vh;
+    padding-block-start: clamp(4rem, 14vh, 10rem);
+  }
+
+  .case-head > * {
+    margin: 0;
+  }
+
+  .case-head > * + * {
+    margin-block-start: 1.25rem;
+  }
+
+  .case-back {
+    font-family: var(--font-data);
+    font-size: var(--text-fine);
+  }
+
+  .case-title {
+    font-family: var(--font-display);
+    font-size: var(--text-h1);
+    font-stretch: 112%;
+    font-weight: 700;
+    line-height: var(--leading-h1);
+  }
+
+  .case-summary {
+    max-inline-size: 54ch;
+    font-size: var(--text-body);
+  }
+
+  /* Block, and only block. A table inside a flex or grid parent has its own
+     display recomputed and loses the table role in the accessibility tree,
+     which is invisible on screen and total to a screen reader. */
+  .case-spec {
+    display: block;
+    margin-block-start: 2rem;
+  }
+
+  .case-narrative {
+    margin-block-start: 3rem;
+  }
+
+  /* The MDX body. Compiled markdown arrives as bare h2 and p elements with
+     every margin removed by preflight, so the reading rhythm is declared here
+     once rather than by a component wrapping each node. */
+  .prose {
+    max-inline-size: 68ch;
+    line-height: var(--leading-body);
+  }
+
+  .prose > * {
+    margin: 0;
+  }
+
+  .prose > * + * {
+    margin-block-start: 1.25rem;
+  }
+
+  .prose h2 {
+    margin-block-start: 2.5rem;
+    padding-block-start: 1rem;
+    border-block-start: 1px solid var(--field-rule-strong);
+    font-family: var(--font-display);
+    font-size: var(--text-h2);
+    font-weight: 700;
+    line-height: var(--leading-h2);
+  }
+
+  .prose h3 {
+    margin-block-start: 2rem;
+    font-family: var(--font-display);
+    font-size: var(--text-h3);
+    font-weight: 600;
+    line-height: var(--leading-h2);
+  }
+
+  /* Links inside the specification table and the narrative.
+     Preflight resets `a` to `text-decoration: inherit`, so a link in a table
+     cell renders as ordinary text in ordinary colour: not merely undecorated
+     but not distinguished at all, which fails WCAG 1.4.1 rather than being a
+     style preference. The case study route is the first place SpecTable's
+     surface and source links reach a reader, so the rule lands here with the
+     rest of that page's composition rather than inside a component this task
+     does not own. The thickening on hover is the same motion DESIGN.md keeps
+     for every other link on the site. */
+  .spec-table a,
+  .prose a,
+  .case-back a {
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.25em;
+    transition: text-decoration-thickness 120ms ease-out;
+  }
+
+  .spec-table a:hover,
+  .prose a:hover,
+  .case-back a:hover {
+    text-decoration-thickness: 3px;
+  }
+
+  /* One orchestrated entrance, on first load, and then nothing. DESIGN.md
+     allows a staggered reveal of roughly 600ms in ease-out-expo and keeps four
+     other motions on the whole site; this is that one.
+
+     Transform and opacity only. Animating a layout property here would move
+     the hero's own box while the browser is still settling the page, which is
+     the cumulative-layout-shift the preloaded fonts exist to avoid.
+
+     Nothing checks prefers-reduced-motion. The base layer collapses every
+     duration and every delay under that query with !important from the
+     strongest position author CSS has, so this animation reaches its end state
+     immediately rather than being skipped, and the elements are visible. That
+     is why `both` is safe: the fill mode is what stops the content flashing in
+     before its delay elapses, and would strand it at opacity 0 if the
+     reduced-motion reset removed the animation instead of shortening it. */
+  @keyframes hero-reveal {
+    from {
+      opacity: 0;
+      transform: translate3d(0, 0.75rem, 0);
+    }
+
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  .hero > *,
+  .proof-strip {
+    animation: hero-reveal 420ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation-delay: calc(var(--reveal-index, 0) * 45ms);
+  }
+}
