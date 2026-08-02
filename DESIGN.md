@@ -31,8 +31,31 @@ hue 85.
 | `--ultramarine` | `oklch(0.52 0.19 264)` | `#2d5ed4` | Hero drench, section fields, links |
 | `--ultramarine-deep` | `oklch(0.34 0.15 264)` | `#0c2d84` | Hover, pressed, dense text grounds |
 | `--rule` | `oklch(0.88 0.01 85)` | `#dad7d0` | Decorative hairlines, grid lines |
-| `--rule-strong` | `oklch(0.62 0.012 85)` | `#89867e` | Structural borders, table dividers, focus |
-| `--signal` | `oklch(0.56 0.16 45)` | `#bd4d00` | Live indicators only, under 3 percent of surface |
+| `--rule-strong` | `oklch(0.62 0.012 85)` | `#89867e` | Structural borders and table dividers, on paper |
+| `--signal` | `oklch(0.56 0.16 45)` | `#bd4d00` | Live indicators on paper, under 3 percent of surface |
+| `--rule-on-color` | `oklch(0.82 0.05 264)` | `#b4c5e5` | Structural borders on ultramarine grounds |
+| `--signal-on-color` | `oklch(0.85 0.13 70)` | `#ffbe69` | Live indicator dots on ultramarine grounds |
+
+### Every role needs two values
+
+The ultramarine ground covers 30 to 50 percent of the site by design, so a token
+validated only against paper is validated against half the site. Measured against
+ultramarine, `signal` is 1.15 and `rule-strong` is 1.57. Both are unusable there, which is
+why the on-colour variants above exist.
+
+The focus ring follows the same rule and is the sharpest case. On paper it is
+`--ultramarine` at 5.26. On an ultramarine ground it **must** invert to `--paper`, because
+an ultramarine ring on an ultramarine field measures 1.00 and is literally invisible.
+Keyboard users would lose focus entirely across half the site.
+
+`--signal-on-color` reaches 3.50 against ultramarine, which clears the non-text threshold
+but not the 4.5 body-text one. No usable lightness of a warm hue does. So on colour
+grounds the indicator **dot** carries the signal and its **label** is set in `--paper`.
+
+**Inheritance hazard.** The base layer sets `color: var(--color-ink)` on `body`. A section
+that sets only `background: var(--color-ultramarine)` therefore inherits ink at 3.02, which
+fails body text. Every ultramarine field must set its text colour explicitly. This is not
+optional styling; it is the difference between passing and failing.
 
 ### Verified contrast
 
@@ -49,7 +72,18 @@ threshold 3.0.
 | signal on paper | 4.56 | PASS body |
 | ink on rule | 12.07 | PASS body |
 | rule-strong on paper | 3.34 | PASS non text |
+| rule-on-color on ultramarine | 3.28 | PASS non text |
+| signal-on-color on ultramarine | 3.50 | PASS non text |
 | rule on paper | 1.32 | Decorative only, never a border that carries meaning |
+
+Measured and deliberately excluded, recorded so nobody reintroduces them:
+
+| Pair | Ratio | Why it is banned |
+|---|---|---|
+| ultramarine focus ring on ultramarine | 1.00 | Invisible. Invert to paper on colour grounds |
+| signal on ultramarine | 1.15 | Use `--signal-on-color` |
+| rule-strong on ultramarine | 1.57 | Use `--rule-on-color` |
+| ink on ultramarine | 3.02 | Fails body text. Set text explicitly on colour grounds |
 
 Because paper on ultramarine clears 4.5, body copy is permitted directly on the drenched
 hero. No lightening of the brand colour is required anywhere.
@@ -91,8 +125,22 @@ Modular, ratio 1.333, fluid via `clamp()`.
 | data | `0.9375rem` | Martian Mono, tabular figures |
 | fine | `0.8125rem` | Captions, table meta |
 
-Body measure capped at 68ch. Line height 1.6 on paper, 1.68 on ultramarine grounds, since
-light type on colour reads lighter and needs more air.
+Body measure capped at 68ch.
+
+**Leading is a token, not an afterthought.** The `--text-*` tokens set font size only, so
+everything would otherwise inherit the body value of 1.6. At `--text-display`, which reaches
+7.5rem, that produces a 12rem line box and the hero falls apart.
+
+| Token | Value | Applies to |
+|---|---|---|
+| `--leading-display` | 0.95 | `--text-display` |
+| `--leading-h1` | 1.05 | `--text-h1` |
+| `--leading-h2` | 1.15 | `--text-h2`, `--text-h3` |
+| `--leading-body` | 1.6 | Reading copy on paper |
+| `--leading-on-color` | 1.68 | Reading copy on ultramarine grounds |
+
+Light type on colour reads lighter and needs more air, which is why the on-colour value is
+higher.
 
 Hierarchy comes from scale and weight contrast, not from colour or from repeated small
 tracked labels above every heading.

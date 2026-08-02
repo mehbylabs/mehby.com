@@ -39,6 +39,12 @@ const TOKENS = {
   rule: [0.88, 0.01, 85],
   'rule-strong': [0.62, 0.012, 85],
   signal: [0.56, 0.16, 45],
+  // On-colour variants. The ultramarine ground covers 30 to 50 percent of the
+  // site by design, so every role that appears on it needs its own value. The
+  // paper-ground tokens above are unusable there: signal measures 1.15 and
+  // rule-strong 1.57 against ultramarine.
+  'rule-on-color': [0.82, 0.05, 264],
+  'signal-on-color': [0.85, 0.13, 70],
 };
 
 // threshold: 4.5 body text, 3.0 large text and non-text UI.
@@ -51,6 +57,17 @@ const PAIRS = [
   ['signal', 'paper', 4.5],
   ['ink', 'rule', 4.5],
   ['rule-strong', 'paper', 3.0],
+
+  // Focus ring. On paper it is ultramarine; on colour it must invert to paper,
+  // or the ring is literally invisible at 1.00 against its own ground.
+  ['ultramarine', 'paper', 3.0],
+  ['paper', 'ultramarine', 3.0],
+
+  // Structural borders and live indicators on the ultramarine ground. Non-text
+  // threshold. The indicator dot carries the signal; its label uses paper,
+  // because no usable lightness of signal reaches 4.5 against ultramarine.
+  ['rule-on-color', 'ultramarine', 3.0],
+  ['signal-on-color', 'ultramarine', 3.0],
 ];
 
 const rgb = {};
