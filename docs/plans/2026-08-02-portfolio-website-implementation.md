@@ -31,6 +31,16 @@ Checked against the registry and the installed packages on 2026-08-02. Do not re
 
 All three proof URLs returned 200 on 2026-08-02. Task 11 turns that into a build-time assertion rather than an assumption.
 
+**Environment gotchas, learned the hard way during Task 1:**
+- **The dev and preview port is 3100, never 3000.** Port 3000 on this machine is
+  permanently held by an unrelated Dokploy container that answers HTTP 200 on `/`. A
+  Playwright `webServer` pointed at 3000 with `reuseExistingServer: true` will happily
+  reuse that foreign service, never start our app, and pass tests against it. Both `dev`
+  and `preview` use `--strictPort` so a port conflict crashes loudly instead of drifting.
+- **Never assert `response.ok()` in an e2e test.** Every HTTP server on earth satisfies it,
+  so it cannot distinguish our app from anything else. Assert on content only our
+  application renders.
+
 **TanStack Start specifics that differ from React frameworks you may know:**
 - Routes are files under `src/routes/`. Dynamic segments use `$slug.tsx`, not `[slug]`.
 - Per-route metadata goes in the route's `head` option returning `{ meta, links }`.
@@ -70,7 +80,7 @@ bunx playwright install chromium --with-deps
 **Step 2: Configure**
 
 `vitest.config.ts` with `environment: 'node'` and `include: ['src/**/*.test.ts']`.
-`playwright.config.ts` with `testDir: './tests/e2e'`, `baseURL: 'http://localhost:3000'`,
+`playwright.config.ts` with `testDir: './tests/e2e'`, `baseURL: 'http://localhost:3100'`,
 and a `webServer` running `bun run dev` with `reuseExistingServer: true`.
 
 **Step 3: Add scripts**
