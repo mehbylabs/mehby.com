@@ -1,5 +1,39 @@
+@import 'tailwindcss';
 
-@import "tailwindcss";
+/* Self-hosted, one file per family. Each file carries BOTH the weight and the
+   width axis, so the expanded display cut costs no extra download.
+
+   The .woff2 files are committed, not built. To refresh them after bumping the
+   @fontsource-variable dev dependencies:
+     cp node_modules/@fontsource-variable/archivo/files/archivo-latin-wdth-normal.woff2 public/fonts/archivo.woff2
+     cp node_modules/@fontsource-variable/martian-mono/files/martian-mono-latin-wdth-normal.woff2 public/fonts/martian-mono.woff2
+   The ranges below are the full axis extents declared in each package's
+   metadata.json; keep them in step with the files.
+
+   format('woff2') is deliberate. The legacy format('woff2-variations') string
+   is documented by MDN as the "older non-normalized" spelling of
+   format(woff2) tech(variations), and neither hint buys anything here: there is
+   a single src with no fallback, so a hint the browser fails to recognise can
+   only cost us the face entirely. Plain format('woff2') is the normative
+   keyword, is understood everywhere, and in the hypothetical UA without
+   variable font support degrades to the default instance rather than to no web
+   font at all. */
+
+@font-face {
+  font-family: 'Archivo';
+  src: url('/fonts/archivo.woff2') format('woff2');
+  font-weight: 100 900;
+  font-stretch: 62% 125%;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Martian Mono';
+  src: url('/fonts/martian-mono.woff2') format('woff2');
+  font-weight: 100 800;
+  font-stretch: 75% 112.5%;
+  font-display: swap;
+}
 
 * {
   box-sizing: border-box;
@@ -14,4 +48,3 @@ body,
 body {
   margin: 0;
 }
-

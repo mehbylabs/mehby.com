@@ -23,6 +23,25 @@ export const Route = createRootRoute({
         rel: 'stylesheet',
         href: appCss,
       },
+      // Both faces are needed above the fold, and neither is discoverable until
+      // the stylesheet has parsed. Preloading here puts them in flight from the
+      // initial HTML instead. crossOrigin is required even though these are
+      // same-origin: font fetches are always CORS-mode, and a preload without
+      // it will not be matched, so the file downloads twice.
+      {
+        rel: 'preload',
+        href: '/fonts/archivo.woff2',
+        as: 'font',
+        type: 'font/woff2',
+        crossOrigin: 'anonymous',
+      },
+      {
+        rel: 'preload',
+        href: '/fonts/martian-mono.woff2',
+        as: 'font',
+        type: 'font/woff2',
+        crossOrigin: 'anonymous',
+      },
     ],
   }),
   shellComponent: RootDocument,
