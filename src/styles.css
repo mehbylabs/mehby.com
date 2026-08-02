@@ -28,6 +28,14 @@
   --color-rule-strong: oklch(0.62 0.012 85);
   --color-signal: oklch(0.56 0.16 45);
 
+  /* On-colour variants. The ultramarine ground carries 30 to 50 percent of the
+     site, so a role validated only against paper is validated against half of
+     it. Measured against ultramarine, rule-strong is 1.57 and signal is 1.15;
+     these two are the values that clear the 3.0 non-text threshold there
+     (3.28 and 3.50). See DESIGN.md, "Every role needs two values". */
+  --color-rule-on-color: oklch(0.82 0.05 264);
+  --color-signal-on-color: oklch(0.85 0.13 70);
+
   --font-display: 'Archivo', system-ui, sans-serif;
   --font-body: 'Archivo', system-ui, sans-serif;
   --font-data: 'Martian Mono', ui-monospace, monospace;
@@ -39,6 +47,23 @@
   --text-body: 1.0625rem;
   --text-data: 0.9375rem;
   --text-fine: 0.8125rem;
+
+  /* Leading is a token, not an afterthought. The --text-* tokens set font size
+     only, so without these everything inherits the body value of 1.6 — which at
+     --text-display, up to 7.5rem, is a 12rem line box.
+
+     `--leading-*` is a real Tailwind 4 theme namespace (it is where the stock
+     --leading-tight/snug/normal live), so each of these also generates a
+     `leading-*` utility. Verified against the installed compiler, and pinned by
+     tests/e2e/primitives.spec.ts rather than taken on trust: if the namespace
+     were wrong the class would compile to nothing and headings would silently
+     fall back to 1.6. */
+  --leading-display: 0.95;
+  --leading-h1: 1.05;
+  --leading-h2: 1.15;
+  --leading-body: 1.6;
+  /* Light type on colour reads lighter and needs more air. */
+  --leading-on-color: 1.68;
 }
 
 /* Self-hosted, one file per family. Each file carries BOTH the weight and the
@@ -86,12 +111,32 @@ body {
 }
 
 @layer base {
+  /* Ground-dependent roles, as inherited properties.
+
+     Two things about a surface cannot be read off the surface itself: what
+     colour a focus ring must be to be seen on it, and what colour a hairline
+     must be to be seen on it. Both are declared here as their paper-ground
+     value and redefined by every coloured tone in the components layer.
+
+     They are custom properties rather than extra `:focus-visible` and rule
+     selectors because inheritance is the part that is hard to break. A
+     descendant selector has to keep matching as markup nests, and a second
+     :focus-visible rule can be out-specified or out-ordered by a third one
+     added later without anything looking wrong. An inherited property has
+     exactly one consumer, reaches arbitrary depth for free, and — because a
+     tone declares it on the same rule as its background — puts the two facts
+     that must agree on adjacent lines. */
+  :root {
+    --focus-ring: var(--color-ultramarine);
+    --field-rule: var(--color-rule);
+  }
+
   body {
     background: var(--color-paper);
     color: var(--color-ink);
     font-family: var(--font-body);
     font-size: var(--text-body);
-    line-height: 1.6;
+    line-height: var(--leading-body);
   }
 
   ::selection {
@@ -100,9 +145,15 @@ body {
   }
 
   /* Sits in `base`, so any utility can override it deliberately. See the
-     reduced-motion block below for the case where that is not what we want. */
+     reduced-motion block below for the case where that is not what we want.
+
+     The colour is deliberately indirect. Hard-coding --color-ultramarine here
+     is a ratio of 1.00 against an ultramarine field: the ring is in the
+     computed style, and invisible on screen, across the 30 to 50 percent of the
+     site that is drenched. There is one ring rule and it reads whatever ground
+     it landed on. */
   :focus-visible {
-    outline: 2px solid var(--color-ultramarine);
+    outline: 2px solid var(--focus-ring);
     outline-offset: 2px;
   }
 
@@ -129,6 +180,143 @@ body {
       transition-duration: 0.01ms !important;
       transition-delay: 0s !important;
       scroll-behavior: auto !important;
+    }
+  }
+}
+
+/* The two layout primitives, in CSS rather than as utility strings inside the
+   components. The reason is the tone blocks below: each one is a set of facts
+   that are only correct together, and utilities let a caller apply one of them
+   without the rest. `bg-ultramarine` is a complete-looking class that produces
+   3.02:1 body text and an invisible focus ring. There is no way to write that
+   mistake against a `data-tone` attribute. */
+@layer components {
+  /* Full bleed: the colour runs to the viewport edges and only the content is
+     inset, which is what makes the paper/ultramarine alternation read as bands
+     rather than as boxes. Spacing is generous between sections and left to the
+     content to be tight inside itself. */
+  .section-field {
+    display: block;
+    width: 100%;
+    padding-block: clamp(3rem, 6vw, 6rem);
+    padding-inline: clamp(1.5rem, 4vw, 4rem);
+  }
+
+  /* One tone, one block, five declarations. Ground, text colour, leading, focus
+     ring and hairline colour are only ever correct as a set, so they are
+     written together and nowhere else: adding a tone means copying a block that
+     already shows every line the new tone owes.
+
+     The three that are easy to forget, with the ratio you get for forgetting:
+       colour      body inherits --color-ink from the base layer .......... 3.02
+       --focus-ring  ring inherits --color-ultramarine, on ultramarine .... 1.00
+       --field-rule  hairlines inherit --color-rule, unmeasured there
+
+     A structural border inside a coloured field belongs to the same family and
+     is not covered by anything here: it must use --color-rule-on-color, never
+     --color-rule-strong, which measures 1.57 on ultramarine. */
+  .section-field[data-tone='paper'] {
+    background: var(--color-paper);
+    color: var(--color-ink);
+    line-height: var(--leading-body);
+    --focus-ring: var(--color-ultramarine);
+    --field-rule: var(--color-rule);
+  }
+
+  .section-field[data-tone='ultramarine'] {
+    background: var(--color-ultramarine);
+    color: var(--color-paper);
+    line-height: var(--leading-on-color);
+    --focus-ring: var(--color-paper);
+    --field-rule: var(--color-rule-on-color);
+  }
+
+  .section-field[data-tone='ultramarine-deep'] {
+    background: var(--color-ultramarine-deep);
+    color: var(--color-paper);
+    line-height: var(--leading-on-color);
+    --focus-ring: var(--color-paper);
+    --field-rule: var(--color-rule-on-color);
+  }
+
+  /* Twelve columns at desktop, stepping down through 6 to 3. DESIGN.md says
+     twelve; twelve literally, at a 375px viewport, is 327px of content cut into
+     27px columns by eleven hairlines — no column wide enough to hold anything
+     and a grid that reads as hatching. 3 and 6 are divisors of 12, so the
+     drawn lines at each step are a subset of the lines at the next one and the
+     grid never shifts under the content — it only ever subdivides further.
+
+     No column-gap, because the gutter here IS the hairline: the line sits
+     exactly on the track boundary, which is also what lets the test derive the
+     expected positions from the browser's own resolved track sizes instead of
+     re-implementing the component's arithmetic. */
+  .grid-field {
+    --grid-columns: 3;
+
+    position: relative;
+    isolation: isolate;
+    display: grid;
+    grid-template-columns: repeat(var(--grid-columns), minmax(0, 1fr));
+    column-gap: 0;
+    row-gap: 1.5rem;
+    width: 100%;
+    max-width: 80rem;
+    margin-inline: auto;
+  }
+
+  @media (width >= 48rem) {
+    .grid-field {
+      --grid-columns: 6;
+    }
+  }
+
+  @media (width >= 64rem) {
+    .grid-field {
+      --grid-columns: 12;
+    }
+  }
+
+  /* Behind the content and out of the hit-testing path. Both are needed and
+     neither is the other's backstop: z-index alone still leaves the layer
+     covering the grid wherever the content does not, and pointer-events alone
+     leaves hairlines painted across the text.
+
+     The negative z-index is why .grid-field isolates. Without a stacking
+     context of its own here, -1 would drop this layer behind the section
+     field's background as well, and the rules would vanish on exactly the
+     coloured bands they are meant to cross. */
+  .grid-rules {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+  }
+
+  /* Hidden by default and revealed by tier, never re-hidden, so the ladder only
+     adds selectors as the viewport widens and there is no specificity race
+     between a rule that shows a line and a later one that hides it again. */
+  .grid-rule {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background: var(--field-rule);
+    display: none;
+  }
+
+  .grid-rule[data-tier='1'] {
+    display: block;
+  }
+
+  @media (width >= 48rem) {
+    .grid-rule[data-tier='2'] {
+      display: block;
+    }
+  }
+
+  @media (width >= 64rem) {
+    .grid-rule[data-tier='3'] {
+      display: block;
     }
   }
 }
