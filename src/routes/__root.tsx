@@ -9,6 +9,7 @@ import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
 import { TanStackDevtools } from '@tanstack/react-devtools'
 import { Grid } from '#/components/Grid'
 import { SectionField } from '#/components/SectionField'
+import { SITE_NAME } from './-seo'
 import type { ErrorComponentProps } from '@tanstack/react-router'
 import type { ReactNode } from 'react'
 
@@ -24,8 +25,18 @@ export const Route = createRootRoute({
         name: 'viewport',
         content: 'width=device-width, initial-scale=1',
       },
+      // The two facts that are the same on every page, declared once. The
+      // router merges head output from the root down and the deepest match
+      // wins per name, so a route that sets its own og:title still inherits
+      // these. Everything that varies per page comes from `pageHead` in
+      // src/routes/-seo.ts instead.
+      { property: 'og:type', content: 'website' },
+      { property: 'og:site_name', content: SITE_NAME },
+      // The fallback title, and it is meant to be reached by nothing. Every
+      // published route sets its own; this is what an unpublished harness page
+      // gets, and it exists so the answer is never the scaffold's name.
       {
-        title: 'TanStack Start Starter',
+        title: 'Mohamed Elhedi Ben Yedder',
       },
     ],
     links: [

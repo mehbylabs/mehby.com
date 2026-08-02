@@ -6,6 +6,7 @@ import { Placeholder } from '#/components/Placeholder'
 import { SectionField } from '#/components/SectionField'
 import { SpecTable } from '#/components/SpecTable'
 import { getCaseStudies } from '#/lib/content'
+import { pageHead } from '../-seo'
 import type { ComponentType } from 'react'
 
 // One dynamic route serves every case study. The three prerendered paths are
@@ -73,14 +74,23 @@ export const Route = createFileRoute('/work/$slug')({
     if (!study) throw notFound()
     return study
   },
+  // Without loaderData there is no case study, only the notFound component, and
+  // a head built from an absent study would advertise a canonical address for a
+  // page that does not exist. The root's fallback title covers that case.
   head: ({ loaderData }) =>
     loaderData
-      ? {
-          meta: [
-            { title: `${loaderData.title}, a case study` },
-            { name: 'description', content: loaderData.summary },
-          ],
-        }
+      ? pageHead({
+          title: `${loaderData.title}, a case study by Mohamed Elhedi Ben Yedder`,
+          // The summary from the frontmatter, unaltered. It is already the one
+          // sentence written to describe this project, it is already validated
+          // against the em dash rule by the schema, and a second description
+          // written for crawlers would be a second thing to keep true.
+          description: loaderData.summary,
+          path: `/work/${loaderData.slug}`,
+          // Generated per slug by scripts/og.mjs from this same frontmatter.
+          image: `/og/${loaderData.slug}.png`,
+          imageAlt: `${loaderData.title}, ${loaderData.role}, ${loaderData.period}`,
+        })
       : {},
 })
 

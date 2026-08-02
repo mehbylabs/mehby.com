@@ -14,6 +14,13 @@ dist-ssr
 .tanstack
 .wrangler
 .output
+
+# Generated share images. A pure function of the case study frontmatter,
+# public/fonts/archivo.woff2 and scripts/og.mjs, all of which are committed.
+# Checking the PNGs in would be caching a derived artefact that no reviewer can
+# read: a binary diff cannot show that a card still names last week's title.
+# `bun run build` regenerates them before vite copies public/.
+public/og
 .vinxi
 __unconfig*
 todos.json

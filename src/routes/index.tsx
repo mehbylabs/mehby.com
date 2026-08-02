@@ -5,6 +5,7 @@ import { Hero } from '#/components/Hero'
 import { ProofStrip } from '#/components/ProofStrip'
 import { SectionField } from '#/components/SectionField'
 import { getCaseStudies } from '#/lib/content'
+import { pageHead } from './-seo'
 
 // The home page. Four bands, alternating ultramarine and paper, which is what
 // produces DESIGN.md's 30 to 50 percent colour commitment structurally rather
@@ -34,16 +35,15 @@ const listCaseStudies = createServerFn({ method: 'GET' }).handler(() =>
 export const Route = createFileRoute('/')({
   component: Home,
   loader: () => listCaseStudies(),
-  head: () => ({
-    meta: [
-      { title: 'Mohamed Elhedi Ben Yedder, full stack product engineer' },
-      {
-        name: 'description',
-        content:
-          'CTO and co-founder of CoaChess. Available for freelance product engineering.',
-      },
-    ],
-  }),
+  head: () =>
+    pageHead({
+      title: 'Mohamed Elhedi Ben Yedder, full stack product engineer',
+      description:
+        'I build and ship full stack products end to end, from an empty repository to something people use. CTO and co-founder of CoaChess, available for freelance work.',
+      path: '/',
+      imageAlt:
+        'Mohamed Elhedi Ben Yedder, full stack product engineer, on an ultramarine ground',
+    }),
 })
 
 // Three statements, in prose. PRODUCT.md: capability is expressed through what

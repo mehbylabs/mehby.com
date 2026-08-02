@@ -3,6 +3,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { Grid } from '#/components/Grid'
 import { SectionField } from '#/components/SectionField'
 import { CONTACT_DESTINATION, sendContactMessage } from '#/lib/contact'
+import { pageHead } from './-seo'
 import type { ContactField, ContactOutcome } from '#/lib/contact'
 import type { FormEvent } from 'react'
 
@@ -31,16 +32,13 @@ import type { FormEvent } from 'react'
 
 export const Route = createFileRoute('/contact')({
   component: Contact,
-  head: () => ({
-    meta: [
-      { title: 'Start a conversation, Mohamed Elhedi Ben Yedder' },
-      {
-        name: 'description',
-        content:
-          'Tell me what you are building and what is in the way. I reply to everything.',
-      },
-    ],
-  }),
+  head: () =>
+    pageHead({
+      title: 'Start a conversation with Mohamed Elhedi Ben Yedder',
+      description:
+        'Tell me what you are building and what is in the way. The form reaches me directly, the address is printed beside it, and I reply to everything.',
+      path: '/contact',
+    }),
 })
 
 const FIELD_ORDER: Array<ContactField> = ['name', 'email', 'message']

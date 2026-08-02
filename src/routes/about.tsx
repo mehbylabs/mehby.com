@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { Grid } from '#/components/Grid'
 import { Placeholder } from '#/components/Placeholder'
 import { SectionField } from '#/components/SectionField'
+import { pageHead } from './-seo'
 
 // Three bands, alternating, which is what keeps the colour commitment in
 // DESIGN.md structural rather than a thing somebody remembers.
@@ -44,16 +45,13 @@ const TIMELINE = [
 
 export const Route = createFileRoute('/about')({
   component: About,
-  head: () => ({
-    meta: [
-      { title: 'About, Mohamed Elhedi Ben Yedder' },
-      {
-        name: 'description',
-        content:
-          'Full stack product engineer in Tunisia. CTO and co-founder of CoaChess, available for freelance product work.',
-      },
-    ],
-  }),
+  head: () =>
+    pageHead({
+      title: 'About Mohamed Elhedi Ben Yedder, product engineer in Tunisia',
+      description:
+        'I am a full stack product engineer in Tunisia. I work in React and TypeScript on the front, Python on the back, and I own the infrastructure underneath when the product needs it.',
+      path: '/about',
+    }),
 })
 
 function About() {

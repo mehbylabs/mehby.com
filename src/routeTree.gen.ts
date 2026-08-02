@@ -15,6 +15,7 @@ import { Route as ContactRouteImport } from './routes/contact'
 import { Route as DevPrimitivesRouteImport } from './routes/dev/primitives'
 import { Route as WorkSlugRouteImport } from './routes/work/$slug'
 import { Route as WritingIndexRouteImport } from './routes/writing/index'
+import { Route as WritingFeedDotxmlRouteImport } from './routes/writing/feed[.]xml'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -46,6 +47,11 @@ const WritingIndexRoute = WritingIndexRouteImport.update({
   path: '/writing/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const WritingFeedDotxmlRoute = WritingFeedDotxmlRouteImport.update({
+  id: '/writing/feed.xml',
+  path: '/writing/feed.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -53,6 +59,7 @@ export interface FileRoutesByFullPath {
   '/contact': typeof ContactRoute
   '/dev/primitives': typeof DevPrimitivesRoute
   '/work/$slug': typeof WorkSlugRoute
+  '/writing/feed.xml': typeof WritingFeedDotxmlRoute
   '/writing/': typeof WritingIndexRoute
 }
 export interface FileRoutesByTo {
@@ -61,6 +68,7 @@ export interface FileRoutesByTo {
   '/contact': typeof ContactRoute
   '/dev/primitives': typeof DevPrimitivesRoute
   '/work/$slug': typeof WorkSlugRoute
+  '/writing/feed.xml': typeof WritingFeedDotxmlRoute
   '/writing': typeof WritingIndexRoute
 }
 export interface FileRoutesById {
@@ -70,6 +78,7 @@ export interface FileRoutesById {
   '/contact': typeof ContactRoute
   '/dev/primitives': typeof DevPrimitivesRoute
   '/work/$slug': typeof WorkSlugRoute
+  '/writing/feed.xml': typeof WritingFeedDotxmlRoute
   '/writing/': typeof WritingIndexRoute
 }
 export interface FileRouteTypes {
@@ -80,10 +89,17 @@ export interface FileRouteTypes {
     | '/contact'
     | '/dev/primitives'
     | '/work/$slug'
+    | '/writing/feed.xml'
     | '/writing/'
   fileRoutesByTo: FileRoutesByTo
   to:
-    '/' | '/about' | '/contact' | '/dev/primitives' | '/work/$slug' | '/writing'
+    | '/'
+    | '/about'
+    | '/contact'
+    | '/dev/primitives'
+    | '/work/$slug'
+    | '/writing/feed.xml'
+    | '/writing'
   id:
     | '__root__'
     | '/'
@@ -91,6 +107,7 @@ export interface FileRouteTypes {
     | '/contact'
     | '/dev/primitives'
     | '/work/$slug'
+    | '/writing/feed.xml'
     | '/writing/'
   fileRoutesById: FileRoutesById
 }
@@ -100,6 +117,7 @@ export interface RootRouteChildren {
   ContactRoute: typeof ContactRoute
   DevPrimitivesRoute: typeof DevPrimitivesRoute
   WorkSlugRoute: typeof WorkSlugRoute
+  WritingFeedDotxmlRoute: typeof WritingFeedDotxmlRoute
   WritingIndexRoute: typeof WritingIndexRoute
 }
 
@@ -147,6 +165,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WritingIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/writing/feed.xml': {
+      id: '/writing/feed.xml'
+      path: '/writing/feed.xml'
+      fullPath: '/writing/feed.xml'
+      preLoaderRoute: typeof WritingFeedDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -156,6 +181,7 @@ const rootRouteChildren: RootRouteChildren = {
   ContactRoute: ContactRoute,
   DevPrimitivesRoute: DevPrimitivesRoute,
   WorkSlugRoute: WorkSlugRoute,
+  WritingFeedDotxmlRoute: WritingFeedDotxmlRoute,
   WritingIndexRoute: WritingIndexRoute,
 }
 export const routeTree = rootRouteImport

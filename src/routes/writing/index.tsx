@@ -1,6 +1,8 @@
 import { Link, createFileRoute } from '@tanstack/react-router'
 import { Grid } from '#/components/Grid'
 import { SectionField } from '#/components/SectionField'
+import { SITE, pageHead } from '../-seo'
+import { FEED_PATH } from './-feed'
 
 // Nothing is published. So this page says that, once, and stops.
 //
@@ -18,15 +20,37 @@ import { SectionField } from '#/components/SectionField'
 
 export const Route = createFileRoute('/writing/')({
   component: Writing,
-  head: () => ({
-    meta: [
-      { title: 'Writing, Mohamed Elhedi Ben Yedder' },
-      {
-        name: 'description',
-        content: 'Notes on the work. Nothing published yet.',
-      },
-    ],
-  }),
+  head: () => {
+    const head = pageHead({
+      title: 'Writing by Mohamed Elhedi Ben Yedder',
+      description:
+        'Notes on the work behind the case studies. Nothing is published yet, so this page says so plainly rather than padding itself with placeholders.',
+      // The trailing slash is load bearing. This route's full path is
+      // `/writing/`, which is the address the generated sitemap advertises, and
+      // a canonical that disagrees with the sitemap hands a crawler two
+      // addresses for one document and lets it pick. Both resolve in a browser,
+      // which is why nothing else would ever catch it.
+      path: '/writing/',
+    })
+
+    return {
+      ...head,
+      links: [
+        ...head.links,
+        // Feed discovery, which is the only thing that makes the feed findable:
+        // no reader guesses a URL, and there is no visible link to one on a
+        // page that says nothing is published. Declared here rather than on the
+        // root so it points at the section it belongs to, and absolute so a
+        // reader that saved the page still resolves it.
+        {
+          rel: 'alternate',
+          type: 'application/rss+xml',
+          title: 'Writing by Mohamed Elhedi Ben Yedder',
+          href: `${SITE}${FEED_PATH}`,
+        },
+      ],
+    }
+  },
 })
 
 function Writing() {
