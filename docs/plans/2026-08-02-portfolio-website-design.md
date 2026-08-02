@@ -50,11 +50,11 @@ this was achievable but tighter than the folder count suggested. Of twelve side 
 five are unmodified starter templates whose READMEs still read "Welcome to your new TanStack
 Start app". Two are real.
 
-| Pillar | Project | Demonstrates |
-|---|---|---|
-| 1 | VoltTunisia | Consumer product with hard domain logic: four tier electricity tariffs, EV VAT exemption, Arabic first RTL, spec driven with end to end tests |
-| 2 | Helmdeck | Developer tooling and AI infrastructure: agent client protocol, local first, Apache 2.0 monorepo |
-| 3 | CoaChess | Multi year platform engineering, three product surfaces, self hosted real time video with recording |
+| Pillar | Project     | Demonstrates                                                                                                                                  |
+| ------ | ----------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1      | VoltTunisia | Consumer product with hard domain logic: four tier electricity tariffs, EV VAT exemption, Arabic first RTL, spec driven with end to end tests |
+| 2      | Helmdeck    | Developer tooling and AI infrastructure: agent client protocol, local first, Apache 2.0 monorepo                                              |
+| 3      | CoaChess    | Multi year platform engineering, three product surfaces, self hosted real time video with recording                                           |
 
 The scaffold projects are excluded entirely. Listing them would invite a click that reveals
 a template, which would retroactively discredit everything else on the page.

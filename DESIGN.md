@@ -24,17 +24,17 @@ grounds carry reading passages. There is no hedging band of neutral between them
 All values are OKLCH. No pure black, no pure white. Every neutral is tinted warm toward
 hue 85.
 
-| Token | OKLCH | Hex | Role |
-|---|---|---|---|
-| `--paper` | `oklch(0.97 0.008 85)` | `#f8f5ef` | Primary ground |
-| `--ink` | `oklch(0.22 0.02 265)` | `#161b24` | Body and headings on paper |
-| `--ultramarine` | `oklch(0.52 0.19 264)` | `#2d5ed4` | Hero drench, section fields, links |
-| `--ultramarine-deep` | `oklch(0.34 0.15 264)` | `#0c2d84` | Hover, pressed, dense text grounds |
-| `--rule` | `oklch(0.88 0.01 85)` | `#dad7d0` | Decorative hairlines, grid lines |
-| `--rule-strong` | `oklch(0.62 0.012 85)` | `#89867e` | Structural borders and table dividers, on paper |
-| `--signal` | `oklch(0.56 0.16 45)` | `#bd4d00` | Live indicators on paper, under 3 percent of surface |
-| `--rule-on-color` | `oklch(0.82 0.05 264)` | `#b4c5e5` | Structural borders on ultramarine grounds |
-| `--signal-on-color` | `oklch(0.85 0.13 70)` | `#ffbe69` | Live indicator dots on ultramarine grounds |
+| Token                | OKLCH                  | Hex       | Role                                                 |
+| -------------------- | ---------------------- | --------- | ---------------------------------------------------- |
+| `--paper`            | `oklch(0.97 0.008 85)` | `#f8f5ef` | Primary ground                                       |
+| `--ink`              | `oklch(0.22 0.02 265)` | `#161b24` | Body and headings on paper                           |
+| `--ultramarine`      | `oklch(0.52 0.19 264)` | `#2d5ed4` | Hero drench, section fields, links                   |
+| `--ultramarine-deep` | `oklch(0.34 0.15 264)` | `#0c2d84` | Hover, pressed, dense text grounds                   |
+| `--rule`             | `oklch(0.88 0.01 85)`  | `#dad7d0` | Decorative hairlines, grid lines                     |
+| `--rule-strong`      | `oklch(0.62 0.012 85)` | `#89867e` | Structural borders and table dividers, on paper      |
+| `--signal`           | `oklch(0.56 0.16 45)`  | `#bd4d00` | Live indicators on paper, under 3 percent of surface |
+| `--rule-on-color`    | `oklch(0.82 0.05 264)` | `#b4c5e5` | Structural borders on ultramarine grounds            |
+| `--signal-on-color`  | `oklch(0.85 0.13 70)`  | `#ffbe69` | Live indicator dots on ultramarine grounds           |
 
 ### Every role needs two values
 
@@ -62,28 +62,28 @@ optional styling; it is the difference between passing and failing.
 Measured, not estimated. WCAG 2.2, body text threshold 4.5, large text and non text
 threshold 3.0.
 
-| Pair | Ratio | Verdict |
-|---|---|---|
-| ink on paper | 15.88 | PASS body |
-| paper on ultramarine | 5.26 | PASS body |
-| ultramarine on paper | 5.26 | PASS body |
-| paper on ultramarine-deep | 11.18 | PASS body |
-| ultramarine-deep on paper | 11.18 | PASS body |
-| signal on paper | 4.56 | PASS body |
-| ink on rule | 12.07 | PASS body |
-| rule-strong on paper | 3.34 | PASS non text |
-| rule-on-color on ultramarine | 3.28 | PASS non text |
-| signal-on-color on ultramarine | 3.50 | PASS non text |
-| rule on paper | 1.32 | Decorative only, never a border that carries meaning |
+| Pair                           | Ratio | Verdict                                              |
+| ------------------------------ | ----- | ---------------------------------------------------- |
+| ink on paper                   | 15.88 | PASS body                                            |
+| paper on ultramarine           | 5.26  | PASS body                                            |
+| ultramarine on paper           | 5.26  | PASS body                                            |
+| paper on ultramarine-deep      | 11.18 | PASS body                                            |
+| ultramarine-deep on paper      | 11.18 | PASS body                                            |
+| signal on paper                | 4.56  | PASS body                                            |
+| ink on rule                    | 12.07 | PASS body                                            |
+| rule-strong on paper           | 3.34  | PASS non text                                        |
+| rule-on-color on ultramarine   | 3.28  | PASS non text                                        |
+| signal-on-color on ultramarine | 3.50  | PASS non text                                        |
+| rule on paper                  | 1.32  | Decorative only, never a border that carries meaning |
 
 Measured and deliberately excluded, recorded so nobody reintroduces them:
 
-| Pair | Ratio | Why it is banned |
-|---|---|---|
-| ultramarine focus ring on ultramarine | 1.00 | Invisible. Invert to paper on colour grounds |
-| signal on ultramarine | 1.15 | Use `--signal-on-color` |
-| rule-strong on ultramarine | 1.57 | Use `--rule-on-color` |
-| ink on ultramarine | 3.02 | Fails body text. Set text explicitly on colour grounds |
+| Pair                                  | Ratio | Why it is banned                                       |
+| ------------------------------------- | ----- | ------------------------------------------------------ |
+| ultramarine focus ring on ultramarine | 1.00  | Invisible. Invert to paper on colour grounds           |
+| signal on ultramarine                 | 1.15  | Use `--signal-on-color`                                |
+| rule-strong on ultramarine            | 1.57  | Use `--rule-on-color`                                  |
+| ink on ultramarine                    | 3.02  | Fails body text. Set text explicitly on colour grounds |
 
 Because paper on ultramarine clears 4.5, body copy is permitted directly on the drenched
 hero. No lightening of the brand colour is required anywhere.
@@ -115,15 +115,15 @@ No display serif anywhere. No italic display. No all caps body.
 
 Modular, ratio 1.333, fluid via `clamp()`.
 
-| Step | Size | Use |
-|---|---|---|
-| display | `clamp(3rem, 9vw, 7.5rem)` | Hero, one line, Archivo Expanded |
-| h1 | `clamp(2.25rem, 4.5vw, 3.75rem)` | Page titles |
-| h2 | `clamp(1.75rem, 2.8vw, 2.5rem)` | Section heads |
-| h3 | `1.333rem` | Subsections |
-| body | `1.0625rem` | Reading copy |
-| data | `0.9375rem` | Martian Mono, tabular figures |
-| fine | `0.8125rem` | Captions, table meta |
+| Step    | Size                             | Use                              |
+| ------- | -------------------------------- | -------------------------------- |
+| display | `clamp(3rem, 9vw, 7.5rem)`       | Hero, one line, Archivo Expanded |
+| h1      | `clamp(2.25rem, 4.5vw, 3.75rem)` | Page titles                      |
+| h2      | `clamp(1.75rem, 2.8vw, 2.5rem)`  | Section heads                    |
+| h3      | `1.333rem`                       | Subsections                      |
+| body    | `1.0625rem`                      | Reading copy                     |
+| data    | `0.9375rem`                      | Martian Mono, tabular figures    |
+| fine    | `0.8125rem`                      | Captions, table meta             |
 
 Body measure capped at 68ch.
 
@@ -131,13 +131,13 @@ Body measure capped at 68ch.
 everything would otherwise inherit the body value of 1.6. At `--text-display`, which reaches
 7.5rem, that produces a 12rem line box and the hero falls apart.
 
-| Token | Value | Applies to |
-|---|---|---|
-| `--leading-display` | 0.95 | `--text-display` |
-| `--leading-h1` | 1.05 | `--text-h1` |
-| `--leading-h2` | 1.15 | `--text-h2`, `--text-h3` |
-| `--leading-body` | 1.6 | Reading copy on paper |
-| `--leading-on-color` | 1.68 | Reading copy on ultramarine grounds |
+| Token                | Value | Applies to                          |
+| -------------------- | ----- | ----------------------------------- |
+| `--leading-display`  | 0.95  | `--text-display`                    |
+| `--leading-h1`       | 1.05  | `--text-h1`                         |
+| `--leading-h2`       | 1.15  | `--text-h2`, `--text-h3`            |
+| `--leading-body`     | 1.6   | Reading copy on paper               |
+| `--leading-on-color` | 1.68  | Reading copy on ultramarine grounds |
 
 Light type on colour reads lighter and needs more air, which is why the on-colour value is
 higher.

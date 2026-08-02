@@ -18,20 +18,21 @@
 
 Checked against the registry and the installed packages on 2026-08-02. Do not re-derive.
 
-| Fact | Value |
-|---|---|
-| Archivo Variable axes | `font-weight: 100 900`, `font-stretch: 62% 125%` |
-| Martian Mono Variable axes | `font-weight: 100 800`, `font-stretch: 75% 112.5%` |
-| Font packages | `@fontsource-variable/archivo@5.3.0`, `@fontsource-variable/martian-mono@5.3.0` |
-| Display face | Archivo at `font-stretch: 125%`. There is no separate Expanded package |
-| Prerender config | `prerender: { enabled, crawlLinks, autoStaticPathsDiscovery, failOnError, concurrency, filter }` |
-| Sitemap config | First-class: `sitemap: { enabled, outputPath, host }`, with per-page `changefreq`, `lastmod`, `images` |
-| OG images | No built-in equivalent to `next/og`. Use `satori@0.29.0` plus `@resvg/resvg-js@2.6.2` in a build script |
-| Live proof URLs | `https://coachess.net`, `https://app.coachess.net`, `https://live.coachess.net` |
+| Fact                       | Value                                                                                                   |
+| -------------------------- | ------------------------------------------------------------------------------------------------------- |
+| Archivo Variable axes      | `font-weight: 100 900`, `font-stretch: 62% 125%`                                                        |
+| Martian Mono Variable axes | `font-weight: 100 800`, `font-stretch: 75% 112.5%`                                                      |
+| Font packages              | `@fontsource-variable/archivo@5.3.0`, `@fontsource-variable/martian-mono@5.3.0`                         |
+| Display face               | Archivo at `font-stretch: 125%`. There is no separate Expanded package                                  |
+| Prerender config           | `prerender: { enabled, crawlLinks, autoStaticPathsDiscovery, failOnError, concurrency, filter }`        |
+| Sitemap config             | First-class: `sitemap: { enabled, outputPath, host }`, with per-page `changefreq`, `lastmod`, `images`  |
+| OG images                  | No built-in equivalent to `next/og`. Use `satori@0.29.0` plus `@resvg/resvg-js@2.6.2` in a build script |
+| Live proof URLs            | `https://coachess.net`, `https://app.coachess.net`, `https://live.coachess.net`                         |
 
 All three proof URLs returned 200 on 2026-08-02. Task 11 turns that into a build-time assertion rather than an assumption.
 
 **Environment gotchas, learned the hard way during Task 1:**
+
 - **The dev and preview port is 3100, never 3000.** Port 3000 on this machine is
   permanently held by an unrelated Dokploy container that answers HTTP 200 on `/`. A
   Playwright `webServer` pointed at 3000 with `reuseExistingServer: true` will happily
@@ -42,6 +43,7 @@ All three proof URLs returned 200 on 2026-08-02. Task 11 turns that into a build
   application renders.
 
 **TanStack Start specifics that differ from React frameworks you may know:**
+
 - Routes are files under `src/routes/`. Dynamic segments use `$slug.tsx`, not `[slug]`.
 - Per-route metadata goes in the route's `head` option returning `{ meta, links }`.
 - Server-side logic uses `createServerFn`, not server actions.
@@ -64,6 +66,7 @@ Start at Task 1.
 ### Task 1: Test tooling
 
 **Files:**
+
 - Modify: `package.json`
 - Create: `vitest.config.ts`, `playwright.config.ts`
 
@@ -113,6 +116,7 @@ git add -A && git commit -m "Add Vitest and Playwright"
 ### Task 2: Fonts
 
 **Files:**
+
 - Create: `public/fonts/archivo.woff2`, `public/fonts/martian-mono.woff2`
 - Modify: `src/styles.css`, `src/routes/__root.tsx`
 
@@ -171,6 +175,7 @@ git add -A && git commit -m "Add self-hosted Archivo and Martian Mono variable f
 ### Task 3: Token layer, contrast-gated
 
 **Files:**
+
 - Modify: `src/styles.css`, `package.json`
 
 **Step 1: Run the gate first**
@@ -214,10 +219,18 @@ Below the existing `@import "tailwindcss";` add a `@theme` block. Values must ma
     font-size: var(--text-body);
     line-height: 1.6;
   }
-  ::selection { background: var(--color-ultramarine); color: var(--color-paper); }
-  :focus-visible { outline: 2px solid var(--color-ultramarine); outline-offset: 2px; }
+  ::selection {
+    background: var(--color-ultramarine);
+    color: var(--color-paper);
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-ultramarine);
+    outline-offset: 2px;
+  }
   @media (prefers-reduced-motion: reduce) {
-    *, *::before, *::after {
+    *,
+    *::before,
+    *::after {
       animation-duration: 0.01ms !important;
       transition-duration: 0.01ms !important;
       scroll-behavior: auto !important;
@@ -257,6 +270,7 @@ git add -A && git commit -m "Add OKLCH token layer with a contrast gate on build
 ### Task 4: Grid and section field primitives
 
 **Files:**
+
 - Create: `src/components/Grid.tsx`, `src/components/SectionField.tsx`
 - Create: `src/routes/dev/primitives.tsx`
 - Test: `tests/e2e/primitives.spec.ts`
@@ -264,17 +278,19 @@ git add -A && git commit -m "Add OKLCH token layer with a contrast gate on build
 **Step 1: Write the failing test**
 
 ```ts
-import { test, expect } from '@playwright/test';
+import { test, expect } from '@playwright/test'
 
-test('ultramarine field renders paper text on the brand colour', async ({ page }) => {
-  await page.goto('/dev/primitives');
-  await expect(page.getByTestId('section-field-ultramarine')).toBeVisible();
-});
+test('ultramarine field renders paper text on the brand colour', async ({
+  page,
+}) => {
+  await page.goto('/dev/primitives')
+  await expect(page.getByTestId('section-field-ultramarine')).toBeVisible()
+})
 
 test('grid draws visible column rules', async ({ page }) => {
-  await page.goto('/dev/primitives');
-  await expect(page.getByTestId('grid-rule').first()).toBeVisible();
-});
+  await page.goto('/dev/primitives')
+  await expect(page.getByTestId('grid-rule').first()).toBeVisible()
+})
 ```
 
 **Step 2: Run it and watch it fail**
@@ -304,14 +320,15 @@ git add -A && git commit -m "Add grid and section field primitives"
 ### Task 5: Typed frontmatter with a schema gate
 
 **Files:**
+
 - Create: `src/lib/content.ts`
 - Test: `src/lib/content.test.ts`
 
 **Step 1: Write the failing test**
 
 ```ts
-import { describe, it, expect } from 'vitest';
-import { caseStudySchema } from './content';
+import { describe, it, expect } from 'vitest'
+import { caseStudySchema } from './content'
 
 describe('caseStudySchema', () => {
   it('accepts a complete case study', () => {
@@ -322,9 +339,9 @@ describe('caseStudySchema', () => {
       period: '2026',
       order: 1,
       surfaces: [{ label: 'Catalog', href: 'https://example.com' }],
-    });
-    expect(parsed.title).toBe('VoltTunisia');
-  });
+    })
+    expect(parsed.title).toBe('VoltTunisia')
+  })
 
   it('rejects an em dash in the summary', () => {
     expect(() =>
@@ -335,13 +352,13 @@ describe('caseStudySchema', () => {
         period: '2026',
         order: 1,
       }),
-    ).toThrow(/em dash/i);
-  });
+    ).toThrow(/em dash/i)
+  })
 
   it('rejects a missing summary', () => {
-    expect(() => caseStudySchema.parse({ title: 'X' })).toThrow();
-  });
-});
+    expect(() => caseStudySchema.parse({ title: 'X' })).toThrow()
+  })
+})
 ```
 
 The em dash test enforces a PRODUCT.md standing rule mechanically rather than by memory.
@@ -354,12 +371,12 @@ Expected: FAIL, cannot resolve `./content`.
 **Step 3: Implement**
 
 ```ts
-import { z } from 'zod';
+import { z } from 'zod'
 
 const noEmDash = (field: string) =>
   z.string().refine((s) => !s.includes('\u2014') && !s.includes('--'), {
     message: `${field} must not contain an em dash`,
-  });
+  })
 
 export const caseStudySchema = z.object({
   title: noEmDash('title'),
@@ -370,9 +387,9 @@ export const caseStudySchema = z.object({
   surfaces: z.array(z.object({ label: z.string(), href: z.url() })).default([]),
   source: z.url().optional(),
   cover: z.string().optional(),
-});
+})
 
-export type CaseStudy = z.infer<typeof caseStudySchema>;
+export type CaseStudy = z.infer<typeof caseStudySchema>
 ```
 
 Install first: `bun add zod@4.4.3`. Note Zod 4 uses `z.url()`, not `z.string().url()`.
@@ -390,6 +407,7 @@ git add -A && git commit -m "Add typed content schema enforcing the em dash rule
 ### Task 6: MDX pipeline and loader
 
 **Files:**
+
 - Modify: `vite.config.ts`, `src/lib/content.ts`
 - Create: `content/work/coachess.mdx`, `content/work/helmdeck.mdx`, `content/work/volt-tunisia.mdx`
 - Test: `src/lib/content.test.ts`
@@ -433,6 +451,7 @@ git add -A && git commit -m "Add MDX pipeline and case study loader"
 ### Task 7: Specification table
 
 **Files:**
+
 - Create: `src/components/SpecTable.tsx`
 - Test: `tests/e2e/spec-table.spec.ts`
 
@@ -442,11 +461,11 @@ The signature component. Real table semantics, not divs.
 
 ```ts
 test('spec table uses real table semantics', async ({ page }) => {
-  await page.goto('/work/coachess');
-  const table = page.getByRole('table', { name: /specification/i });
-  await expect(table).toBeVisible();
-  await expect(table.getByRole('rowheader').first()).toBeVisible();
-});
+  await page.goto('/work/coachess')
+  const table = page.getByRole('table', { name: /specification/i })
+  await expect(table).toBeVisible()
+  await expect(table.getByRole('rowheader').first()).toBeVisible()
+})
 ```
 
 **Step 2: Run and watch it fail.**
@@ -469,6 +488,7 @@ git add -A && git commit -m "Add specification table component"
 ### Task 8: Placeholder component
 
 **Files:**
+
 - Create: `src/components/Placeholder.tsx`
 - Test: `tests/e2e/placeholder.spec.ts`
 
@@ -498,6 +518,7 @@ git add -A && git commit -m "Add labelled placeholder component"
 ### Task 9: Homepage
 
 **Files:**
+
 - Modify: `src/routes/index.tsx`
 - Create: `src/components/Hero.tsx`, `src/components/ProofStrip.tsx`
 - Test: `tests/e2e/home.spec.ts`
@@ -506,19 +527,21 @@ git add -A && git commit -m "Add labelled placeholder component"
 
 ```ts
 test('hero states the positioning and the credential', async ({ page }) => {
-  await page.goto('/');
-  await expect(page.getByRole('heading', { level: 1 })).toContainText(/Ben Yedder/i);
-});
+  await page.goto('/')
+  await expect(page.getByRole('heading', { level: 1 })).toContainText(
+    /Ben Yedder/i,
+  )
+})
 
 test('proof strip shows exactly the three live surfaces', async ({ page }) => {
-  await page.goto('/');
-  await expect(page.getByTestId('proof-link')).toHaveCount(3);
-});
+  await page.goto('/')
+  await expect(page.getByTestId('proof-link')).toHaveCount(3)
+})
 
 test('no badge wall is present', async ({ page }) => {
-  await page.goto('/');
-  await expect(page.getByTestId('stack-badge')).toHaveCount(0);
-});
+  await page.goto('/')
+  await expect(page.getByTestId('stack-badge')).toHaveCount(0)
+})
 ```
 
 **Step 2: Run and watch them fail.**
@@ -540,6 +563,7 @@ git add -A && git commit -m "Add homepage with hero and proof strip"
 ### Task 10: Case study route and prerendering
 
 **Files:**
+
 - Create: `src/routes/work/$slug.tsx`
 - Modify: `vite.config.ts`
 - Test: `tests/e2e/work.spec.ts`
@@ -580,6 +604,7 @@ git add -A && git commit -m "Add case study route with prerendering and sitemap"
 ### Task 11: Build-time proof link verification
 
 **Files:**
+
 - Create: `scripts/verify-links.mjs`
 - Modify: `package.json`
 - Test: `scripts/verify-links.test.mjs`
@@ -613,6 +638,7 @@ git add -A && git commit -m "Verify proof links at build time"
 ### Task 12: About, contact, and writing routes
 
 **Files:**
+
 - Create: `src/routes/about.tsx`, `src/routes/contact.tsx`, `src/routes/writing/index.tsx`
 - Test: `tests/e2e/routes.spec.ts`
 
@@ -639,6 +665,7 @@ git add -A && git commit -m "Add about, contact and writing routes"
 ### Task 13: Contact form
 
 **Files:**
+
 - Create: `src/lib/contact.ts`
 - Modify: `src/routes/contact.tsx`
 - Test: `src/lib/contact.test.ts`
@@ -666,6 +693,7 @@ git add -A && git commit -m "Add contact server function with full state coverag
 ### Task 14: Not-found and error components
 
 **Files:**
+
 - Modify: `src/routes/__root.tsx`
 
 TanStack Router takes `notFoundComponent` and `errorComponent` in the root route options
@@ -681,6 +709,7 @@ not exist. Both link home.
 ### Task 15: Metadata, share images, feed
 
 **Files:**
+
 - Modify: every route file, adding a `head` option
 - Create: `scripts/og.mjs`, `src/routes/writing/feed.xml.tsx`
 
@@ -729,13 +758,13 @@ DNS records at all, so this is first-time configuration.
 
 ## Owner-supplied, tracked as placeholders until delivered
 
-| Asset | Blocks |
-|---|---|
-| Headshot | `/about` visual only |
-| Helmdeck and VoltTunisia screenshots | case study covers only |
-| Contact email | Task 13 destination |
-| Pre-2022 history | `/about` timeline only |
-| Case study narratives, owner-reviewed | Task 6 bodies |
+| Asset                                 | Blocks                 |
+| ------------------------------------- | ---------------------- |
+| Headshot                              | `/about` visual only   |
+| Helmdeck and VoltTunisia screenshots  | case study covers only |
+| Contact email                         | Task 13 destination    |
+| Pre-2022 history                      | `/about` timeline only |
+| Case study narratives, owner-reviewed | Task 6 bodies          |
 
 None block Tasks 1 through 8, 10, 11, 14 or 15.
 
