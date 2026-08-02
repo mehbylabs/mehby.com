@@ -133,10 +133,52 @@ describe('the excluded list stays honest', () => {
     }
   })
 
-  it('excludes the call to action the hero links to but nothing serves', () => {
-    // Pins the reason the mechanism exists. Without this, deleting /contact
-    // from the list passes every other test here and fails only at build time.
-    expect(NOT_PRERENDERED).toContain('/contact')
+  it('advertises the call to action now that something serves it', () => {
+    // This assertion used to read `expect(NOT_PRERENDERED).toContain('/contact')`,
+    // pinning the reason the exclusion existed: while nothing served /contact,
+    // deleting it from the list passed every other test here and failed only at
+    // build time, on a 404, with failOnError.
+    //
+    // The route landed, so that pin became the opposite of the rule. It and the
+    // test above are now mutually exclusive by construction: one requires the
+    // path in the list, the other requires it out the moment the router can
+    // serve it. Both cannot hold, and the one that expires is this one. So it
+    // is rewritten to guard the other half of the same mistake, which is real
+    // and current: re-adding /contact, or quietly filtering it, would keep the
+    // site's only conversion out of the sitemap while every page still worked
+    // in a browser.
+    const routes = new Set(
+      Object.values(getRouter().routesById).map((r) => r.fullPath),
+    )
+
+    expect(routes.has('/contact'), 'nothing serves /contact').toBe(true)
+    expect(NOT_PRERENDERED).not.toContain('/contact')
+    expect(
+      isPrerendered({ path: '/contact' }),
+      '/contact is filtered out of the prerender, so the page a visitor is ' +
+        'sent to convert on is the one page a crawler cannot read',
+    ).toBe(true)
+  })
+
+  it('prerenders every static page the router serves', () => {
+    // Derived from the router rather than listed, so /writing/tag or whatever
+    // ships next is covered without anybody remembering this file. Dynamic
+    // paths are excluded because a `$param` is not a path; the case studies
+    // behind /work/$slug are enumerated separately above.
+    const statics = Object.values(getRouter().routesById)
+      .map((r) => r.fullPath)
+      .filter(
+        (path) => path && !path.includes('$') && !path.startsWith('/dev/'),
+      )
+
+    expect(statics.length).toBeGreaterThan(1)
+    for (const path of statics) {
+      expect(
+        isPrerendered({ path }),
+        `${path} is served by the router and filtered out of the prerender, ` +
+          `so it ships as a client-rendered shell`,
+      ).toBe(true)
+    }
   })
 })
 

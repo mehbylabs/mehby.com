@@ -3,7 +3,13 @@ node_modules
 dist
 dist-ssr
 *.local
+# RESEND_API_KEY lives in one of these and is never committed. `.env` alone
+# covers the file people mean to write and not the three they actually write,
+# so the glob is here too, with an escape for a checked-in example that holds
+# names and no values.
 .env
+.env.*
+!.env.example
 .nitro
 .tanstack
 .wrangler

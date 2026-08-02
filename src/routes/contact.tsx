@@ -1,0 +1,285 @@
+import { useEffect, useState } from 'react'
+import { createFileRoute } from '@tanstack/react-router'
+import { Grid } from '#/components/Grid'
+import { SectionField } from '#/components/SectionField'
+import { CONTACT_DESTINATION, sendContactMessage } from '#/lib/contact'
+import type { ContactField, ContactOutcome } from '#/lib/contact'
+import type { FormEvent } from 'react'
+
+// The site's only conversion, and therefore the page with the most ways to
+// fail quietly.
+//
+// Inline, on the page. DESIGN.md bans modals outright, and a contact modal is
+// the specific one worth naming: it hides the only action the site is asking
+// for behind a click, cannot be linked to, and traps focus around a form that
+// has no reason to trap anything.
+//
+// The address is printed above the form and is not a fallback nobody sees. It
+// is the whole interface for a visitor with JavaScript off, since a server
+// function is an RPC endpoint and cannot be a plain form action, and it is the
+// escape hatch when the provider is down. Printing it also follows PRODUCT.md's
+// proof-over-claim rule: a button labelled "Get in touch" withholds the one
+// fact needed to act.
+//
+// Validation is server side, and the form carries `noValidate` so the browser
+// does not intercept first. Two reasons that is deliberate rather than lazy:
+// the rules that decide whether an enquiry is deliverable live on the server
+// and are tested there, and native constraint bubbles are unstyled, transient,
+// and invisible to a screen reader that is not focused on the field at the
+// moment they appear. `type="email"` stays, because it still selects the right
+// keyboard on a phone.
+
+export const Route = createFileRoute('/contact')({
+  component: Contact,
+  head: () => ({
+    meta: [
+      { title: 'Start a conversation, Mohamed Elhedi Ben Yedder' },
+      {
+        name: 'description',
+        content:
+          'Tell me what you are building and what is in the way. I reply to everything.',
+      },
+    ],
+  }),
+})
+
+const FIELD_ORDER: Array<ContactField> = ['name', 'email', 'message']
+
+const errorId = (field: ContactField) => `contact-${field}-error`
+
+// One sentence per outcome, in the live region. The invalid case deliberately
+// does not repeat the field messages: they are already associated with their
+// inputs, and hearing all three twice is worse than hearing them once. The
+// failed case carries the reason the server gave, because "something went
+// wrong" is not something a visitor can act on.
+const summarise = (outcome: ContactOutcome | null) => {
+  if (outcome === null) return ''
+  if (outcome.status === 'sent')
+    return 'Message sent. I will reply to the address you gave.'
+  if (outcome.status === 'invalid')
+    return 'Nothing was sent. The fields marked below need attention.'
+  return outcome.reason
+}
+
+function Contact() {
+  const [pending, setPending] = useState(false)
+  const [outcome, setOutcome] = useState<ContactOutcome | null>(null)
+  // False on the server and through the first client render, true once React
+  // has hydrated. See the two comments on the submit button for what it is
+  // for: without it there is a real window, measured in this build and not
+  // hypothetical, in which pressing Send performs a native form submission,
+  // navigates away, and loses everything the visitor typed.
+  const [ready, setReady] = useState(false)
+  useEffect(() => setReady(true), [])
+
+  const errors = outcome?.status === 'invalid' ? outcome.errors : {}
+  const summary = summarise(outcome)
+
+  async function onSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    // Guarded rather than disabled. A disabled button loses focus to the body
+    // mid-submission, which drops a keyboard user out of the form.
+    if (pending) return
+
+    const form = event.currentTarget
+    const data = new FormData(form)
+    const read = (field: string) => String(data.get(field) ?? '')
+
+    setPending(true)
+    let result: ContactOutcome
+    try {
+      result = await sendContactMessage({
+        data: {
+          name: read('name'),
+          email: read('email'),
+          message: read('message'),
+          company: read('company'),
+        },
+      })
+    } catch (cause) {
+      // The transport itself broke: offline, a 500, a deploy mid-request. The
+      // one thing that must not happen here is nothing, which is what an
+      // unhandled rejection looks like on screen.
+      console.error('contact: the request did not complete', cause)
+      result = {
+        status: 'failed',
+        reason:
+          'The message could not be sent. Try again, or email me directly.',
+      }
+    } finally {
+      setPending(false)
+    }
+
+    setOutcome(result)
+
+    if (result.status === 'sent') {
+      form.reset()
+      return
+    }
+
+    if (result.status === 'invalid') {
+      // The live region says something is wrong; this says where. Without it a
+      // keyboard user is left at the submit button and has to walk back up the
+      // form to find out which field the announcement was about.
+      const first = FIELD_ORDER.find((field) => result.errors[field])
+      if (first) {
+        const element = form.elements.namedItem(first)
+        if (element instanceof HTMLElement) element.focus()
+      }
+    }
+  }
+
+  const field = (name: ContactField) => ({
+    id: `contact-${name}`,
+    name,
+    className: 'field-control',
+    'aria-invalid': errors[name] ? (true as const) : undefined,
+    'aria-describedby': errors[name] ? errorId(name) : undefined,
+  })
+
+  return (
+    <main>
+      <SectionField tone="ultramarine">
+        <Grid>
+          <div className="page-head col-span-full lg:col-span-8">
+            <h1 className="page-title">Start a conversation</h1>
+            <p className="page-intro">
+              Tell me what you are building and what is in the way. I reply to
+              everything.
+            </p>
+            <p>
+              <a
+                className="contact-address"
+                href={`mailto:${CONTACT_DESTINATION}`}
+              >
+                {CONTACT_DESTINATION}
+              </a>
+            </p>
+          </div>
+        </Grid>
+      </SectionField>
+
+      <SectionField tone="paper">
+        <Grid>
+          <form
+            className="contact-form col-span-full lg:col-span-7"
+            data-testid="contact-form"
+            method="post"
+            noValidate
+            aria-busy={pending || undefined}
+            onSubmit={onSubmit}
+          >
+            {/* Mounted from the first render, always, and never conditionally
+                rendered. A live region inserted into the DOM at the same moment
+                it gains text is frequently not announced at all: the assistive
+                technology has nothing to compare the change against. */}
+            <p
+              className="form-status"
+              data-testid="contact-status"
+              data-status={outcome?.status ?? 'idle'}
+              role="status"
+              aria-live="polite"
+            >
+              {summary}
+            </p>
+
+            {outcome?.status === 'failed' ? (
+              // The retry affordance is the Send button, which is never
+              // disabled after a failure, plus the address for a visitor who
+              // has had enough of trying.
+              <p className="form-alternative">
+                <a href={`mailto:${CONTACT_DESTINATION}`}>
+                  {CONTACT_DESTINATION}
+                </a>
+              </p>
+            ) : null}
+
+            <div className="field">
+              <label className="field-label" htmlFor="contact-name">
+                Name
+              </label>
+              <input {...field('name')} type="text" autoComplete="name" />
+              {errors.name ? (
+                <p className="field-error" id={errorId('name')}>
+                  {errors.name}
+                </p>
+              ) : null}
+            </div>
+
+            <div className="field">
+              <label className="field-label" htmlFor="contact-email">
+                Email
+              </label>
+              <input {...field('email')} type="email" autoComplete="email" />
+              {errors.email ? (
+                <p className="field-error" id={errorId('email')}>
+                  {errors.email}
+                </p>
+              ) : null}
+            </div>
+
+            <div className="field">
+              <label className="field-label" htmlFor="contact-message">
+                What are you building?
+              </label>
+              <textarea {...field('message')} rows={7} />
+              {errors.message ? (
+                <p className="field-error" id={errorId('message')}>
+                  {errors.message}
+                </p>
+              ) : null}
+            </div>
+
+            {/* The honeypot. Off screen rather than `display: none`, because a
+                bot that parses CSS skips a hidden field and fills a visible
+                one. tabIndex -1 keeps it out of the keyboard path, and
+                aria-hidden keeps it out of the accessibility tree: together
+                those are what stop it being a trap for the people it is not
+                aimed at. Named `company`, which is a field a form filler
+                expects to exist. */}
+            <div className="honeypot" aria-hidden="true">
+              <label htmlFor="contact-company">Company</label>
+              <input
+                id="contact-company"
+                name="company"
+                type="text"
+                tabIndex={-1}
+                autoComplete="off"
+                aria-hidden="true"
+              />
+            </div>
+
+            <div className="form-actions">
+              {/* Two disabled states, two mechanisms, and they are not
+                  interchangeable.
+
+                  Before hydration the button is really `disabled`, because
+                  nothing else stops a native form submission: the handler that
+                  calls preventDefault does not exist yet, so a press in that
+                  window navigates the browser and discards the message. The
+                  address printed above the form is what a visitor without
+                  JavaScript uses, and it is on the page for that reason rather
+                  than as decoration.
+
+                  While a request is in flight it is `aria-disabled` instead,
+                  and the double submit is refused in the handler. A real
+                  `disabled` here would move focus to the body mid-request and
+                  drop a keyboard user out of the form they are using. */}
+              <button
+                className="action action-primary submit"
+                type="submit"
+                data-testid="contact-submit"
+                data-ready={ready || undefined}
+                data-pending={pending || undefined}
+                disabled={!ready}
+                aria-disabled={pending || undefined}
+              >
+                {pending ? 'Sending' : 'Send'}
+              </button>
+            </div>
+          </form>
+        </Grid>
+      </SectionField>
+    </main>
+  )
+}

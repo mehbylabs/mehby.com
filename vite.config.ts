@@ -51,11 +51,14 @@ export const NOT_PRERENDERED = [
   // by the router generator whether or not anything links to it, so keeping it
   // unpublished takes an explicit exclusion.
   '/dev/primitives',
-  // Linked from the hero and not built yet. With failOnError the 404 would stop
-  // the build, and without failOnError the whole prerender guarantee goes with
-  // it. Remove this line when the route lands; the test named "holds no path
-  // that the router can actually serve" fails until somebody does.
-  '/contact',
+  // '/contact' used to sit here, because the hero linked to a route that did
+  // not exist and failOnError would have stopped the build on its 404. The
+  // route landed, so the exclusion went: leaving it would have kept the site's
+  // primary call to action out of the sitemap permanently, which is the quiet
+  // failure the test named "holds no path that the router can actually serve"
+  // exists to force. /contact is prerendered like every other static page. Its
+  // form is a client-side RPC to a server function, so the HTML a crawler gets
+  // is complete and the endpoint behind it is unaffected by being static.
 ]
 
 /**
