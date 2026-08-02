@@ -90,11 +90,17 @@ and a `webServer` running `bun run dev` with `reuseExistingServer: true`.
 "test:e2e": "playwright test"
 ```
 
-**Step 4: Prove both runners work**
+**Step 4: Prove both runners work, and keep the proof**
 
-Write `src/lib/smoke.test.ts` asserting `expect(1 + 1).toBe(2)`.
-Run: `bun run test`
-Expected: 1 passed. Then delete the smoke file.
+Write one unit test and one e2e test that make a genuine assertion, and **keep them
+permanently**. A harness that exits 1 on a fresh clone because no tests exist is a red
+harness, and nobody can then distinguish "tooling broken" from "no tests yet". Do not use
+`passWithNoTests`, which masks the signal instead.
+
+The e2e test must assert on content only this application renders. Never assert
+`response.ok()`.
+
+Run `bun run test` and `bun run test:e2e`. Both must exit 0.
 
 **Step 5: Commit**
 
