@@ -67,8 +67,15 @@ Two families. Neither appears on the reflex reject list.
   Never for body copy, never as decoration. Monospace here is earned by the tabular content,
   not worn as a technical costume.
 
-Both self hosted through `next/font/local`. No display serif anywhere. No italic display. No
-all caps body.
+Both self hosted. The `.woff2` files live in `public/fonts/`, the faces are declared by hand
+in `src/styles.css`, and both are preloaded from the server-rendered HTML. Nothing is
+fetched from a third party, which is a privacy obligation and not only a performance
+preference.
+
+Reference the families as `Archivo` and `Martian Mono`. The fontsource package default
+names carry a `Variable` suffix; using those names silently falls back.
+
+No display serif anywhere. No italic display. No all caps body.
 
 ### Scale
 
