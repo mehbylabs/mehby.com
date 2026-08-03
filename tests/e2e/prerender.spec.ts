@@ -1,6 +1,7 @@
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 import { expect, test } from '@playwright/test'
+import { getCaseStudies } from '#/lib/content'
 
 // Prerendering, asserted against the files on disk.
 //
@@ -21,6 +22,17 @@ import { expect, test } from '@playwright/test'
 // proves nothing is worse than no test.
 
 const OUTPUT = '.output'
+
+/** Every path the build prerenders and advertises. */
+const PAGES = [
+  { path: '/' },
+  { path: '/about' },
+  { path: '/contact' },
+  { path: '/writing/' },
+  { path: '/work/coachess' },
+  { path: '/work/helmdeck' },
+  { path: '/work/volt-tunisia' },
+] as const
 
 const clientDir = () => {
   expect(
@@ -89,6 +101,62 @@ test.describe('the home page is on disk, rendered', () => {
     ]) {
       expect(html, `${href} is not in the prerendered HTML`).toContain(href)
     }
+  })
+})
+
+test.describe('every address the site publishes is one the gate checks', () => {
+  // scripts/verify-links.mjs stops the build when a URL in case study
+  // frontmatter does not resolve. PRODUCT.md is why that is allowed to break a
+  // build: the owner's recent source is private and no metrics may be
+  // published, so a short strip of live addresses carries the whole burden of
+  // credibility, and a dead one is the site making a false claim about a
+  // product being live to the audience it is trying to convince.
+  //
+  // The gate reads the frontmatter. This reads what the pages actually
+  // painted. That gap is where the failure lives, and it is not hypothetical:
+  // ProofStrip.tsx used to carry its own hardcoded copy of the three CoaChess
+  // URLs, so a fourth address added there, or a third removed from the
+  // frontmatter, would have been published without the gate ever seeing it.
+  //
+  // Deliberately every external href on every prerendered page rather than
+  // just the proof strip. The rule is about the site, not about one component,
+  // so a hardcoded URL dropped into a case study narrative or a footer is
+  // covered without anybody extending this.
+  test('no built page links off-origin to an address the gate never sees', () => {
+    const studies = getCaseStudies()
+    const verified = new Set([
+      ...studies.flatMap((study) => study.surfaces.map((s) => s.href)),
+      ...studies.flatMap((study) => (study.source ? [study.source] : [])),
+    ])
+
+    expect(
+      verified.size,
+      'the gate has nothing to verify, so this proves nothing',
+    ).toBeGreaterThan(0)
+
+    // Addresses that are not claims about a live product, and are therefore
+    // not the gate's business. mailto is not an HTTP resource; the canonical
+    // and og:url point at this site's own pages, which prerender.spec.ts
+    // already proves exist.
+    const OWN_ORIGIN = 'https://mehby.com'
+
+    const unverified = new Map<string, Array<string>>()
+    for (const { path } of PAGES) {
+      const html = htmlFor(path)
+      for (const match of html.matchAll(/href="(https?:\/\/[^"]+)"/g)) {
+        const href = match[1]
+        if (href === OWN_ORIGIN || href.startsWith(`${OWN_ORIGIN}/`)) continue
+        if (verified.has(href)) continue
+        unverified.set(href, [...(unverified.get(href) ?? []), path])
+      }
+    }
+
+    expect(
+      [...unverified].map(([href, pages]) => `${href} on ${pages.join(', ')}`),
+      'these off-origin addresses are published by the built site and are in ' +
+        'no case study frontmatter, so scripts/verify-links.mjs never checks ' +
+        'them and the build cannot tell when one dies',
+    ).toEqual([])
   })
 })
 

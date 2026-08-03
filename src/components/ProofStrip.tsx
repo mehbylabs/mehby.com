@@ -22,13 +22,32 @@ export type ProofLink = {
   href: string
 }
 
-export const PROOF_LINKS: ReadonlyArray<ProofLink> = [
-  { label: 'coachess.net', href: 'https://coachess.net' },
-  { label: 'app.coachess.net', href: 'https://app.coachess.net' },
-  { label: 'live.coachess.net', href: 'https://live.coachess.net' },
-]
+// Taken as a prop, never declared here, and that is the whole point of this
+// component's shape.
+//
+// It used to hold its own hardcoded array of the three CoaChess addresses.
+// Those same URLs are already in content/work/coachess.mdx as `surfaces`, and
+// scripts/verify-links.mjs reads the frontmatter, not this file. So the build
+// gate that exists to stop the site claiming a dead product is live was
+// checking a different list from the one the page painted. A URL added only
+// here shipped unverified; a URL removed from the frontmatter stopped being
+// checked while this went on publishing it. The drift was invisible precisely
+// because both lists looked right in isolation.
+//
+// The home route already calls the content loader for the case study index, so
+// the surfaces come down that same path. One source, and the gate reads it.
+export type ProofStripProps = {
+  /** Live surfaces, from case study frontmatter. */
+  surfaces: ReadonlyArray<ProofLink>
+}
 
-export function ProofStrip() {
+export function ProofStrip({ surfaces }: ProofStripProps) {
+  // Nothing to prove, so nothing is claimed. An empty strip with its heading
+  // still painted would be a "Shipping now" label over no evidence, which is
+  // worse than the section being absent: PRODUCT.md's first design principle
+  // is proof over claim, and a claim with the proof removed is just a claim.
+  if (surfaces.length === 0) return null
+
   return (
     <div
       className="proof-strip col-span-full"
@@ -42,7 +61,7 @@ export function ProofStrip() {
         Shipping now
       </p>
       <ul className="proof-list" aria-labelledby="proof-label">
-        {PROOF_LINKS.map((link) => (
+        {surfaces.map((link) => (
           <li key={link.href}>
             <a className="proof-link" data-testid="proof-link" href={link.href}>
               {/* The signal dot carries the "live" meaning, and the label is

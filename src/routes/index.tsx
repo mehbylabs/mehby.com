@@ -24,12 +24,16 @@ import { pageHead } from './-seo'
 // SSR and prerender, and over the wire on a client navigation, and node:fs
 // never reaches the bundle.
 const listCaseStudies = createServerFn({ method: 'GET' }).handler(() =>
-  getCaseStudies().map(({ slug, title, summary, role, period }) => ({
+  getCaseStudies().map(({ slug, title, summary, role, period, surfaces }) => ({
     slug,
     title,
     summary,
     role,
     period,
+    // Carried for the proof strip. It used to hold its own hardcoded copy of
+    // these URLs while scripts/verify-links.mjs read the frontmatter, so the
+    // build gate and the page were checking different lists. See ProofStrip.
+    surfaces,
   })),
 )
 
@@ -71,6 +75,13 @@ const CAPABILITIES = [
 function Home() {
   const studies = Route.useLoaderData()
 
+  // Every live surface the site publishes, in content order, from the same
+  // frontmatter scripts/verify-links.mjs checks at build time. Flattened
+  // across studies rather than taken from coachess alone: today only that one
+  // declares surfaces, and a fourth case study with a live URL should reach
+  // the strip by existing, not by anybody remembering this line.
+  const surfaces = studies.flatMap((study) => study.surfaces)
+
   return (
     <main>
       {/* One field, two components. The proof strip is not given a band of its
@@ -79,7 +90,7 @@ function Home() {
       <SectionField tone="ultramarine">
         <Grid>
           <Hero />
-          <ProofStrip />
+          <ProofStrip surfaces={surfaces} />
         </Grid>
       </SectionField>
 

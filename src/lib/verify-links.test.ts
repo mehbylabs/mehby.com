@@ -4,7 +4,6 @@ import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, expect, test } from 'vitest'
-import { PROOF_LINKS } from '#/components/ProofStrip'
 import { getCaseStudies } from '#/lib/content'
 import type { IncomingMessage, Server, ServerResponse } from 'node:http'
 
@@ -328,25 +327,49 @@ test('the offline opt-out is refused on CI', async () => {
   expect(result.stdout + result.stderr).toContain('ignored on CI')
 })
 
-test('the gate covers every link the proof strip actually paints', () => {
-  // src/components/ProofStrip.tsx holds its own hardcoded PROOF_LINKS array,
-  // which is the second list this gate was written to avoid. The component is
-  // out of scope to change here, so the drift is pinned instead of ignored:
-  // the gate reads coachess.mdx, the strip reads its constant, and this fails
-  // the moment those two stop describing the same three products. Without it,
-  // a surface removed from the frontmatter goes unverified while the page
-  // carries on publishing it.
-  const strip = PROOF_LINKS.map((link) => link.href)
-  const frontmatter = getCaseStudies()
-    .flatMap((study) => study.surfaces)
-    .map((surface) => surface.href)
+test('the proof strip declares no URLs of its own', () => {
+  // The predecessor of this test pinned a known drift: ProofStrip.tsx held a
+  // hardcoded PROOF_LINKS array while this gate read the frontmatter, so the
+  // two could describe different products and the test asserted only that they
+  // currently agreed. The component now takes its surfaces as a prop from the
+  // home route's loader, so the drift is gone rather than pinned.
+  //
+  // What is left to check is that it stays gone, and the shape of that check
+  // is deliberately crude: no absolute URL may appear in the component's own
+  // source at all. A subset assertion could not catch a second list being
+  // reintroduced alongside the prop, because a list that is currently correct
+  // passes a subset assertion, which is exactly how the original drift stayed
+  // green.
+  //
+  // The site-wide half of this, every external address on every built page
+  // against the set the gate checks, is in tests/e2e/prerender.spec.ts, which
+  // can read what the pages actually painted.
+  const source = readFileSync('src/components/ProofStrip.tsx', 'utf8')
+  const urls = [...source.matchAll(/https?:\/\/[^\s'"`)]+/g)].map((m) => m[0])
 
-  for (const href of strip) {
-    expect(
-      frontmatter,
-      `${href} is painted by ProofStrip but is not in any case study's ` +
-        'surfaces, so verify-links.mjs never checks it',
-    ).toContain(href)
+  expect(
+    urls,
+    'ProofStrip.tsx names an absolute URL in its own source. Its addresses ' +
+      'come from case study frontmatter, which is what scripts/verify-links.mjs ' +
+      'checks; a URL written here would be published without ever being verified',
+  ).toEqual([])
+})
+
+test('the gate checks something, and it comes from the frontmatter', () => {
+  // The gate is only worth having while there is something for it to check.
+  // A content directory that stopped yielding surfaces would leave every
+  // assertion above passing against an empty set.
+  const surfaces = getCaseStudies().flatMap((study) => study.surfaces)
+
+  expect(
+    surfaces.length,
+    'no case study declares any surfaces, so the link gate verifies nothing ' +
+      'and the proof strip paints nothing',
+  ).toBeGreaterThan(0)
+
+  for (const surface of surfaces) {
+    expect(surface.href).toMatch(/^https?:\/\//)
+    expect(surface.label.length).toBeGreaterThan(0)
   }
 })
 
