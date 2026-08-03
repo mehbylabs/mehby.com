@@ -1,5 +1,6 @@
 import { createServerFn } from '@tanstack/react-start'
 import { z } from 'zod'
+import { CONTACT_DESTINATION } from '#/lib/site'
 
 // The contact form's server half.
 //
@@ -15,8 +16,11 @@ import { z } from 'zod'
 // every outcome including the failure path is proved without a network, and the
 // one thing that genuinely needs a key is the one thing left untested.
 
-/** Where enquiries go. Not configurable: it is the address printed on the page. */
-export const CONTACT_DESTINATION = 'hello@mehby.com'
+// Re-exported rather than declared here. It lives in src/lib/site.ts because
+// this module imports zod at the top level, and the footer, which the root
+// route renders on every page, needs the address: importing it from here would
+// put zod in the entry bundle for the whole site.
+export { CONTACT_DESTINATION }
 
 export type ContactField = 'name' | 'email' | 'message'
 

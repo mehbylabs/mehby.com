@@ -9,6 +9,7 @@ import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
 import { TanStackDevtools } from '@tanstack/react-devtools'
 import { Grid } from '#/components/Grid'
 import { SectionField } from '#/components/SectionField'
+import { SiteFooter } from '#/components/SiteFooter'
 import { SITE_NAME } from './-seo'
 import type { ErrorComponentProps } from '@tanstack/react-router'
 import type { ReactNode } from 'react'
@@ -197,6 +198,11 @@ function RootDocument({ children }: { children: React.ReactNode }) {
       </head>
       <body>
         {children}
+        {/* Outside {children}, so it is a sibling of the route's <main> and
+            lands in the contentinfo landmark rather than inside the main one.
+            Rendered by the shell, so the failure states get it too: a 404 with
+            no way onward is the page that needs navigation most. */}
+        <SiteFooter />
         <TanStackDevtools
           config={{
             position: 'bottom-right',

@@ -258,7 +258,10 @@ test.describe('section field', () => {
     )
 
     for (const tone of TONES) {
-      const field = page.getByTestId(`section-field-${tone}`)
+      // Scoped to main. The site footer is itself an ultramarine-deep field,
+      // so the unscoped query matches two of that tone; the harness fixtures
+      // this test is about are the ones inside the page.
+      const field = page.locator('main').getByTestId(`section-field-${tone}`)
       await expect(field, `no field rendered for tone ${tone}`).toBeVisible()
 
       const style = await styleOf(field, ['background-color'])

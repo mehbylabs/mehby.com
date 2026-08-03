@@ -73,11 +73,35 @@ export const NOT_PRERENDERED = [
  * and still lists it in sitemap.xml, pointing a crawler at a 404. Declaring the
  * path here, with `sitemap.exclude`, is what closes that half.
  */
+/**
+ * Addresses that serve a page which is already advertised under another
+ * spelling. Prerendered, because they resolve and a visitor can arrive on one;
+ * kept out of the sitemap, because two <loc> entries for one document is
+ * duplicate content handed to a crawler.
+ *
+ * `/writing` is here because the router's generated `to` type for that route
+ * is `/writing` while its full path, its canonical link and the address the
+ * sitemap advertises are all `/writing/`. So `<Link to="/writing">` is the
+ * only spelling the typed API will accept and it is not the canonical one.
+ * The disagreement was latent for as long as nothing linked to the page; the
+ * site footer is the first thing that does, and the crawler immediately
+ * discovered the second address and listed both.
+ *
+ * The canonical stays `/writing/`, which is what src/routes/writing/index.tsx
+ * already argues for at length. This is the other half: the alias resolves,
+ * self-canonicalises in its own HTML, and is not advertised.
+ */
+const SITEMAP_ALIASES = ['/writing']
+
 export const prerenderPages: Array<{
   path: string
   sitemap?: { exclude: boolean }
 }> = [
   ...caseStudyPages,
+  ...SITEMAP_ALIASES.map((path) => ({
+    path,
+    sitemap: { exclude: true },
+  })),
   ...NOT_PRERENDERED.map((path) => ({
     path,
     sitemap: { exclude: true },

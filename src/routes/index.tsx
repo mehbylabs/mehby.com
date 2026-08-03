@@ -5,6 +5,7 @@ import { Hero } from '#/components/Hero'
 import { ProofStrip } from '#/components/ProofStrip'
 import { SectionField } from '#/components/SectionField'
 import { getCaseStudies } from '#/lib/content'
+import { CONTACT_DESTINATION } from '#/lib/site'
 import { pageHead } from './-seo'
 
 // The home page. Four bands, alternating ultramarine and paper, which is what
@@ -141,8 +142,11 @@ function Home() {
                 the one piece of information a visitor needs to act without
                 clicking, and PRODUCT.md asks for proof over claim throughout. */}
             <p>
-              <a className="contact-address" href="mailto:hello@mehby.com">
-                hello@mehby.com
+              <a
+                className="contact-address"
+                href={`mailto:${CONTACT_DESTINATION}`}
+              >
+                {CONTACT_DESTINATION}
               </a>
             </p>
           </div>

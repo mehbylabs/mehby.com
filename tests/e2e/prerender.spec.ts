@@ -170,6 +170,34 @@ test.describe('the sitemap', () => {
     ).not.toContain('/dev')
   })
 
+  test('advertises one address per page', async () => {
+    // Two <loc> entries that resolve to the same file is duplicate content
+    // handed to a crawler on purpose, and it is quiet: every entry has a page
+    // behind it, so the check below passes and nothing else notices.
+    //
+    // Not hypothetical. The site footer linked to '/writing' while the route's
+    // fullPath, and its own canonical link, are '/writing/'. The prerenderer
+    // crawls links, so it discovered the second spelling, emitted a single
+    // writing/index.html, and listed both addresses.
+    const base = clientDir()
+    const seen = new Map<string, Array<string>>()
+
+    for (const match of sitemap().matchAll(/<loc>([^<]+)<\/loc>/g)) {
+      const path = new URL(match[1]).pathname
+      const file =
+        path === '/' ? join(base, 'index.html') : join(base, path, 'index.html')
+      seen.set(file, [...(seen.get(file) ?? []), path])
+    }
+
+    const duplicated = [...seen.values()].filter((paths) => paths.length > 1)
+
+    expect(
+      duplicated,
+      `the sitemap advertises more than one address for the same prerendered ` +
+        `file: ${duplicated.map((p) => p.join(' and ')).join('; ')}`,
+    ).toEqual([])
+  })
+
   test('advertises nothing it did not prerender', async () => {
     // A sitemap entry with no file behind it is a 404 handed to a crawler on
     // purpose. Checks the whole list rather than the known-bad paths, so a

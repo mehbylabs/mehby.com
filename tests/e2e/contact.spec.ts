@@ -54,8 +54,13 @@ test.describe('the page', () => {
     await expect(page.locator('.page-intro')).toHaveText(
       'Tell me what you are building and what is in the way. I reply to everything.',
     )
+    // Scoped to main. The site footer prints the same address on every page,
+    // so the unscoped query matches two links; this test is about the copy
+    // this page carries, not about the chrome around it.
     await expect(
-      page.getByRole('link', { name: 'hello@mehby.com', exact: true }),
+      page
+        .locator('main')
+        .getByRole('link', { name: 'hello@mehby.com', exact: true }),
     ).toHaveAttribute('href', 'mailto:hello@mehby.com')
   })
 
@@ -149,10 +154,12 @@ test.describe('the form is operable', () => {
   test('shows a focus ring on the coloured band too', async ({ page }) => {
     // The sharpest case in DESIGN.md: an ultramarine ring on an ultramarine
     // field measures 1.00 and is literally invisible.
-    const address = page.getByRole('link', {
-      name: 'hello@mehby.com',
-      exact: true,
-    })
+    // The one in main, on the ultramarine band. The footer prints the same
+    // address on an ultramarine-deep ground, which is a different measurement
+    // and is covered by a11y.spec.ts on every page.
+    const address = page
+      .locator('main')
+      .getByRole('link', { name: 'hello@mehby.com', exact: true })
     await address.focus()
     const ring = await address.evaluate(
       (el) => getComputedStyle(el).outlineColor,

@@ -1104,6 +1104,46 @@ body {
     opacity: 0.6;
   }
 
+  /* The site footer, and the one navigation on the site.
+     Tone is set by the component, not here: `ultramarine-deep` is the third
+     measured ground, and it is chosen so the footer never fuses with the last
+     band of the page above it, which alternates. See SiteFooter.tsx.
+
+     No fill and no border on the links, deliberately, for the reason
+     ProofStrip.tsx gives at length: four short enclosed labels sharing a
+     parent is the badge wall PRODUCT.md bans, and tests/e2e/home.spec.ts
+     measures for that shape rather than for a class name. They inherit
+     `.action`, which is underlined text, like every other action on the site. */
+  .footer-nav {
+    padding-block-end: 1.5rem;
+    /* Structural, so the per-ground strong token. On ultramarine-deep that
+       resolves to --color-rule-on-color; --color-rule-strong measures 1.57 on
+       the colour grounds and would leave no visible edge. */
+    border-block-end: 1px solid var(--field-rule-strong);
+  }
+
+  .footer-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem 2rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  /* The page you are already on is still a link, and still reachable, so it is
+     not dimmed or disabled. It is marked, and only marked: aria-current says
+     so to a screen reader and the thicker underline says so on screen, which
+     is the same pair of channels every other state on this site uses rather
+     than colour alone. */
+  .footer-link[aria-current='page'] {
+    text-decoration-thickness: 3px;
+  }
+
+  .footer-address {
+    margin-block-start: 1.5rem;
+  }
+
   /* The honeypot. Off screen rather than `display: none` or `hidden`, both of
      which a form filler that reads CSS will skip, leaving the trap unsprung.
      Clipped to a single pixel so it costs no layout. */
