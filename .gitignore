@@ -10,6 +10,9 @@ dist-ssr
 .env
 .env.*
 !.env.example
+# direnv. Not covered by the globs above, and it is the other file people
+# actually put `export RESEND_API_KEY=` in.
+.envrc
 .nitro
 .tanstack
 .wrangler
