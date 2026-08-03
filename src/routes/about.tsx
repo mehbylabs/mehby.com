@@ -1,15 +1,18 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { Grid } from '#/components/Grid'
+import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableHead,
+  TableRow,
+} from '#/components/ui/table'
 import { Placeholder } from '#/components/Placeholder'
-import { SectionField } from '#/components/SectionField'
 import { pageHead } from './-seo'
 
-// Three bands, alternating, which is what keeps the colour commitment in
-// DESIGN.md structural rather than a thing somebody remembers.
-//
-//   ultramarine  page title and the portrait
-//   paper        the four paragraphs, because paper carries reading passages
-//   ultramarine  the timeline, which is data and belongs on a drenched field
+// The page opens as a session: `whoami`, then the answer. The h1 is the name,
+// because a heading is the document's title in the accessibility tree and in
+// search results, and `whoami` outputs exactly that.
 //
 // PRODUCT.md's honest-scope rule does the most work on this page. The owner
 // supplied nothing before 2022, so nothing before 2022 appears: no university
@@ -18,9 +21,8 @@ import { pageHead } from './-seo'
 // site, so a reader can tell the difference between a short career and a short
 // record of one.
 
-// The one heading level, the one prose block. Written here rather than inline
-// so a paragraph cannot be added in the middle of markup without going past
-// the list.
+// The one prose block. Written here rather than inline so a paragraph cannot
+// be added in the middle of markup without going past the list.
 const PARAGRAPHS = [
   'I am a full stack product engineer based in Tunisia, and the CTO and co-founder of CoaChess, a chess coaching platform I have been building since 2022.',
   'My work tends toward domains with real rules. Chess federation pairings, national electricity tariffs, tax exemptions, agent protocols. The common thread is that the rules are not negotiable and encoding them faithfully is most of the job. Software that gets those subtly wrong is worse than software that ships late.',
@@ -57,10 +59,33 @@ export const Route = createFileRoute('/about')({
 function About() {
   return (
     <main>
-      <SectionField tone="ultramarine">
-        <Grid>
-          <div className="page-head col-span-full lg:col-span-7">
-            <h1 className="page-title">About</h1>
+      <section className="shell section">
+        <p className="prompt">
+          <span className="prompt-user">mehby</span>
+          <span className="prompt-host">@dev:~$</span>
+          <span>whoami</span>
+          <span className="cursor" aria-hidden="true" />
+        </p>
+        <h1 className="page-title" style={{ marginTop: '1rem' }}>
+          Mohamed Elhedi Ben Yedder
+        </h1>
+        <p className="log-line" style={{ marginTop: '0.5rem' }}>
+          <b>Full stack product engineer</b> / based in Tunisia / CTO and
+          co-founder of CoaChess
+        </p>
+      </section>
+
+      <section className="shell section" style={{ paddingTop: 0 }}>
+        <div className="section-path">
+          <span className="section-path-code">~/who-is-this</span>
+          <h2 className="section-path-title">The short version</h2>
+        </div>
+
+        <div className="grid gap-6 lg:grid-cols-12">
+          <div className="prose lg:col-span-8" data-testid="about-body">
+            {PARAGRAPHS.map((paragraph) => (
+              <p key={paragraph.slice(0, 24)}>{paragraph}</p>
+            ))}
           </div>
 
           {/* No portrait has been supplied. PRODUCT.md: ship a labelled
@@ -68,61 +93,51 @@ function About() {
               reserve the space the real asset will take so the reflow does not
               land the day nobody is watching. 4:5 is a portrait crop; a square
               would have to be re-cropped when the photograph arrives. */}
-          <Placeholder
-            className="col-span-full sm:col-span-3 lg:col-span-3 lg:col-start-10"
-            label="headshot"
-            ratio={4 / 5}
-          />
-        </Grid>
-      </SectionField>
-
-      <SectionField tone="paper">
-        <Grid>
-          <div
-            className="prose col-span-full lg:col-span-8"
-            data-testid="about-body"
-          >
-            {PARAGRAPHS.map((paragraph) => (
-              <p key={paragraph.slice(0, 24)}>{paragraph}</p>
-            ))}
+          <div className="lg:col-span-3 lg:col-start-10">
+            <Placeholder label="headshot" ratio={4 / 5} />
           </div>
-        </Grid>
-      </SectionField>
+        </div>
+      </section>
 
-      <SectionField tone="ultramarine">
-        <Grid>
-          <h2 className="section-heading col-span-full">Timeline</h2>
+      <section className="shell section" style={{ paddingTop: 0 }}>
+        <div className="section-path">
+          <span className="section-path-code">~/timeline</span>
+          <h2 className="section-path-title">Timeline</h2>
+        </div>
 
-          {/* A real table, placed directly in the grid rather than inside a
-              wrapper. A grid item is blockified, and `display: table` is
-              already block level, so the element keeps its table role; putting
-              a flex or grid container between the two is what strips it from
-              the accessibility tree, invisibly. */}
-          <table className="timeline col-span-full lg:col-span-8">
-            <caption className="spec-caption">
-              Timeline: what has been built, and when
-            </caption>
-            <tbody>
-              {TIMELINE.map((row) => (
-                <tr key={row.entry}>
-                  <th scope="row">{row.period}</th>
-                  <td>{row.entry}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        {/* A real table, with real row headers. The period is the data and the
+            row header, so it is set in mono and amber exactly as a terminal
+            prints a timestamp. */}
+        <Table className="spec-table" style={{ maxInlineSize: '52rem' }}>
+          <TableCaption className="spec-caption">
+            Timeline: what has been built, and when
+          </TableCaption>
+          <TableBody>
+            {TIMELINE.map((row) => (
+              <TableRow key={row.entry} className="border-b-0">
+                <TableHead scope="row" className="timeline-period">
+                  {row.period}
+                </TableHead>
+                <TableCell className="whitespace-normal">{row.entry}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
 
-          {/* Declared, not omitted. A timeline that starts in 2022 with no note
-              reads as a claim that nothing happened before it; this says the
-              record is short rather than the career. Same register as the asset
-              placeholders, deliberately: both are gaps, and both are labelled
-              the same way so a reader learns to read the label once. */}
-          <p className="note col-span-full" data-testid="timeline-note">
-            <span className="note-label">PLACEHOLDER</span>
-            Earlier roles and education pending.
-          </p>
-        </Grid>
-      </SectionField>
+        {/* Declared, not omitted. A timeline that starts in 2022 with no note
+            reads as a claim that nothing happened before it; this says the
+            record is short rather than the career. Same register as the asset
+            placeholders, deliberately: both are gaps, and both are labelled
+            the same way so a reader learns to read the label once. */}
+        <p
+          className="log-line"
+          data-testid="timeline-note"
+          style={{ marginTop: '1.5rem' }}
+        >
+          <b className="note-label">PLACEHOLDER</b> Earlier roles and education
+          pending.
+        </p>
+      </section>
     </main>
   )
 }
