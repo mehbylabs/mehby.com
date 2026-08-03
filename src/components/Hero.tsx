@@ -32,21 +32,31 @@ export function Hero() {
         <span className="cursor" aria-hidden="true" />
       </p>
 
-      <div className="section rise-in" style={{ ...step(1), paddingBlock: '1.5rem' }}>
+      <div
+        className="section rise-in"
+        style={{ ...step(1), paddingBlock: '1.5rem' }}
+      >
         <h1 className="hero-name" data-testid="hero-name">
           Mohamed Elhedi Ben Yedder
         </h1>
         <p className="log-line" style={{ marginTop: '0.5rem' }}>
-          <b>CTO and co-founder of CoaChess</b> / available for freelance product
-          engineering
+          <b>CTO and co-founder of CoaChess</b> / available for freelance
+          product engineering
         </p>
       </div>
 
-      <p className="hero-display rise-in" data-testid="hero-display" style={step(2)}>
+      <p
+        className="hero-display rise-in"
+        data-testid="hero-display"
+        style={step(2)}
+      >
         I build and ship full stack products, end to end.
       </p>
 
-      <div className="hero-actions rise-in" style={{ ...step(3), marginTop: '2rem' }}>
+      <div
+        className="hero-actions rise-in"
+        style={{ ...step(3), marginTop: '2rem' }}
+      >
         <Button asChild size="lg">
           <Link to="/work/$slug" params={{ slug: 'coachess' }}>
             See the work

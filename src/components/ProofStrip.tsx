@@ -53,7 +53,11 @@ export function ProofStrip({ surfaces }: ProofStripProps) {
   if (surfaces.length === 0) return null
 
   return (
-    <div className="section rise-in" data-testid="proof-strip" style={{ '--stagger-index': 4 } as CSSProperties}>
+    <div
+      className="section rise-in"
+      data-testid="proof-strip"
+      style={{ '--stagger-index': 4 } as CSSProperties}
+    >
       <p className="log-line" id="proof-label" style={{ marginBottom: '1rem' }}>
         <b># live</b> three products, checked just now
       </p>
