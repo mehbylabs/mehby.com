@@ -1,12 +1,6 @@
 import { expect, test } from '@playwright/test'
 import type { Locator, Page } from '@playwright/test'
-import {
-  NON_TEXT,
-  TOKENS,
-  hydrated,
-  installProbes,
-  styleOf,
-} from './support/probes'
+import { TOKENS, hydrated, installProbes, styleOf } from './support/probes'
 
 // The specification table, pinned against a real browser, on the pages that
 // ship it.
@@ -425,89 +419,59 @@ test.describe('typography', () => {
 })
 
 test.describe('dividers', () => {
-  test('uses the structural rule token on paper, never the decorative one', async ({
+  test('rules the table in the structural token and separates rows in the decorative one', async ({
     page,
   }) => {
     await visit(page, STUDIES.coachess.path)
+    const spec = table(page)
 
-    const divider = await styleOf(table(page).getByRole('rowheader').first(), [
+    // The whole table is edged with the structural token: a rule a user must
+    // perceive, which is what edge-strong is for (it clears 3.0 on bg).
+    const top = await styleOf(spec, [
+      'border-top-color',
+      'border-top-style',
+      'border-top-width',
+    ])
+    expect(
+      top['border-top-color'],
+      'the table top is not the structural edge-strong token',
+    ).toBe(TOKENS['edge-strong'])
+    expect(top['border-top-style']).toBe('solid')
+    expect(
+      parseFloat(top['border-top-width']),
+      'the top rule has a colour but no width, so nothing is drawn',
+    ).toBeGreaterThan(0)
+
+    // Between the rows the divider is the decorative edge token, the same
+    // register as a terminal's row separators. DESIGN.md assigns edge to
+    // decoration and edge-strong to structure; row dividers are the former.
+    const row = await styleOf(spec.getByRole('rowheader').first(), [
       'border-bottom-color',
       'border-bottom-style',
       'border-bottom-width',
     ])
-
     expect(
-      divider['border-bottom-color'],
-      '--color-rule measures 1.32 on paper. DESIGN.md permits it for grid ' +
-        'hatching and never for a border that carries meaning, which a table ' +
-        'divider does',
-    ).not.toBe(TOKENS.rule)
+      row['border-bottom-color'],
+      'row dividers must be the decorative edge token, never edge-strong: ' +
+        'a table with every row heavily ruled reads as a wall of boxes',
+    ).toBe(TOKENS.edge)
+    expect(row['border-bottom-style']).toBe('solid')
     expect(
-      divider['border-bottom-color'],
-      'table dividers on paper must resolve --field-rule-strong to ' +
-        '--color-rule-strong',
-    ).toBe(TOKENS['rule-strong'])
-    expect(
-      divider['border-bottom-style'],
-      'the divider has a colour but no style, so nothing is drawn',
-    ).toBe('solid')
-    expect(
-      parseFloat(divider['border-bottom-width']),
-      'the divider has a colour but no width, so nothing is drawn',
+      parseFloat(row['border-bottom-width']),
+      'the row divider has a colour but no width, so nothing is drawn',
     ).toBeGreaterThan(0)
   })
 
-  test('inverts to the on-colour rule token on an ultramarine ground', async ({
-    page,
-  }) => {
-    // Measured on /about's timeline rather than on a specification table,
-    // because no page that ships puts a SpecTable on colour. The two tables are
-    // different components and different classes, and they read the same
-    // declaration: `border-block-end: 1px solid var(--field-rule-strong)`,
-    // with --field-rule-strong redefined by the two coloured tone blocks in
-    // styles.css. So this is the same invariant measured one class over, and it
-    // fails for exactly the same edit.
-    //
-    // What it no longer proves is that SpecTable in particular reads the
-    // inherited property rather than hard-coding the paper value. Nothing that
-    // ships can prove that, and the honest options were to say so or to keep a
-    // harness page alive to be measured. This says so.
-    await visit(page, '/about')
-
-    const timeline = page.locator('table.timeline')
-    await expect(
-      timeline,
-      'there is no timeline table on /about, so the only place a table sits ' +
-        'on a coloured ground has gone and this assertion proves nothing',
-    ).toHaveCount(1)
-
-    const divider = await styleOf(timeline.getByRole('rowheader').first(), [
-      'border-bottom-color',
-    ])
-
-    expect(
-      divider['border-bottom-color'],
-      '--color-rule-strong measures 1.57 on ultramarine, so a divider that ' +
-        'kept its paper value is invisible across the 30 to 50 percent of the ' +
-        'site that is drenched (DESIGN.md, Every role needs two values)',
-    ).not.toBe(TOKENS['rule-strong'])
-    expect(
-      divider['border-bottom-color'],
-      'table dividers on ultramarine must resolve --field-rule-strong to ' +
-        '--color-rule-on-color',
-    ).toBe(TOKENS['rule-on-color'])
-  })
-
-  test('every table on every page draws dividers that clear 3.0 on their own ground', async ({
+  test('every table on every page rules its top in the structural token', async ({
     page,
   }) => {
     // Deliberately generic, and deliberately every table rather than every
-    // specification table. The named tests above pin the two pairings that
-    // ship today; this one discovers whatever is rendered, so a table dropped
-    // onto a ground nobody thought about is caught the moment it appears
-    // rather than the moment somebody remembers to extend a list. Widening it
-    // from `[data-testid="spec-table"]` to `table` is what brings the timeline
-    // on /about's coloured band under the same measurement.
+    // specification table. The named test above pins the shipped case studies;
+    // this one discovers whatever is rendered, so a table dropped onto a page
+    // with a decorative top rule is caught the moment it appears rather than
+    // the moment somebody remembers to extend a list. Widening it from
+    // `[data-testid="spec-table"]` to `table` is what brings the timeline on
+    // /about under the same measurement.
     const PAGES = [
       '/',
       '/about',
@@ -523,50 +487,34 @@ test.describe('dividers', () => {
     for (const path of PAGES) {
       await visit(page, path)
 
-      const measured = await page.evaluate(() => {
-        const cells = [
-          ...document.querySelectorAll<HTMLElement>('table th, table td'),
-        ]
-        return cells.map((cell) => {
-          // Nothing inside a field paints its own background, so the ground for
-          // a divider is the nearest ancestor that does.
-          let node: HTMLElement | null = cell
-          let ground = 'rgba(0, 0, 0, 0)'
-          while (node) {
-            const bg = getComputedStyle(node).backgroundColor
-            if (window.rgba(bg)[3] === 1) {
-              ground = bg
-              break
-            }
-            node = node.parentElement
-          }
-          const color = getComputedStyle(cell).borderBottomColor
+      const measured = await page.evaluate(() =>
+        [...document.querySelectorAll<HTMLElement>('table')].map((el) => {
+          const s = getComputedStyle(el)
           return {
-            where:
-              cell.closest('[data-tone]')?.getAttribute('data-tone') ?? '?',
-            table: cell.closest('table')?.className ?? '?',
-            color,
-            ground,
-            ratio: window.contrast(color, ground),
+            table: el.className,
+            topColor: s.borderTopColor,
+            topStyle: s.borderTopStyle,
+            topWidth: parseFloat(s.borderTopWidth),
           }
-        })
-      })
+        }),
+      )
 
       found += measured.length
 
-      for (const cell of measured) {
+      for (const entry of measured) {
         expect(
-          cell.ratio,
-          `on ${path}, inside .${cell.table} on the ${cell.where} ground, a ` +
-            `divider measures ${cell.ratio.toFixed(2)} against ${cell.ground}, ` +
-            `below the 3.0 non-text threshold`,
-        ).toBeGreaterThanOrEqual(NON_TEXT)
+          entry.topColor,
+          `on ${path}, .${entry.table} is not edged in the structural ` +
+            `edge-strong token`,
+        ).toBe(TOKENS['edge-strong'])
+        expect(entry.topStyle).toBe('solid')
+        expect(entry.topWidth).toBeGreaterThan(0)
       }
     }
 
     expect(
       found,
-      'no table cells were found on any page, so this test proves nothing',
+      'no tables were found on any page, so this test proves nothing',
     ).toBeGreaterThan(0)
   })
 })
@@ -661,76 +609,13 @@ test.describe('row hover', () => {
     ).toBeLessThan(1)
   })
 
-  test('derives that tint from the ground it is on', async ({ page }) => {
-    // The harness proved this by putting two tables on two grounds and
-    // asserting the two tints differed, which is the only way to catch a
-    // literal directly. No page that ships renders a specification table on
-    // anything but paper, so that comparison has nowhere to stand.
-    //
-    // This is the replacement, and it is narrower on purpose. The declaration
-    // is `color-mix(in oklch, currentColor 8%, transparent)`, so the tint's
-    // colour must be the row's own text colour and only its alpha may differ.
-    // Any literal fails: `rgba(0, 0, 0, 0.08)` is black where currentColor is
-    // ink, and a tint chosen for the ultramarine ground is near-white. What it
-    // cannot catch, and the two-ground version could, is a literal that happens
-    // to equal ink.
-    await visit(page, STUDIES.coachess.path)
-
-    const row = table(page).getByRole('row').first()
-    await row.scrollIntoViewIfNeeded()
-    await page.mouse.move(0, 0)
-
-    const text = (await styleOf(row, ['color'])).color
-
-    await row.hover()
-    expect(
-      await row.evaluate((el) => el.matches(':hover')),
-      'the pointer was placed on the row but :hover did not engage',
-    ).toBe(true)
-
-    const hovered = await settledBackground(row)
-
-    const [tint, ink] = await page.evaluate(
-      ([a, b]) => [window.rgba(a), window.rgba(b)],
-      [hovered, text],
-    )
-
-    expect(
-      tint[3],
-      'the hover tint is not translucent, so it cannot have been mixed with ' +
-        'transparent',
-    ).toBeGreaterThan(0)
-
-    // Compared channel by channel against currentColor, with a tolerance that
-    // is derived rather than guessed.
-    //
-    // The probe paints one pixel and reads it back, and a canvas stores colour
-    // premultiplied by alpha. At the alpha this tint carries, ~0.078, the
-    // round trip through 8-bit premultiplied storage can move a channel by up
-    // to 0.5/255/0.078 = 0.025 before anything about the colour has changed.
-    // Measured here, the three channels come back 0.0157, 0.0039 and 0.0078
-    // from ink, all inside that bound and none of it real.
-    //
-    // 0.03 sits just above the artefact and far below the thing being caught.
-    // A tint written as `rgba(0, 0, 0, 0.08)` — the literal somebody reaches
-    // for — is 0.086, 0.106 and 0.141 away on the three channels, so the
-    // nearest miss is still three times the tolerance. A tint chosen for the
-    // ultramarine ground is near white and misses by an order of magnitude.
-    const TINT_TOLERANCE = 0.03
-
-    for (const [channel, name] of [
-      [0, 'red'],
-      [1, 'green'],
-      [2, 'blue'],
-    ] as const) {
-      expect(
-        Math.abs(tint[channel] - ink[channel]),
-        `the hover tint's ${name} channel is ${tint[channel].toFixed(3)} where ` +
-          `the row's own text colour is ${ink[channel].toFixed(3)}. The tint ` +
-          `must be mixed from currentColor, not written as a literal: a fixed ` +
-          `tint can only ever be right on one ground, and this table is one ` +
-          `move away from a coloured band`,
-      ).toBeLessThan(TINT_TOLERANCE)
-    }
-  })
+  // DELETED: "derives that tint from the ground it is on". It asserted that
+  // the row hover tint was mixed from the row's own currentColor, so that one
+  // declaration could serve both the paper and the ultramarine grounds. The
+  // terminal design has one ground, and the shadcn TableRow hover now uses the
+  // panel-lift token at 50 percent, a fixed design colour rather than a
+  // currentColor mix. The two-ground problem the test existed to solve is
+  // structurally gone, and a tint "derived from the ground" no longer means
+  // anything here. What survives is measured in "tints the row under the
+  // pointer" above: a row gives feedback, restfully and by tint alone.
 })

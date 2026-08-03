@@ -18,13 +18,17 @@ export const BODY_TEXT = 4.5
 export const NON_TEXT = 3.0
 
 export const TOKENS = {
-  paper: 'oklch(0.97 0.008 85)',
-  ink: 'oklch(0.22 0.02 265)',
-  ultramarine: 'oklch(0.52 0.19 264)',
-  'ultramarine-deep': 'oklch(0.34 0.15 264)',
-  rule: 'oklch(0.88 0.01 85)',
-  'rule-strong': 'oklch(0.62 0.012 85)',
-  'rule-on-color': 'oklch(0.82 0.05 264)',
+  bg: 'oklch(0.145 0.01 70)',
+  panel: 'oklch(0.185 0.012 70)',
+  'panel-lift': 'oklch(0.225 0.014 70)',
+  text: 'oklch(0.93 0.012 75)',
+  muted: 'oklch(0.64 0.02 72)',
+  orange: 'oklch(0.66 0.2 45)',
+  amber: 'oklch(0.85 0.13 85)',
+  green: 'oklch(0.75 0.16 150)',
+  red: 'oklch(0.6 0.2 25)',
+  edge: 'oklch(0.35 0.015 70)',
+  'edge-strong': 'oklch(0.52 0.02 70)',
 } as const
 
 declare global {

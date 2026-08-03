@@ -17,14 +17,17 @@ import { getCaseStudies } from '#/lib/content'
 // The temptation with a build script that emits binaries is to assert that the
 // files exist and stop, which passes just as happily when every image is a
 // blank white rectangle. So these tests inflate the pixel data and read it: the
-// ground has to be ultramarine, the type has to be paper, and two case studies
-// have to differ from each other. A share image is seen only outside the site,
-// in a place nobody on this project will look, so nothing about it can be left
-// to "it probably rendered".
+// ground has to be the warm near-black, the headline has to be orange, and two
+// case studies have to differ from each other. A share image is seen only
+// outside the site, in a place nobody on this project will look, so nothing
+// about it can be left to "it probably rendered".
 
 const SCRIPT = 'scripts/og.mjs'
-const ULTRAMARINE = [0x2d, 0x5e, 0xd4]
-const PAPER = [0xf8, 0xf5, 0xef]
+// The terminal tokens the cards are built from, as sRGB: the warm near-black
+// ground and the orange headline. Written as bytes rather than hex to compare
+// against the decoded pixels directly.
+const BG = [0x0d, 0x09, 0x06]
+const ORANGE = [0xf0, 0x5d, 0x00]
 
 function run(args: Array<string>) {
   return new Promise<{ status: number | null; stdout: string; stderr: string }>(
@@ -184,7 +187,7 @@ test('every image is a real PNG at exactly 1200 by 630', async () => {
   }
 }, 60000)
 
-test('the ground is ultramarine and the type is paper', async () => {
+test('the ground is the near-black and the headline is orange', async () => {
   const out = outDir()
   await run(['--out', out, '--content', fixtureContent(['alpha'])])
   const png = readPng(join(out, 'default.png'))
@@ -193,17 +196,17 @@ test('the ground is ultramarine and the type is paper', async () => {
   // somebody drops the background and ships white cards.
   expect(
     png.at(4, 4).slice(0, 3),
-    'the corner is not the ultramarine ground',
-  ).toEqual(ULTRAMARINE)
-  expect(png.at(1195, 625).slice(0, 3)).toEqual(ULTRAMARINE)
+    'the corner is not the near-black ground',
+  ).toEqual(BG)
+  expect(png.at(1195, 625).slice(0, 3)).toEqual(BG)
   expect(png.at(4, 4)[3], 'the image is not opaque').toBe(255)
 
-  // Glyph interiors are pure paper; only the antialiased edges are blends. A
+  // Glyph interiors are pure orange; only the antialiased edges are blends. A
   // count in the thousands is text on the card, and zero is an empty ground,
   // which is what a missing font or an unrendered title looks like.
   expect(
-    png.count(PAPER),
-    'there is no paper coloured type on the card, so nothing was drawn',
+    png.count(ORANGE),
+    'there is no orange type on the card, so nothing was drawn',
   ).toBeGreaterThan(5000)
 }, 60000)
 

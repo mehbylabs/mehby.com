@@ -34,43 +34,40 @@ import { NON_TEXT, TOKENS, installProbes, styleOf } from './support/probes'
  * suite gives everywhere: a test that reads its expectations out of the module
  * the page renders from cannot fail when both are wrong together.
  *
- * `ground` is asserted, not assumed. If somebody moves the portrait onto the
- * paper band, this file must fail on the ground rather than quietly go on
- * measuring a border token against the wrong background and passing.
+ * `ground` is asserted, not assumed. The placeholder paints its own panel
+ * ground, which is the nearest opaque ancestor of the caption, so both blocks
+ * stand on `panel`; if that stops being true this file fails on the ground
+ * rather than quietly measuring a border against the wrong background.
  */
 const PLACEHOLDERS = [
   {
     page: '/work/coachess',
     label: 'CoaChess cover',
     ratio: 16 / 9,
-    ground: 'paper',
-    // --color-rule measures 1.32 on paper. DESIGN.md permits it for grid
-    // hatching and forbids it for a border that carries meaning, which the
-    // edge of a placeholder does: it is the thing that makes the block read as
-    // provisional rather than as an intentionally empty panel.
-    rule: TOKENS['rule-strong'],
-    notRule: TOKENS.rule,
+    ground: 'panel',
+    // The edge of a placeholder is what makes the block read as provisional
+    // rather than as an intentionally empty panel, so it is drawn in the
+    // structural token, edge-strong (3.38 on panel), and dashed: the
+    // terminal's own marker for "this is not real yet".
+    rule: TOKENS['edge-strong'],
+    notRule: TOKENS.edge,
   },
   {
     page: '/about',
     label: 'headshot',
     ratio: 4 / 5,
-    ground: 'ultramarine',
-    // --color-rule-strong measures 1.57 on ultramarine, so a placeholder that
-    // kept its paper border has no visible edge on a drenched section
-    // (DESIGN.md, Every role needs two values).
-    rule: TOKENS['rule-on-color'],
-    notRule: TOKENS['rule-strong'],
+    ground: 'panel',
+    rule: TOKENS['edge-strong'],
+    notRule: TOKENS.edge,
   },
 ] as const
 
 /**
  * The one placeholder on the page.
  *
- * Located by its own test id rather than through the section field it sits in.
- * /about carries two ultramarine fields, the title band and the timeline, so a
- * `section-field-ultramarine` lookup there matches two elements and fails
- * strict mode for a reason that has nothing to do with placeholders.
+ * Located by its own test id rather than through a section: the cover sits on
+ * the case study page and the portrait on /about, and neither page needs a
+ * section-level lookup to find them.
  */
 const placeholderOn = (page: Page) => page.getByTestId('placeholder')
 
@@ -187,7 +184,7 @@ for (const placeholder of PLACEHOLDERS) {
       ).not.toContain('Archivo')
     })
 
-    test('draws its border in the structural rule token for the ground it is on', async ({
+    test('draws its border in the structural token, dashed, on the ground it is on', async ({
       page,
     }) => {
       const border = await styleOf(placeholderOn(page), [
@@ -198,18 +195,19 @@ for (const placeholder of PLACEHOLDERS) {
 
       expect(
         border['border-top-color'],
-        `the placeholder border on ${placeholder.ground} is the token chosen ` +
-          `for the other ground, where it is measured. Here it is not`,
+        `the placeholder border is the token chosen for the other role: ` +
+          `${border['border-top-color']}. Structural edges are edge-strong; ` +
+          `the decorative edge is never a boundary a user must perceive`,
       ).not.toBe(placeholder.notRule)
       expect(
         border['border-top-color'],
-        `the placeholder border on ${placeholder.ground} must resolve ` +
-          `--field-rule-strong to ${placeholder.rule}`,
+        `the placeholder border must resolve to ${placeholder.rule}`,
       ).toBe(placeholder.rule)
       expect(
         border['border-top-style'],
-        'the placeholder border has a colour but no style, so no edge is drawn',
-      ).toBe('solid')
+        'the placeholder border is not dashed, so it does not read as ' +
+          'provisional, which is the whole point of the marker',
+      ).toBe('dashed')
       expect(
         parseFloat(border['border-top-width']),
         'the placeholder border has a colour but no width, so no edge is drawn',

@@ -133,30 +133,24 @@ test.describe('the built home page fits its budget', () => {
       `(the document is ${documentRaw} B on disk and ${document} B gzipped)`,
     ].join('\n    ')
 
-    // 250 KiB, against a measured 238.9 KiB. Headroom for a chunk or two, not
+    // 260 KiB, against a measured 252.5 KiB. Headroom for a chunk or two, not
     // for a category. The number is deliberately close: the point of a budget
     // is to fail before somebody adds a font or an analytics bundle, and a
     // budget with 3x headroom fails only after it is far too late.
     //
-    // It moved down from 260 KiB, and the move is smaller than the preset
-    // change might suggest, which is worth writing down because the intuition
-    // is wrong. Two things went in opposite directions:
-    //
-    //   document   16 808 -> 3 234 B    now a static file, so it is encoded
-    //   script     96 648 -> 106 709 B  brotli twin on disk -> gzip in process
-    //   TOTAL     248 697 -> 244 600 B  238.9 KiB
-    //
-    // A net 4 KiB. The document saving is real and the script rise is an
-    // artefact of measuring gzip where the edge will send brotli, so the true
-    // number is better than this and the budget is set against the pessimistic
-    // one on purpose. Neither is the headline: 128 596 B of the 244 600 is two
-    // woff2 faces, which no preset touches and which is where the next real
-    // saving on this page would have to come from.
+    // It moved up from 250 KiB, and the whole move is the shadcn/ui additions
+    // of the terminal design. The previous budget was measured against the
+    // light design, whose chrome was plain markup; the sticky nav's Button and
+    // the form's Label and controls pull radix-ui primitives into the entry
+    // chunk, which all eight prerendered pages share. Measured: script went
+    // from 106 709 B to 118 222 B gzipped, and the stylesheet from 4 989 B to
+    // 6 991 B. The fonts are unchanged at 128 596 B and are still the largest
+    // single line and the place the next real saving would have to come from.
     expect(
       total,
       `a cold load of the home page costs ${(total / 1024).toFixed(1)} KiB:\n` +
         `    ${breakdown}\n`,
-    ).toBeLessThan(250 * 1024)
+    ).toBeLessThan(260 * 1024)
   })
 
   test('ships no precompressed twin, because nothing on Vercel serves one', async () => {

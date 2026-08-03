@@ -1,4 +1,6 @@
 import { expect, test } from '@playwright/test'
+import { hydrated } from './support/probes'
+import type { Locator, Page } from '@playwright/test'
 
 // Permanent test. Design tokens fail silently in two distinct ways, and neither
 // one breaks a build:
@@ -13,34 +15,65 @@ import { expect, test } from '@playwright/test'
 //
 // So the contract is pinned against computed style in a real browser, not
 // against the text of styles.css.
+//
+// ---------------------------------------------------------------------------
+// This file absorbed tests/e2e/primitives.spec.ts. That file was the pinned
+// record for Grid and SectionField, the two layout primitives the terminal
+// design deleted: it measured the three colour grounds, their inherited
+// leading, and the drawn grid rules. All of those are gone with the
+// primitives, and the one invariant that outlived them, that the `--leading-*`
+// tokens reach the elements that ship, is the second describe block below.
+// ---------------------------------------------------------------------------
 
 // Source of truth: DESIGN.md, and scripts/contrast.mjs for the colours.
 const TOKENS: Record<string, string> = {
-  '--color-paper': 'oklch(0.97 0.008 85)',
-  '--color-ink': 'oklch(0.22 0.02 265)',
-  '--color-ultramarine': 'oklch(0.52 0.19 264)',
-  '--color-ultramarine-deep': 'oklch(0.34 0.15 264)',
-  '--color-rule': 'oklch(0.88 0.01 85)',
-  '--color-rule-strong': 'oklch(0.62 0.012 85)',
-  '--color-signal': 'oklch(0.56 0.16 45)',
+  '--color-bg': 'oklch(0.145 0.01 70)',
+  '--color-panel': 'oklch(0.185 0.012 70)',
+  '--color-panel-lift': 'oklch(0.225 0.014 70)',
+  '--color-text': 'oklch(0.93 0.012 75)',
+  '--color-muted': 'oklch(0.64 0.02 72)',
+  '--color-orange': 'oklch(0.66 0.2 45)',
+  '--color-amber': 'oklch(0.85 0.13 85)',
+  '--color-green': 'oklch(0.75 0.16 150)',
+  '--color-red': 'oklch(0.6 0.2 25)',
+  '--color-edge': 'oklch(0.35 0.015 70)',
+  '--color-edge-strong': 'oklch(0.52 0.02 70)',
 
   '--font-display': "'Archivo', system-ui, sans-serif",
   '--font-body': "'Archivo', system-ui, sans-serif",
   '--font-data': "'Martian Mono', ui-monospace, monospace",
 
-  '--text-display': 'clamp(3rem, 9vw, 7.5rem)',
-  '--text-h1': 'clamp(2.25rem, 4.5vw, 3.75rem)',
-  '--text-h2': 'clamp(1.75rem, 2.8vw, 2.5rem)',
-  '--text-h3': '1.333rem',
+  '--text-display': 'clamp(2.6rem, 7vw, 5.8rem)',
+  '--text-h1': 'clamp(2.1rem, 4.2vw, 3.4rem)',
+  '--text-h2': 'clamp(1.6rem, 2.6vw, 2.3rem)',
+  '--text-h3': '1.25rem',
   '--text-body': '1.0625rem',
   '--text-data': '0.9375rem',
   '--text-fine': '0.8125rem',
 }
 
+const LEADING: Record<string, number> = {
+  '--leading-display': 1.02,
+  '--leading-h1': 1.08,
+  '--leading-h2': 1.2,
+  '--leading-body': 1.65,
+}
+
+const visit = async (page: Page, path: string) => {
+  await page.goto(path)
+  await hydrated(page)
+}
+
+const styleOf = (locator: Locator, props: Array<string>) =>
+  locator.evaluate((el, names: Array<string>) => {
+    const s = getComputedStyle(el)
+    return Object.fromEntries(names.map((n) => [n, s.getPropertyValue(n)]))
+  }, props)
+
 test('every design token reaches the browser as a custom property', async ({
   page,
 }) => {
-  await page.goto('/')
+  await visit(page, '/')
 
   const actual = await page.evaluate((names) => {
     const style = getComputedStyle(document.documentElement)
@@ -62,7 +95,7 @@ test('every design token reaches the browser as a custom property', async ({
 test('the base layer paints the document from those tokens', async ({
   page,
 }) => {
-  await page.goto('/')
+  await visit(page, '/')
 
   const body = await page.evaluate(() => {
     const s = getComputedStyle(document.body)
@@ -77,13 +110,62 @@ test('the base layer paints the document from those tokens', async ({
 
   // Chromium serialises an oklch() computed colour back as oklch(), so these
   // compare against the token values directly.
-  expect(body.background).toBe(TOKENS['--color-paper'])
-  expect(body.color).toBe(TOKENS['--color-ink'])
+  expect(body.background).toBe(TOKENS['--color-bg'])
+  expect(body.color).toBe(TOKENS['--color-text'])
   // The family name must be bare `Archivo`, not `Archivo Variable`. The
   // fontsource default name would fall back to system-ui without erroring.
   expect(body.fontFamily).toBe('Archivo, system-ui, sans-serif')
   expect(body.fontSize).toBe('17px') // --text-body, 1.0625rem
-  expect(body.lineHeight).toBe('27.2px') // 1.6 * 17
+  expect(body.lineHeight).toBe('28.05px') // 1.65 * 17
+})
+
+test.describe('the leading tokens reach the elements that ship', () => {
+  // The replacement for the primitives harness's `leading-*` utility test, and
+  // a different assertion rather than the same one moved.
+  //
+  // That test proved Tailwind generates a utility from the --leading-*
+  // namespace. Nothing on this site uses those utilities: every real element
+  // reads `line-height: var(--leading-h1)` and friends from styles.css, so
+  // the utilities could stop being generated tomorrow and no page would
+  // change. What matters is that each token resolves on the element that
+  // consumes it, because the failure the old comment described is real and is
+  // reached the other way: a declaration deleted from styles.css leaves the
+  // heading inheriting 1.65, which at --text-display is a 9.6rem line box.
+  //
+  // One element per token, and each is the only place that token is used at
+  // this size on the site.
+  const CONSUMERS = [
+    { path: '/', selector: '.hero-display', token: '--leading-display' },
+    { path: '/about', selector: '.page-title', token: '--leading-h1' },
+    { path: '/', selector: '.section-path-title', token: '--leading-h2' },
+    { path: '/work/coachess', selector: '.prose p', token: '--leading-body' },
+  ] as const
+
+  for (const consumer of CONSUMERS) {
+    test(`${consumer.token} resolves on ${consumer.selector}`, async ({
+      page,
+    }) => {
+      await visit(page, consumer.path)
+
+      const element = page.locator(consumer.selector).first()
+      await expect(
+        element,
+        `${consumer.selector} no longer exists on ${consumer.path}, so ` +
+          `${consumer.token} has no shipping consumer to measure`,
+      ).toBeVisible()
+
+      const s = await styleOf(element, ['line-height', 'font-size'])
+      const resolved = parseFloat(s['line-height']) / parseFloat(s['font-size'])
+
+      expect(
+        resolved,
+        `${consumer.selector} on ${consumer.path} resolves to a leading of ` +
+          `${resolved.toFixed(3)} rather than ${consumer.token}. A missing ` +
+          `line-height declaration inherits 1.65, which at --text-display is a ` +
+          `9.6rem line box`,
+      ).toBeCloseTo(LEADING[consumer.token], 2)
+    })
+  }
 })
 
 // Measures a throwaway element that asks for long, delayed, infinite motion

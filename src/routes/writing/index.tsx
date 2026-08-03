@@ -1,6 +1,4 @@
 import { Link, createFileRoute } from '@tanstack/react-router'
-import { Grid } from '#/components/Grid'
-import { SectionField } from '#/components/SectionField'
 import { SITE, pageHead } from '../-seo'
 import { FEED_PATH } from './-feed'
 
@@ -13,10 +11,9 @@ import { FEED_PATH } from './-feed'
 // portfolio, and a fake post is worse than an empty section because it is a
 // claim rather than an absence.
 //
-// One band rather than the usual alternation. A drenched title strip above an
-// almost empty paper ground reads as a render that stopped halfway, which is
-// the one thing an intentionally empty page must not look like. `page-field`
-// gives it the height to read as finished.
+// The path header names the directory, the empty line says what is true, and
+// the single link goes back to the work. Nothing else belongs on an empty
+// page, and nothing else is here.
 
 export const Route = createFileRoute('/writing/')({
   component: Writing,
@@ -74,22 +71,28 @@ export const Route = createFileRoute('/writing/')({
 function Writing() {
   return (
     <main>
-      <SectionField tone="ultramarine" className="page-field">
-        <Grid>
-          <div className="page-head col-span-full lg:col-span-7">
-            <h1 className="page-title">Writing</h1>
-            <p className="page-intro" data-testid="writing-empty">
-              Nothing published yet. Notes on the work in progress will appear
-              here.
-            </p>
-            <p className="page-actions">
-              <Link className="action" to="/">
-                Home
-              </Link>
-            </p>
-          </div>
-        </Grid>
-      </SectionField>
+      <section
+        className="shell section"
+        style={{
+          minHeight: '65vh',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+        }}
+      >
+        <div className="section-path">
+          <span className="section-path-code">~/writing</span>
+          <h1 className="page-title">Writing</h1>
+        </div>
+        <p className="page-intro" data-testid="writing-empty">
+          Nothing published yet. Notes on the work in progress will appear here.
+        </p>
+        <p style={{ marginTop: '1.5rem' }}>
+          <Link className="nav-link" to="/">
+            ~/work
+          </Link>
+        </p>
+      </section>
     </main>
   )
 }

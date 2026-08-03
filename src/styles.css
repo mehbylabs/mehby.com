@@ -1,84 +1,97 @@
 @import 'tailwindcss';
 
-/* The design system. Values are copied from DESIGN.md; the colours are the same
-   numbers scripts/contrast.mjs measures, and `bun run build` refuses to build if
-   any measured pair drops below its WCAG threshold.
+/* ============================================================
+   Terminal design system
+   ============================================================
+   The site is built to read like a working session: a prompt, real
+   commands, honest status. Warm near-black ground, one loud orange,
+   amber for prompt glyphs, green and red reserved for live status.
+   Mono carries the terminal voice, Archivo carries the statements.
 
-   `static` guarantees every token is emitted to :root even when nothing yet
-   references it. Measured honestly: with tailwindcss 4.1.18 through
-   @tailwindcss/vite it changes nothing — the built stylesheet is byte-identical
-   either way, same content hash. But Tailwind's compiler does drop unreferenced
-   theme variables when driven directly, so the optimisation exists and is a
-   version away from applying here. It is kept because a token that vanishes
-   would not be caught by our tests: they run against the dev server, which
-   never tree-shakes, so a production-only regression would ship green. Zero
-   measured cost, closes a gap the test suite structurally cannot see.
+   Values are copied from scripts/contrast.mjs, which is the single
+   source of truth, and `bun run build` refuses to build if any
+   measured pair drops below its WCAG threshold.
 
-   Naming note for anyone extending this: --color-* and --text-* both produce
-   `text-` utilities, so a colour and a size can never share a name. Likewise
-   --font-* shares `font-` with --font-weight-*. `text-body` is a size,
-   `font-body` is a family. */
+   Colour rules the gate enforces:
+   - orange is a fill and a display accent, never body-size text on bg
+   - button labels on orange are bg (dark), which measures 5.90
+   - green and red only for live status
+   - amber for prompt glyphs and small highlights
+   - edge is decorative (1.75); structural borders use edge-strong
+   ============================================================ */
 
 @theme static {
-  --color-paper: oklch(0.97 0.008 85);
-  --color-ink: oklch(0.22 0.02 265);
-  --color-ultramarine: oklch(0.52 0.19 264);
-  --color-ultramarine-deep: oklch(0.34 0.15 264);
-  --color-rule: oklch(0.88 0.01 85);
-  --color-rule-strong: oklch(0.62 0.012 85);
-  --color-signal: oklch(0.56 0.16 45);
-
-  /* On-colour variants. The ultramarine ground carries 30 to 50 percent of the
-     site, so a role validated only against paper is validated against half of
-     it. Measured against ultramarine, rule-strong is 1.57 and signal is 1.15;
-     these two are the values that clear the 3.0 non-text threshold there
-     (3.28 and 3.50). See DESIGN.md, "Every role needs two values". */
-  --color-rule-on-color: oklch(0.82 0.05 264);
-  --color-signal-on-color: oklch(0.85 0.13 70);
+  --color-bg: oklch(0.145 0.01 70);
+  --color-panel: oklch(0.185 0.012 70);
+  --color-panel-lift: oklch(0.225 0.014 70);
+  --color-text: oklch(0.93 0.012 75);
+  --color-muted: oklch(0.64 0.02 72);
+  --color-orange: oklch(0.66 0.2 45);
+  --color-amber: oklch(0.85 0.13 85);
+  --color-green: oklch(0.75 0.16 150);
+  --color-red: oklch(0.6 0.2 25);
+  --color-edge: oklch(0.35 0.015 70);
+  --color-edge-strong: oklch(0.52 0.02 70);
 
   --font-display: 'Archivo', system-ui, sans-serif;
   --font-body: 'Archivo', system-ui, sans-serif;
   --font-data: 'Martian Mono', ui-monospace, monospace;
 
-  --text-display: clamp(3rem, 9vw, 7.5rem);
-  --text-h1: clamp(2.25rem, 4.5vw, 3.75rem);
-  --text-h2: clamp(1.75rem, 2.8vw, 2.5rem);
-  --text-h3: 1.333rem;
+  --text-display: clamp(2.6rem, 7vw, 5.8rem);
+  --text-h1: clamp(2.1rem, 4.2vw, 3.4rem);
+  --text-h2: clamp(1.6rem, 2.6vw, 2.3rem);
+  --text-h3: 1.25rem;
   --text-body: 1.0625rem;
   --text-data: 0.9375rem;
   --text-fine: 0.8125rem;
 
-  /* Leading is a token, not an afterthought. The --text-* tokens set font size
-     only, so without these everything inherits the body value of 1.6 — which at
-     --text-display, up to 7.5rem, is a 12rem line box.
-
-     `--leading-*` is a real Tailwind 4 theme namespace (it is where the stock
-     --leading-tight/snug/normal live), so each of these also generates a
-     `leading-*` utility. Verified against the installed compiler, and pinned by
-     tests/e2e/primitives.spec.ts rather than taken on trust: if the namespace
-     were wrong the class would compile to nothing and headings would silently
-     fall back to 1.6. */
-  --leading-display: 0.95;
-  --leading-h1: 1.05;
-  --leading-h2: 1.15;
-  --leading-body: 1.6;
-  /* Light type on colour reads lighter and needs more air. */
-  --leading-on-color: 1.68;
+  --leading-display: 1.02;
+  --leading-h1: 1.08;
+  --leading-h2: 1.2;
+  --leading-body: 1.65;
 }
 
-/* Self-hosted, one file per family. Each file carries BOTH the weight and the
-   width axis, so the expanded display cut costs no extra download.
+/* shadcn/ui variable mapping. The components read --color-* tokens
+   through Tailwind utilities (bg-primary, border-input, ring-ring),
+   so every shadcn semantic variable resolves to a measured token.
+   Nothing in this block may introduce a colour the gate does not
+   measure. */
+@theme inline {
+  --color-background: var(--color-bg);
+  --color-foreground: var(--color-text);
+  --color-card: var(--color-panel);
+  --color-card-foreground: var(--color-text);
+  --color-popover: var(--color-panel-lift);
+  --color-popover-foreground: var(--color-text);
+  --color-primary: var(--color-orange);
+  --color-primary-foreground: var(--color-bg);
+  --color-secondary: var(--color-panel-lift);
+  --color-secondary-foreground: var(--color-text);
+  --color-muted-foreground: var(--color-muted);
+  --color-accent: var(--color-panel-lift);
+  --color-accent-foreground: var(--color-text);
+  --color-destructive: var(--color-red);
+  --color-destructive-foreground: var(--color-bg);
+  --color-border: var(--color-edge);
+  --color-input: var(--color-edge-strong);
+  --color-ring: var(--color-orange);
+  --radius-sm: 0.25rem;
+  --radius-md: 0.375rem;
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.75rem;
+  --font-mono: var(--font-data);
+  --font-sans: var(--font-body);
+}
 
-   The .woff2 files are committed, not built. To refresh them after bumping the
-   @fontsource-variable dev dependencies:
+/* Self-hosted, one file per family. Each file carries BOTH the weight
+   and the width axis, so the expanded display cut costs no extra
+   download. To refresh after bumping the @fontsource-variable dev
+   dependencies:
      cp node_modules/@fontsource-variable/archivo/files/archivo-latin-wdth-normal.woff2 public/fonts/archivo.woff2
      cp node_modules/@fontsource-variable/martian-mono/files/martian-mono-latin-wdth-normal.woff2 public/fonts/martian-mono.woff2
-   The ranges below are the full axis extents declared in each package's
-   metadata.json; keep them in step with the files.
-
-   format('woff2') is deliberate. Do not "fix" it to woff2-variations: with one
-   src and no fallback, a hint the browser fails to recognise can only lose us
-   the face. Rationale and browser evidence are in the commit that added this. */
+   format('woff2') is deliberate. Do not "fix" it to woff2-variations:
+   with one src and no fallback, a hint the browser fails to recognise
+   can only lose us the face. */
 
 @font-face {
   font-family: 'Archivo';
@@ -96,86 +109,41 @@
   font-display: swap;
 }
 
-* {
-  box-sizing: border-box;
-}
-
-html,
-body,
-#app {
-  min-height: 100%;
-}
-
-body {
-  margin: 0;
-}
-
 @layer base {
-  /* Ground-dependent roles, as inherited properties.
-
-     Two things about a surface cannot be read off the surface itself: what
-     colour a focus ring must be to be seen on it, and what colour a hairline
-     must be to be seen on it. Both are declared here as their paper-ground
-     value and redefined by every coloured tone in the components layer.
-
-     They are custom properties rather than extra `:focus-visible` and rule
-     selectors because inheritance is the part that is hard to break. A
-     descendant selector has to keep matching as markup nests, and a second
-     :focus-visible rule can be out-specified or out-ordered by a third one
-     added later without anything looking wrong. An inherited property has
-     exactly one consumer, reaches arbitrary depth for free, and — because a
-     tone declares it on the same rule as its background — puts the two facts
-     that must agree on adjacent lines. */
-  :root {
-    --focus-ring: var(--color-ultramarine);
-    --field-rule: var(--color-rule);
-  }
-
   body {
-    background: var(--color-paper);
-    color: var(--color-ink);
+    background: var(--color-bg);
+    color: var(--color-text);
     font-family: var(--font-body);
     font-size: var(--text-body);
     line-height: var(--leading-body);
   }
 
   ::selection {
-    background: var(--color-ultramarine);
-    color: var(--color-paper);
+    background: var(--color-orange);
+    color: var(--color-bg);
   }
 
-  /* Sits in `base`, so any utility can override it deliberately. See the
-     reduced-motion block below for the case where that is not what we want.
-
-     The colour is deliberately indirect. Hard-coding --color-ultramarine here
-     is a ratio of 1.00 against an ultramarine field: the ring is in the
-     computed style, and invisible on screen, across the 30 to 50 percent of the
-     site that is drenched. There is one ring rule and it reads whatever ground
-     it landed on. */
+  /* Orange on every ground. The outline sits outside the element, so it
+     always draws on the page background, never on a filled button. On bg it
+     measures 5.90. Important, because shadcn components carry Tailwind's
+     `outline-none` utility to make room for their own ring, and the site's
+     focus contract is the orange outline on every focusable element. */
   :focus-visible {
-    outline: 2px solid var(--focus-ring);
+    outline: 2px solid var(--color-orange) !important;
     outline-offset: 2px;
   }
 
-  /* Deliberately inside a layer, and deliberately inside `base`.
-     Importance is compared before layer order, so these beat every normal
-     declaration anywhere, including utilities and style attributes. Among
-     important declarations layer order is *reversed*, so `base` — declared
-     before `components` and `utilities` — outranks them and outranks unlayered
-     CSS too. This is the strongest position available to author CSS, which is
-     what an accessibility preference override should have. */
+  /* The strongest position author CSS has: importance beats layer
+     order, and among important declarations base outranks later
+     layers. Durations are collapsed, not removed, so animationend
+     still fires; an infinite animation is pinned to one iteration;
+     delays are zeroed so a stagger cannot hold elements back. */
   @media (prefers-reduced-motion: reduce) {
     *,
     *::before,
     *::after {
       animation-duration: 0.01ms !important;
-      /* Not `animation: none`: durations are collapsed rather than removed so
-         that animationend still fires and JS sequencing does not stall. But an
-         `infinite` animation would then loop at 0.01ms forever, so pin the
-         count. */
       animation-iteration-count: 1 !important;
-      /* DESIGN.md specifies a staggered hero reveal. A surviving delay would
-         still hold elements back for the length of the stagger. */
       animation-delay: 0s !important;
       transition-duration: 0.01ms !important;
       transition-delay: 0s !important;
@@ -184,188 +152,267 @@ body {
   }
 }
 
-/* The two layout primitives, in CSS rather than as utility strings inside the
-   components. The reason is the tone blocks below: each one is a set of facts
-   that are only correct together, and utilities let a caller apply one of them
-   without the rest. `bg-ultramarine` is a complete-looking class that produces
-   3.02:1 body text and an invisible focus ring. There is no way to write that
-   mistake against a `data-tone` attribute. */
+/* ============================================================
+   Terminal elements
+   ============================================================ */
 @layer components {
-  /* Full bleed: the colour runs to the viewport edges and only the content is
-     inset, which is what makes the paper/ultramarine alternation read as bands
-     rather than as boxes. Spacing is generous between sections and left to the
-     content to be tight inside itself. */
-  .section-field {
-    display: block;
-    width: 100%;
-    padding-block: clamp(3rem, 6vw, 6rem);
-    padding-inline: clamp(1.5rem, 4vw, 4rem);
-  }
-
-  /* One tone, one block, five declarations. Ground, text colour, leading, focus
-     ring and hairline colour are only ever correct as a set, so they are
-     written together and nowhere else: adding a tone means copying a block that
-     already shows every line the new tone owes.
-
-     The three that are easy to forget, with the ratio you get for forgetting:
-       colour      body inherits --color-ink from the base layer .......... 3.02
-       --focus-ring  ring inherits --color-ultramarine, on ultramarine .... 1.00
-       --field-rule  hairlines inherit --color-rule, unmeasured there
-
-     A structural border inside a coloured field belongs to the same family and
-     is not covered by anything here: it must use --color-rule-on-color, never
-     --color-rule-strong, which measures 1.57 on ultramarine. */
-  .section-field[data-tone='paper'] {
-    background: var(--color-paper);
-    color: var(--color-ink);
-    line-height: var(--leading-body);
-    --focus-ring: var(--color-ultramarine);
-    --field-rule: var(--color-rule);
-  }
-
-  .section-field[data-tone='ultramarine'] {
-    background: var(--color-ultramarine);
-    color: var(--color-paper);
-    line-height: var(--leading-on-color);
-    --focus-ring: var(--color-paper);
-    --field-rule: var(--color-rule-on-color);
-  }
-
-  .section-field[data-tone='ultramarine-deep'] {
-    background: var(--color-ultramarine-deep);
-    color: var(--color-paper);
-    line-height: var(--leading-on-color);
-    --focus-ring: var(--color-paper);
-    --field-rule: var(--color-rule-on-color);
-  }
-
-  /* Twelve columns at desktop, stepping down through 6 to 3. DESIGN.md says
-     twelve; twelve literally, at a 375px viewport, is 327px of content cut into
-     27px columns by eleven hairlines — no column wide enough to hold anything
-     and a grid that reads as hatching. 3 and 6 are divisors of 12, so the
-     drawn lines at each step are a subset of the lines at the next one and the
-     grid never shifts under the content — it only ever subdivides further.
-
-     No column-gap, because the gutter here IS the hairline: the line sits
-     exactly on the track boundary, which is also what lets the test derive the
-     expected positions from the browser's own resolved track sizes instead of
-     re-implementing the component's arithmetic. */
-  .grid-field {
-    --grid-columns: 3;
-
-    position: relative;
-    isolation: isolate;
-    display: grid;
-    grid-template-columns: repeat(var(--grid-columns), minmax(0, 1fr));
-    column-gap: 0;
-    row-gap: 1.5rem;
+  /* The container every section hangs off. */
+  .shell {
     width: 100%;
     max-width: 80rem;
     margin-inline: auto;
+    padding-inline: clamp(1.25rem, 4vw, 3.5rem);
+  }
+
+  .section {
+    padding-block: clamp(3rem, 7vw, 6rem);
+  }
+
+  /* Section headers as paths. The mono prefix is the terminal voice,
+     the Archivo line is the statement. */
+  .section-path {
+    display: flex;
+    align-items: baseline;
+    gap: 0.75rem;
+    margin-bottom: 2rem;
+  }
+
+  .section-path-code {
+    font-family: var(--font-data);
+    font-size: var(--text-fine);
+    color: var(--color-amber);
+  }
+
+  .section-path-title {
+    font-family: var(--font-display);
+    font-size: var(--text-h2);
+    font-weight: 700;
+    line-height: var(--leading-h2);
+    letter-spacing: -0.02em;
+  }
+
+  /* The prompt line that opens the hero. */
+  .prompt {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    font-family: var(--font-data);
+    font-size: var(--text-data);
+  }
+
+  .prompt-user {
+    color: var(--color-green);
+  }
+
+  .prompt-host {
+    color: var(--color-muted);
+  }
+
+  .prompt-dollar {
+    color: var(--color-amber);
+  }
+
+  /* The block cursor. Blinks at a terminal's rate; the reduced-motion
+     reset collapses it to a static block, which is the correct state. */
+  @keyframes cursor-blink {
+    0%,
+    49% {
+      opacity: 1;
+    }
+
+    50%,
+    100% {
+      opacity: 0;
+    }
+  }
+
+  .cursor {
+    display: inline-block;
+    inline-size: 0.55em;
+    block-size: 1.05em;
+    margin-inline-start: 0.15em;
+    background: var(--color-amber);
+    vertical-align: text-bottom;
+    animation: cursor-blink 1.1s step-end infinite;
+  }
+
+  /* Mono metadata lines, the "session log" voice. */
+  .log-line {
+    font-family: var(--font-data);
+    font-size: var(--text-fine);
+    color: var(--color-muted);
+  }
+
+  .log-line b {
+    color: var(--color-amber);
+    font-weight: 500;
+  }
+
+  /* Status chip: dot plus label. Green and red are status colours and
+     used nowhere else. */
+  .status {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-family: var(--font-data);
+    font-size: var(--text-fine);
+  }
+
+  .status-dot {
+    inline-size: 0.5rem;
+    block-size: 0.5rem;
+    border-radius: 50%;
+    flex: none;
+  }
+
+  .status-live .status-dot {
+    background: var(--color-green);
+    box-shadow: 0 0 0 0 color-mix(in oklch, var(--color-green) 60%, transparent);
+    animation: pulse-ring 2.4s ease-out infinite;
+  }
+
+  .status-live {
+    color: var(--color-green);
+  }
+
+  .status-dead .status-dot {
+    background: var(--color-red);
+  }
+
+  .status-dead {
+    color: var(--color-red);
+  }
+
+  .status-checking .status-dot {
+    background: var(--color-muted);
+  }
+
+  .status-checking {
+    color: var(--color-muted);
+  }
+
+  @keyframes pulse-ring {
+    70% {
+      box-shadow: 0 0 0 6px transparent;
+    }
+
+    100% {
+      box-shadow: 0 0 0 0 transparent;
+    }
+  }
+
+  /* The hero statement. Size, width axis, leading and measure are set
+     together; each one is invisible when omitted. */
+  .hero-display {
+    max-inline-size: 18ch;
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: var(--text-display);
+    font-stretch: 112%;
+    font-weight: 700;
+    line-height: var(--leading-display);
+    letter-spacing: -0.025em;
+  }
+
+  .hero-subline {
+    max-inline-size: 52ch;
+    margin: 0;
+    color: var(--color-muted);
+    font-size: var(--text-body);
+  }
+
+  /* A terminal card: panel ground, edge border, mono header line.
+     The header is the "filename" of the card. */
+  .tcard {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    padding: 1.5rem;
+    border: 1px solid var(--color-edge-strong);
+    border-radius: 0.375rem;
+    background: var(--color-panel);
+    text-decoration: none;
+    color: var(--color-text);
+    transition:
+      border-color 120ms ease-out,
+      transform 120ms ease-out;
+  }
+
+  .tcard:hover {
+    border-color: var(--color-orange);
+    transform: translateY(-2px);
+  }
+
+  .tcard-path {
+    font-family: var(--font-data);
+    font-size: var(--text-fine);
+    color: var(--color-amber);
+  }
+
+  .tcard-title {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: var(--text-h3);
+    font-weight: 700;
+    line-height: var(--leading-h2);
+  }
+
+  .tcard-meta {
+    font-family: var(--font-data);
+    font-size: var(--text-fine);
+    color: var(--color-muted);
+  }
+
+  .tcard-summary {
+    margin: 0;
+    color: var(--color-muted);
+    font-size: var(--text-body);
+  }
+
+  .tcard-action {
+    margin-block-start: auto;
+    font-family: var(--font-data);
+    font-size: var(--text-fine);
+    color: var(--color-orange);
+  }
+
+  /* Definition rows: mono index on the left, prose on the right. */
+  .capability {
+    display: grid;
+    gap: 1rem;
+    padding-block: 1.5rem;
+    border-block-end: 1px solid var(--color-edge);
   }
 
   @media (width >= 48rem) {
-    .grid-field {
-      --grid-columns: 6;
+    .capability {
+      grid-template-columns: 14rem 1fr;
+      column-gap: 3rem;
     }
   }
 
-  @media (width >= 64rem) {
-    .grid-field {
-      --grid-columns: 12;
-    }
+  .capability-index {
+    font-family: var(--font-data);
+    font-size: var(--text-fine);
+    color: var(--color-amber);
   }
 
-  /* Behind the content and out of the hit-testing path. Both are needed and
-     neither is the other's backstop: z-index alone still leaves the layer
-     covering the grid wherever the content does not, and pointer-events alone
-     leaves hairlines painted across the text.
-
-     The negative z-index is why .grid-field isolates. Without a stacking
-     context of its own here, -1 would drop this layer behind the section
-     field's background as well, and the rules would vanish on exactly the
-     coloured bands they are meant to cross. */
-  .grid-rules {
-    position: absolute;
-    inset: 0;
-    z-index: -1;
-    pointer-events: none;
+  .capability-heading {
+    margin: 0 0 0.5rem;
+    font-family: var(--font-display);
+    font-size: var(--text-h3);
+    font-weight: 650;
+    line-height: var(--leading-h2);
   }
 
-  /* Hidden by default and revealed by tier, never re-hidden, so the ladder only
-     adds selectors as the viewport widens and there is no specificity race
-     between a rule that shows a line and a later one that hides it again. */
-  .grid-rule {
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    width: 1px;
-    background: var(--field-rule);
-    display: none;
+  .capability-body {
+    margin: 0;
+    max-inline-size: 68ch;
+    color: var(--color-muted);
   }
 
-  .grid-rule[data-tier='1'] {
-    display: block;
-  }
-
-  @media (width >= 48rem) {
-    .grid-rule[data-tier='2'] {
-      display: block;
-    }
-  }
-
-  @media (width >= 64rem) {
-    .grid-rule[data-tier='3'] {
-      display: block;
-    }
-  }
-
-  /* The second ground-dependent hairline, and the one that carries meaning.
-     --field-rule above is the *decorative* value: on paper it resolves to
-     --color-rule at 1.32, which DESIGN.md permits for grid hatching and
-     explicitly forbids as "a border that carries meaning". A table divider and
-     the edge of a placeholder both carry meaning, so they need their own pair
-     of measured values: --color-rule-strong at 3.34 on paper, --color-rule-on-
-     color at 3.28 on ultramarine, where rule-strong drops to 1.57.
-
-     Same mechanism as --field-rule and --focus-ring, deliberately: an
-     inherited custom property that each ground declares for itself. That is
-     what lets SpecTable and Placeholder be written once with no `tone` prop
-     and no ancestor selectors, and still be correct at any nesting depth.
-
-     Declared beside the tone blocks rather than inside them because those
-     blocks are the pinned record of the three grounds and are not edited by
-     component work. The selectors are identical, so the pair moves together —
-     and the invariant is enforced rather than left to a comment:
-     tests/e2e/spec-table.spec.ts measures every divider on the page against
-     the ground it actually landed on, so a fourth tone that copies one block
-     and not the other fails on the ratio, not on a missing token. */
-  :root {
-    --field-rule-strong: var(--color-rule-strong);
-  }
-
-  .section-field[data-tone='ultramarine'],
-  .section-field[data-tone='ultramarine-deep'] {
-    --field-rule-strong: var(--color-rule-on-color);
-  }
-
-  /* The specification table. Structure lives here rather than in utility
-     classes on the component for the reason the tone blocks give: the divider
-     colour and the two font families are only correct as a set, and a caller
-     assembling them from utilities can apply three of four and still ship
-     something that renders. */
-  .spec-table {
-    width: 100%;
-    /* Collapsed, so one hairline sits between two rows rather than two
-       hairlines sitting a pixel apart. */
-    border-collapse: collapse;
-    border-block-start: 1px solid var(--field-rule-strong);
-    text-align: start;
-  }
-
-  /* Visually hidden, still in the accessibility tree. Clipped rather than
-     `display: none`, which would remove the accessible name the caption exists
-     to give the table. */
+  /* The specification table uses shadcn Table with edge-strong
+     dividers. Structural borders inside it must never be --color-edge. */
   .spec-caption {
     position: absolute;
     width: 1px;
@@ -378,422 +425,45 @@ body {
     border: 0;
   }
 
+  .spec-table {
+    border-block-start: 1px solid var(--color-edge-strong);
+  }
+
   .spec-table th,
   .spec-table td {
-    border-block-end: 1px solid var(--field-rule-strong);
-    padding-block: 0.7rem;
-    text-align: start;
-    vertical-align: baseline;
+    border-block-end: 1px solid var(--color-edge);
   }
 
-  /* Archivo. The label column is structure, not data, and it shrinks to its
-     own content so the values line up in one column however long the labels
-     get. `width: 1%` is the table-layout idiom for that. */
-  .spec-table th {
-    width: 1%;
-    padding-inline-end: 1.5rem;
-    font-family: var(--font-body);
-    font-size: var(--text-fine);
-    font-weight: 600;
-    white-space: nowrap;
-  }
-
-  /* Martian Mono, earned by the content rather than worn as a costume:
-     DESIGN.md lists table cells among the places data type belongs.
-
-     `anywhere`, and specifically not `break-word`, which is the version that
-     looks equivalent and does not work here. The two wrap identically once a
-     box has been sized; they differ in whether the browser counts the break
-     opportunity when it computes the cell's min-content width. `break-word`
-     does not, so a table still sizes itself to the longest unbroken token and
-     then overflows its container, which is precisely the bug: measured at a
-     375px viewport, /work/helmdeck rendered its specification table 343px wide
-     inside a 327px column, because
-     `github.com/MohamedElhedi-BenYedder/helmdeck` set in Martian Mono has no
-     break opportunity in it at all. `anywhere` is counted, so the table sizes
-     to its container and the address wraps.
-
-     Scoped to the data column on purpose. The label column beside it stays
-     nowrap: those are single short words, and breaking "Period" across two
-     lines to save eight pixels would be worse than the problem. */
   .spec-table td {
     font-family: var(--font-data);
     font-size: var(--text-data);
     overflow-wrap: anywhere;
   }
 
-  .spec-list {
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
+  .spec-table a {
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.25em;
+    color: var(--color-orange);
   }
 
-  /* Rows tint on hover, which DESIGN.md allows as one of the four motions the
-     site keeps.
-
-     Mixed from currentColor, not from a literal. currentColor is already the
-     ground's own text colour — ink on paper, paper on ultramarine — so the
-     tint darkens a light ground and lightens a dark one with one declaration.
-     A fixed tint can only be right on one of them. */
-  .spec-table tbody tr {
-    transition: background-color 120ms ease-out;
-  }
-
-  .spec-table tbody tr:hover {
-    background-color: color-mix(in oklch, currentColor 8%, transparent);
-  }
-
-  /* The placeholder. A ruled box is a legitimate design element here, so the
-     border alone is not enough to make this unmistakable; the hatch and the
-     printed caption are what stop it reading as an intentionally empty panel.
-
-     Even on all four sides. An uneven one would be the side-stripe accent
-     DESIGN.md bans, and that is a single deleted declaration away. */
+  /* The placeholder: a ruled box that is unmistakably not content. */
   .placeholder {
     display: flex;
     align-items: flex-end;
     padding: 0.75rem;
-    border: 1px solid var(--field-rule-strong);
-    background-image: repeating-linear-gradient(
-      45deg,
-      transparent 0 10px,
-      color-mix(in oklch, var(--field-rule-strong) 30%, transparent) 10px 11px
-    );
+    border: 1px dashed var(--color-edge-strong);
+    border-radius: 0.375rem;
+    background: var(--color-panel);
   }
 
   .placeholder-caption {
     font-family: var(--font-data);
     font-size: var(--text-fine);
-    line-height: 1.2;
-  }
-}
-
-/* Page-level composition: the home page and the case study route.
-   Appended as a second `components` layer block, which merges with the one
-   above rather than replacing it, so the tone and primitive rules keep their
-   position in the cascade.
-
-   Written as CSS classes rather than as utility strings for the same reason
-   the tone blocks are: several of these are sets of declarations that are only
-   correct together, and a utility list lets a caller apply some of them. The
-   clearest case is .hero-display, three properties one of which is invisible
-   when omitted. */
-@layer components {
-  /* Preflight zeroes the margins on headings and paragraphs, so vertical
-     rhythm has to be declared. Owl selectors rather than a margin on every
-     element: the space belongs between siblings, and a rule that puts it on
-     each one has to be undone at the top and bottom of every block.
-     
-     The reset lives HERE, on the container's children, and not as `margin: 0`
-     inside each child's own rule. Both are specificity 0,1,0, so a `margin: 0`
-     written later in the file silently wins and the block collapses to its
-     line boxes. That is not a hypothetical: it is the bug this pair replaced,
-     and it looked like "the design just has tight spacing" rather than like a
-     cascade fault. */
-  .hero > * {
-    margin: 0;
+    color: var(--color-muted);
   }
 
-  .hero > * + * {
-    margin-block-start: 1.5rem;
-  }
-
-  .hero-identity {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    gap: 0.5rem 1.25rem;
-    padding-block-end: 1rem;
-    /* Structural, so the strong token, which each ground redefines for itself.
-       --field-rule would be --color-rule-on-color here and is the decorative
-       value; DESIGN.md forbids it for a border that carries meaning. */
-    border-block-end: 1px solid var(--field-rule-strong);
-  }
-
-  .hero-name {
-    margin: 0;
-    font-family: var(--font-display);
-    font-size: var(--text-h3);
-    font-weight: 600;
-    line-height: var(--leading-h2);
-  }
-
-  .hero-credential {
-    margin: 0;
-    font-size: var(--text-fine);
-    line-height: var(--leading-h2);
-  }
-
-  /* The one display-step line on the site, and the three facts that make it
-     one. Size without leading is a 12rem line box at the top of the clamp;
-     leading without the width axis is Archivo's normal cut at a size DESIGN.md
-     reserves for Expanded; either without the family is system-ui. */
-  .hero-display {
-    max-inline-size: 18ch;
-    font-family: var(--font-display);
-    font-size: var(--text-display);
-    font-stretch: 125%;
-    font-weight: 700;
-    line-height: var(--leading-display);
-    letter-spacing: -0.02em;
-    /* Left aligned. DESIGN.md permits this one line to be centred and only if
-       it reads better; inside a strict visible grid it does not. */
-    text-align: start;
-    text-wrap: balance;
-  }
-
-  .hero-subline {
-    max-inline-size: 48ch;
-    font-size: var(--text-body);
-  }
-
-  .hero-actions {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    gap: 0.75rem 2rem;
-  }
-
-  /* Underlined text, not a filled button. Three or more short enclosed labels
-     sharing a parent is the badge wall PRODUCT.md bans, and pill-shaped
-     actions are the first step toward it. The underline thickens on hover,
-     which is one of the four motions DESIGN.md keeps. */
-  .action {
-    font-weight: 600;
-    text-decoration: underline;
-    text-decoration-thickness: 1px;
-    text-underline-offset: 0.35em;
-    transition: text-decoration-thickness 120ms ease-out;
-  }
-
-  .action:hover {
-    text-decoration-thickness: 3px;
-  }
-
-  .action-primary {
-    font-size: var(--text-h3);
-  }
-
-  .proof-strip {
-    margin-block-start: 2.5rem;
-    padding-block-start: 1.25rem;
-    border-block-start: 1px solid var(--field-rule-strong);
-  }
-
-  .proof-label {
-    margin: 0 0 0.75rem;
-    font-size: var(--text-fine);
-    font-weight: 600;
-  }
-
-  .proof-list {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem 2rem;
-    margin: 0;
-    padding: 0;
-    list-style: none;
-  }
-
-  /* Martian Mono, earned by the content: DESIGN.md lists link URLs among the
-     things that are data. No fill and no border, deliberately; see the note in
-     ProofStrip.tsx. */
-  .proof-link {
-    display: inline-flex;
-    align-items: baseline;
-    gap: 0.5rem;
-    font-family: var(--font-data);
-    font-size: var(--text-data);
-    text-decoration: underline;
-    text-decoration-thickness: 1px;
-    text-underline-offset: 0.35em;
-    transition: text-decoration-thickness 120ms ease-out;
-  }
-
-  .proof-link:hover {
-    text-decoration-thickness: 3px;
-  }
-
-  /* The dot carries the live signal and the label does not. --signal-on-color
-     reaches 3.50 against ultramarine, which clears the 3.0 non-text threshold
-     and fails the 4.5 body-text one, so a label painted in it would be the
-     unreadable half of a rule DESIGN.md already worked out. */
-  .proof-dot {
-    inline-size: 0.5rem;
-    block-size: 0.5rem;
-    flex: none;
-    border-radius: 50%;
-    background: var(--color-signal-on-color);
-    transform: translateY(-0.05em);
-  }
-
-  .section-heading {
-    margin: 0 0 2rem;
-    font-family: var(--font-display);
-    font-size: var(--text-h2);
-    font-weight: 700;
-    line-height: var(--leading-h2);
-  }
-
-  /* An index entry, not a card. The rule above it is the structure and there
-     is no box, no radius and no shadow; DESIGN.md bans cards as the default
-     container and this is the place they would arrive. */
-  /* The inline padding is not decoration. .grid-field sets column-gap to zero
-     on purpose, because the gutter IS the drawn hairline and a gap would put
-     the line off the track boundary. The consequence is that anything sitting
-     in adjacent tracks butts straight up against its neighbour unless it
-     insets itself, which is what this does. Trailing edge only, so the first
-     column still starts on the field's own inset and the left margin of the
-     page stays one measurement rather than two. */
-  .pillar {
-    display: block;
-    padding-block-start: 1rem;
-    padding-inline-end: 1.5rem;
-    border-block-start: 1px solid var(--field-rule-strong);
-    text-decoration: none;
-  }
-
-  .pillar-title {
-    margin: 0;
-    font-family: var(--font-display);
-    font-size: var(--text-h3);
-    font-weight: 700;
-    line-height: var(--leading-h2);
-    text-decoration: underline;
-    text-decoration-thickness: 1px;
-    text-underline-offset: 0.2em;
-    transition: text-decoration-thickness 120ms ease-out;
-  }
-
-  .pillar:hover .pillar-title {
-    text-decoration-thickness: 3px;
-  }
-
-  .pillar-meta {
-    margin: 0.5rem 0 0;
-    font-family: var(--font-data);
-    font-size: var(--text-fine);
-  }
-
-  /* No measure cap. The column it sits in is already narrower than 68ch at
-     every breakpoint that puts three of these side by side, and a second
-     constraint on top of that one only ever fights it. */
-  .pillar-summary {
-    margin: 0.75rem 0 0;
-    font-size: var(--text-body);
-  }
-
-  /* A definition row: the statement on the left, the prose on the right. Three
-     of these stacked read as a specification; three of them side by side would
-     be the icon-heading-two-lines grid DESIGN.md bans, whatever the words
-     inside them said. */
-  .capability {
-    padding-block-start: 1.25rem;
-    border-block-start: 1px solid var(--field-rule-strong);
-  }
-
-  .capability + .capability {
-    margin-block-start: 0.5rem;
-  }
-
-  .capability-heading {
-    margin: 0 0 0.5rem;
-    font-family: var(--font-display);
-    font-size: var(--text-h3);
-    font-weight: 600;
-    line-height: var(--leading-h2);
-  }
-
-  .capability-body {
-    margin: 0;
-    max-inline-size: 68ch;
-  }
-
-  @media (width >= 64rem) {
-    .capability {
-      display: grid;
-      /* 3fr / 1fr / 8fr puts the two edges on the 25 percent and 33.3 percent
-         boundaries, which are drawn hairlines in the twelve-column grid. The
-         inner layout lands on the outer one rather than near it. */
-      grid-template-columns: 3fr 1fr 8fr;
-      column-gap: 0;
-    }
-
-    .capability-heading {
-      margin: 0;
-    }
-
-    .capability-body {
-      grid-column: 3;
-    }
-  }
-
-  .contact-body {
-    margin: 0 0 1.5rem;
-    max-inline-size: 52ch;
-  }
-
-  /* The address itself, at heading scale, in Martian Mono because it is the
-     one piece of data on this band. */
-  .contact-address {
-    font-family: var(--font-data);
-    font-size: var(--text-h3);
-    text-decoration: underline;
-    text-decoration-thickness: 1px;
-    text-underline-offset: 0.3em;
-    transition: text-decoration-thickness 120ms ease-out;
-  }
-
-  .contact-address:hover {
-    text-decoration-thickness: 3px;
-  }
-
-  .not-found-field {
-    min-block-size: 80vh;
-    padding-block-start: clamp(4rem, 14vh, 10rem);
-  }
-
-  .case-head > * {
-    margin: 0;
-  }
-
-  .case-head > * + * {
-    margin-block-start: 1.25rem;
-  }
-
-  .case-back {
-    font-family: var(--font-data);
-    font-size: var(--text-fine);
-  }
-
-  .case-title {
-    font-family: var(--font-display);
-    font-size: var(--text-h1);
-    font-stretch: 112%;
-    font-weight: 700;
-    line-height: var(--leading-h1);
-  }
-
-  .case-summary {
-    max-inline-size: 54ch;
-    font-size: var(--text-body);
-  }
-
-  /* Block, and only block. A table inside a flex or grid parent has its own
-     display recomputed and loses the table role in the accessibility tree,
-     which is invisible on screen and total to a screen reader. */
-  .case-spec {
-    display: block;
-    margin-block-start: 2rem;
-  }
-
-  .case-narrative {
-    margin-block-start: 3rem;
-  }
-
-  /* The MDX body. Compiled markdown arrives as bare h2 and p elements with
-     every margin removed by preflight, so the reading rhythm is declared here
-     once rather than by a component wrapping each node. */
+  /* Prose: the MDX body. */
   .prose {
     max-inline-size: 68ch;
     line-height: var(--leading-body);
@@ -810,7 +480,7 @@ body {
   .prose h2 {
     margin-block-start: 2.5rem;
     padding-block-start: 1rem;
-    border-block-start: 1px solid var(--field-rule-strong);
+    border-block-start: 1px solid var(--color-edge);
     font-family: var(--font-display);
     font-size: var(--text-h2);
     font-weight: 700;
@@ -825,359 +495,15 @@ body {
     line-height: var(--leading-h2);
   }
 
-  /* Links inside the specification table and the narrative.
-     Preflight resets `a` to `text-decoration: inherit`, so a link in a table
-     cell renders as ordinary text in ordinary colour: not merely undecorated
-     but not distinguished at all, which fails WCAG 1.4.1 rather than being a
-     style preference. The case study route is the first place SpecTable's
-     surface and source links reach a reader, so the rule lands here with the
-     rest of that page's composition rather than inside a component this task
-     does not own. The thickening on hover is the same motion DESIGN.md keeps
-     for every other link on the site. */
-  .spec-table a,
-  .prose a,
-  .case-back a {
-    text-decoration: underline;
-    text-decoration-thickness: 1px;
-    text-underline-offset: 0.25em;
-    transition: text-decoration-thickness 120ms ease-out;
-  }
-
-  .spec-table a:hover,
-  .prose a:hover,
-  .case-back a:hover {
-    text-decoration-thickness: 3px;
-  }
-
-  /* One orchestrated entrance, on first load, and then nothing. DESIGN.md
-     allows a staggered reveal of roughly 600ms in ease-out-expo and keeps four
-     other motions on the whole site; this is that one.
-
-     Transform and opacity only. Animating a layout property here would move
-     the hero's own box while the browser is still settling the page, which is
-     the cumulative-layout-shift the preloaded fonts exist to avoid.
-
-     Nothing checks prefers-reduced-motion. The base layer collapses every
-     duration and every delay under that query with !important from the
-     strongest position author CSS has, so this animation reaches its end state
-     immediately rather than being skipped, and the elements are visible. That
-     is why `both` is safe: the fill mode is what stops the content flashing in
-     before its delay elapses, and would strand it at opacity 0 if the
-     reduced-motion reset removed the animation instead of shortening it. */
-  @keyframes hero-reveal {
-    from {
-      opacity: 0;
-      transform: translate3d(0, 0.75rem, 0);
-    }
-
-    to {
-      opacity: 1;
-      transform: none;
-    }
-  }
-
-  .hero > *,
-  .proof-strip {
-    animation: hero-reveal 420ms cubic-bezier(0.16, 1, 0.3, 1) both;
-    animation-delay: calc(var(--reveal-index, 0) * 45ms);
-  }
-}
-
-/* Page-level composition: /about, /writing, /contact, and the two failure
-   states in __root.tsx. A third `components` block, which merges with the two
-   above rather than replacing them, so nothing already in the cascade moves.
-
-   Same reason as before for writing CSS rather than utility strings: several
-   of these are sets of declarations that are only correct together. .field-
-   control is the clearest case, where dropping `color: inherit` alone produces
-   a control that is legible on paper and unreadable the day the form is moved
-   onto a coloured band. */
-@layer components {
-  /* Short pages need a floor. /writing has one sentence on it and the failure
-     states have four table rows; without this the band ends a few centimetres
-     down the viewport and the page reads as a render that stopped halfway,
-     which is exactly the wrong signal on a page about something missing.
-
-     The floor is on the grid rather than on the field, which is not a detail.
-     The drawn hairlines are absolutely positioned inside .grid-field, so they
-     are exactly as tall as it is: putting the height on the section instead
-     produces a band whose rules stop a third of the way down and leave the
-     rest as flat colour. DESIGN.md calls the visible grid the voice, and a
-     page that is mostly empty is the page that most needs it to keep
-     speaking. */
-  .page-field .grid-field {
-    min-block-size: 60vh;
-  }
-
-  .page-head > * {
-    margin: 0;
-  }
-
-  .page-head > * + * {
-    margin-block-start: 1.25rem;
-  }
-
-  /* h1 step, not display: DESIGN.md reserves the display step for one line on
-     the site and the hero already holds it. Size, width axis and leading are
-     set together for the same reason .hero-display sets all three. */
-  .page-title {
-    font-family: var(--font-display);
-    font-size: var(--text-h1);
-    font-stretch: 112%;
-    font-weight: 700;
-    line-height: var(--leading-h1);
-    text-wrap: balance;
-  }
-
-  .page-intro {
-    max-inline-size: 54ch;
-    font-size: var(--text-body);
-  }
-
-  .page-actions {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    gap: 0.75rem 2rem;
-    margin-block-start: 2rem;
-  }
-
-  /* The timeline, and the two failure-state tables. Same bones as .spec-table,
-     with the two columns swapped in kind: here the row header is the period,
-     which DESIGN.md names as data and therefore sets in Martian Mono, and the
-     value is the prose. Reusing .spec-table would have meant a class whose
-     `th` is Archivo and whose `td` is mono, which is backwards for this
-     content.
-
-     --field-rule-strong, never --color-rule-strong: the tables sit on an
-     ultramarine band where rule-strong measures 1.57 and would leave the
-     dividers invisible. The inherited property resolves per ground. */
-  .timeline {
-    width: 100%;
-    border-collapse: collapse;
-    border-block-start: 1px solid var(--field-rule-strong);
-    text-align: start;
-  }
-
-  .timeline th,
-  .timeline td {
-    border-block-end: 1px solid var(--field-rule-strong);
-    padding-block: 0.85rem;
-    text-align: start;
-    vertical-align: baseline;
-  }
-
-  /* The period column, shrunk to its own content by the `width: 1%` idiom so
-     the entries beside it all start on one line.
-
-     `white-space: nowrap` stays, and the alternative was measured rather than
-     reasoned about. Removing it does not merely relax the rule at narrow
-     widths: `width: 1%` is an explicit preferred width, so auto table layout
-     resolves the column to max(min-content, 1%) and never to max-content.
-     With nowrap gone, "2022 to present" broke across two lines at 1280px as
-     well as at 320px, which is worse than the thing it was meant to fix.
-
-     Known, and deliberately left: at a 320px viewport this table extends 14px
-     past its grid column, because a phrase that cannot wrap sets the table's
-     minimum width. It stays inside the viewport and causes no horizontal
-     scroll. Clean at 375, 768 and 1280. */
-  .timeline th {
-    width: 1%;
-    padding-inline-end: 2rem;
-    font-family: var(--font-data);
-    font-size: var(--text-data);
-    font-weight: 500;
-    white-space: nowrap;
-  }
-
-  .timeline td {
-    font-family: var(--font-body);
-    font-size: var(--text-body);
-  }
-
-  /* A declared gap, in the same register as the Placeholder component's
-     caption: Martian Mono at the fine step, with a printed label in front of
-     it. The label is the part that stops this reading as a closing remark. */
-  .note {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    gap: 0.75rem;
-    margin-block-start: 1.5rem;
-    font-family: var(--font-data);
-    font-size: var(--text-fine);
-    line-height: 1.5;
-  }
-
-  .note-label {
-    padding: 0.15rem 0.45rem;
-    border: 1px solid var(--field-rule-strong);
-    font-size: var(--text-fine);
-    font-weight: 600;
-    letter-spacing: 0.06em;
-  }
-
-  .contact-form > * + * {
-    margin-block-start: 1.75rem;
-  }
-
-  .field {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    max-inline-size: 46ch;
-  }
-
-  .field-label {
-    font-size: var(--text-fine);
-    font-weight: 600;
-  }
-
-  /* Preflight resets form controls to `font: inherit` for family and size but
-     NOT for colour: a control keeps the user-agent's own text colour, which is
-     near black on a near white default background. On paper that is nearly
-     right and on any other ground it is wrong. `color: inherit` and a
-     transparent background are what make one control correct on every band.
-
-     The border is the structural token, not the decorative one: an input's
-     edge is what tells a visitor where the field is, so it carries meaning and
-     --field-rule at 1.32 on paper would not do. */
-  .field-control {
-    width: 100%;
-    padding: 0.6rem 0.7rem;
-    border: 1px solid var(--field-rule-strong);
-    border-radius: 0;
-    background: transparent;
-    color: inherit;
-    font-family: var(--font-body);
-    font-size: var(--text-body);
-    line-height: 1.5;
-  }
-
-  .field-control:hover {
-    border-color: currentColor;
-  }
-
-  /* The invalid state is not carried by colour alone, which would fail WCAG
-     1.4.1 for a visitor who cannot distinguish it. The border thickens, the
-     message appears beneath, and aria-invalid announces it. */
-  .field-control[aria-invalid='true'] {
-    border-width: 2px;
-    border-color: var(--color-signal);
-  }
-
-  textarea.field-control {
-    resize: vertical;
-  }
-
-  /* --color-signal measures 4.56 on paper, which clears the body-text
-     threshold. It is only correct on paper, and this form only ever sits on
-     paper; a form moved onto a coloured band needs the on-colour variant and
-     the ratio re-measured, which is what the comment is here to say. */
-  .field-error {
-    margin: 0;
-    color: var(--color-signal);
-    font-size: var(--text-fine);
-    font-weight: 600;
-  }
-
-  /* Always present, empty when there is nothing to say, so the live region is
-     in the DOM before it changes. Collapsed to nothing when empty rather than
-     hidden, because `display: none` on a live region stops it announcing. */
-  .form-status {
-    margin: 0;
-    max-inline-size: 52ch;
-    font-weight: 600;
-  }
-
-  .form-status:empty {
-    display: none;
-  }
-
-  .form-status[data-status='failed'] {
-    color: var(--color-signal);
-  }
-
-  .form-alternative {
-    margin: 0;
-    font-family: var(--font-data);
-    font-size: var(--text-data);
-  }
-
-  .form-alternative a,
-  .field-error a {
+  .prose a {
+    color: var(--color-orange);
     text-decoration: underline;
     text-decoration-thickness: 1px;
     text-underline-offset: 0.25em;
   }
 
-  .form-actions {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    gap: 0.75rem 2rem;
-  }
-
-  /* Underlined text, not a filled pill, so the one action on the page matches
-     every other action on the site. Preflight gives buttons `background:
-     transparent` already; the rest is undoing the user-agent chrome without
-     losing the button role. */
-  .submit {
-    padding: 0;
-    border: 0;
-    color: inherit;
-    font-family: var(--font-body);
-    cursor: pointer;
-  }
-
-  .submit[aria-disabled='true'] {
-    cursor: progress;
-    opacity: 0.6;
-  }
-
-  /* The site footer, and the one navigation on the site.
-     Tone is set by the component, not here: `ultramarine-deep` is the third
-     measured ground, and it is chosen so the footer never fuses with the last
-     band of the page above it, which alternates. See SiteFooter.tsx.
-
-     No fill and no border on the links, deliberately, for the reason
-     ProofStrip.tsx gives at length: four short enclosed labels sharing a
-     parent is the badge wall PRODUCT.md bans, and tests/e2e/home.spec.ts
-     measures for that shape rather than for a class name. They inherit
-     `.action`, which is underlined text, like every other action on the site. */
-  .footer-nav {
-    padding-block-end: 1.5rem;
-    /* Structural, so the per-ground strong token. On ultramarine-deep that
-       resolves to --color-rule-on-color; --color-rule-strong measures 1.57 on
-       the colour grounds and would leave no visible edge. */
-    border-block-end: 1px solid var(--field-rule-strong);
-  }
-
-  .footer-list {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.75rem 2rem;
-    margin: 0;
-    padding: 0;
-    list-style: none;
-  }
-
-  /* The page you are already on is still a link, and still reachable, so it is
-     not dimmed or disabled. It is marked, and only marked: aria-current says
-     so to a screen reader and the thicker underline says so on screen, which
-     is the same pair of channels every other state on this site uses rather
-     than colour alone. */
-  .footer-link[aria-current='page'] {
-    text-decoration-thickness: 3px;
-  }
-
-  .footer-address {
-    margin-block-start: 1.5rem;
-  }
-
-  /* The honeypot. Off screen rather than `display: none` or `hidden`, both of
-     which a form filler that reads CSS will skip, leaving the trap unsprung.
-     Clipped to a single pixel so it costs no layout. */
+  /* The honeypot. Off screen rather than display:none, which a form
+     filler that reads CSS will skip, leaving the trap unsprung. */
   .honeypot {
     position: absolute;
     width: 1px;
@@ -1188,5 +514,173 @@ body {
     clip-path: inset(50%);
     white-space: nowrap;
     border: 0;
+  }
+
+  /* ============================================================
+     Pages: titles, nav, footer, forms
+     ============================================================ */
+
+  /* The interior page title, the answer to the opening prompt. */
+  .page-title {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: var(--text-h1);
+    font-weight: 700;
+    line-height: var(--leading-h1);
+    letter-spacing: -0.02em;
+  }
+
+  /* The hero's h1 is the name, and it is the document title: the same step as
+     an interior page title. The display line below it is the loudest thing on
+     the page, but a heading is the document's title in the accessibility tree
+     and in search results, and the name is both. */
+  .hero-name {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: var(--text-h1);
+    font-weight: 700;
+    line-height: var(--leading-h1);
+    letter-spacing: -0.02em;
+  }
+
+  .page-intro {
+    margin: 0;
+    max-inline-size: 52ch;
+    color: var(--color-muted);
+    font-size: var(--text-body);
+  }
+
+  /* Sticky navigation. The blur keeps long panels from crashing into the
+     links as the page scrolls; the ground stays bg at high opacity, so the
+     mono links keep their measured contrast. */
+  .site-nav {
+    position: sticky;
+    top: 0;
+    z-index: 40;
+    border-block-end: 1px solid var(--color-edge-strong);
+    background: color-mix(in oklch, var(--color-bg) 82%, transparent);
+    backdrop-filter: blur(10px);
+  }
+
+  .site-nav-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding-block: 0.75rem;
+  }
+
+  .nav-list {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .nav-link {
+    font-family: var(--font-data);
+    font-size: var(--text-fine);
+    color: var(--color-muted);
+    text-decoration: none;
+    transition: color 120ms ease-out;
+  }
+
+  .nav-link:hover {
+    color: var(--color-text);
+  }
+
+  .nav-link[aria-current='page'] {
+    color: var(--color-amber);
+  }
+
+  /* The footer: a terminal sign-off and the same navigation, on every page.
+     The structural top rule is edge-strong because the footer is a real
+     boundary, not decoration. */
+  .site-footer {
+    border-block-start: 1px solid var(--color-edge-strong);
+  }
+
+  .footer-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.25rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .footer-address {
+    font-family: var(--font-data);
+    font-size: var(--text-data);
+  }
+
+  .footer-address a,
+  .contact-address {
+    color: var(--color-orange);
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.25em;
+  }
+
+  /* Contact form. Fields are a mono label with an amber `$` glyph, a shadcn
+     control, and a mono error line. Error text is amber, not red: red is
+     reserved for live status. */
+  .field {
+    display: grid;
+    gap: 0.5rem;
+  }
+
+  .field-label {
+    font-family: var(--font-data);
+    font-size: var(--text-fine);
+    color: var(--color-muted);
+  }
+
+  .field-label .label-glyph {
+    color: var(--color-amber);
+  }
+
+  .field-error {
+    margin: 0;
+    font-family: var(--font-data);
+    font-size: var(--text-fine);
+    color: var(--color-amber);
+  }
+
+  .form-status {
+    margin: 0;
+    font-family: var(--font-data);
+    font-size: var(--text-fine);
+    color: var(--color-muted);
+  }
+
+  .form-alternative a {
+    font-family: var(--font-data);
+    font-size: var(--text-data);
+    color: var(--color-orange);
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.25em;
+  }
+
+  /* Surfaces list inside the specification table. */
+  .spec-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 1rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  /* The timeline's period column is the row header: the data, in mono, in
+     amber, exactly as a terminal prints a timestamp. */
+  .timeline-period {
+    font-family: var(--font-data);
+    font-size: var(--text-fine);
+    color: var(--color-amber);
+    white-space: nowrap;
   }
 }

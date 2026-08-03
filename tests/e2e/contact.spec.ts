@@ -24,9 +24,12 @@ const VALID = {
 
 const fill = async (page: Page, values: Partial<typeof VALID>) => {
   const merged = { ...VALID, ...values }
-  await page.getByLabel('Name', { exact: true }).fill(merged.name)
-  await page.getByLabel('Email', { exact: true }).fill(merged.email)
-  await page.getByLabel('What are you building?').fill(merged.message)
+  // The labels carry the terminal `$` glyph, hidden from the accessibility
+  // tree so each control's accessible name stays the bare word; getByLabel
+  // matches the visible label text, which is why the `$` is part of it.
+  await page.getByLabel('$ Name', { exact: true }).fill(merged.name)
+  await page.getByLabel('$ Email', { exact: true }).fill(merged.email)
+  await page.getByLabel('$ What are you building?').fill(merged.message)
 }
 
 const submit = (page: Page) => page.getByTestId('contact-submit').click()
@@ -84,15 +87,15 @@ test.describe('the form is operable', () => {
   test('associates a real label with every control', async ({ page }) => {
     // getByLabel resolves through the accessibility tree, so a placeholder
     // masquerading as a label, or a label with no `for`, fails here.
-    await expect(page.getByLabel('Name', { exact: true })).toHaveAttribute(
+    await expect(page.getByLabel('$ Name', { exact: true })).toHaveAttribute(
       'name',
       'name',
     )
-    await expect(page.getByLabel('Email', { exact: true })).toHaveAttribute(
+    await expect(page.getByLabel('$ Email', { exact: true })).toHaveAttribute(
       'name',
       'email',
     )
-    await expect(page.getByLabel('What are you building?')).toHaveAttribute(
+    await expect(page.getByLabel('$ What are you building?')).toHaveAttribute(
       'name',
       'message',
     )
@@ -136,41 +139,27 @@ test.describe('the form is operable', () => {
   test('shows a focus ring that is visible on the ground it lands on', async ({
     page,
   }) => {
-    await page.getByLabel('Name', { exact: true }).focus()
+    await page.getByLabel('$ Name', { exact: true }).focus()
     const ring = await page
-      .getByLabel('Name', { exact: true })
+      .getByLabel('$ Name', { exact: true })
       .evaluate((el) => getComputedStyle(el).outlineColor)
 
     const ratio = await page.evaluate(([a, b]) => window.contrast(a, b), [
       ring,
-      TOKENS.paper,
+      TOKENS.bg,
     ] as const)
     expect(
       ratio,
-      'the focus ring is invisible on the paper ground',
+      'the focus ring is invisible on the ground',
     ).toBeGreaterThanOrEqual(NON_TEXT)
   })
-
-  test('shows a focus ring on the coloured band too', async ({ page }) => {
-    // The sharpest case in DESIGN.md: an ultramarine ring on an ultramarine
-    // field measures 1.00 and is literally invisible.
-    // The one in main, on the ultramarine band. The footer prints the same
-    // address on an ultramarine-deep ground, which is a different measurement
-    // and is covered by a11y.spec.ts on every page.
-    const address = page
-      .locator('main')
-      .getByRole('link', { name: 'hello@mehby.com', exact: true })
-    await address.focus()
-    const ring = await address.evaluate(
-      (el) => getComputedStyle(el).outlineColor,
-    )
-
-    const ratio = await page.evaluate(([a, b]) => window.contrast(a, b), [
-      ring,
-      TOKENS.ultramarine,
-    ] as const)
-    expect(ratio).toBeGreaterThanOrEqual(NON_TEXT)
-  })
+  // DELETED: "shows a focus ring on the coloured band too". The previous
+  // design measured the ring on its drenched ultramarine band, where an
+  // ultramarine ring on an ultramarine field is literally invisible. The
+  // terminal design stands on one ground; the ring is orange everywhere, and
+  // tests/e2e/a11y.spec.ts measures it on every page against the ground
+  // behind it. The band-specific half of the claim has no band left to stand
+  // on.
 })
 
 test.describe('an invalid email', () => {
@@ -180,12 +169,11 @@ test.describe('an invalid email', () => {
     await fill(page, { email: 'amel@' })
     await submit(page)
 
-    const email = page.getByLabel('Email', { exact: true })
+    const email = page.getByLabel('$ Email', { exact: true })
     await expect(email).toHaveAttribute('aria-invalid', 'true')
-    await expect(page.getByLabel('Name', { exact: true })).not.toHaveAttribute(
-      'aria-invalid',
-      'true',
-    )
+    await expect(
+      page.getByLabel('$ Name', { exact: true }),
+    ).not.toHaveAttribute('aria-invalid', 'true')
   })
 
   test('describes the field with the message, so it is announced with it', async ({
@@ -194,7 +182,7 @@ test.describe('an invalid email', () => {
     await fill(page, { email: 'amel@' })
     await submit(page)
 
-    const email = page.getByLabel('Email', { exact: true })
+    const email = page.getByLabel('$ Email', { exact: true })
     await expect(email).toHaveAttribute('aria-invalid', 'true')
     const describedBy = await email.getAttribute('aria-describedby')
 
@@ -220,11 +208,11 @@ test.describe('an invalid email', () => {
     await submit(page)
     await expect(status(page)).toHaveAttribute('data-status', 'invalid')
 
-    await expect(page.getByLabel('Email', { exact: true })).toBeFocused()
+    await expect(page.getByLabel('$ Email', { exact: true })).toBeFocused()
   })
 
   test('marks the field by more than colour', async ({ page }) => {
-    const email = page.getByLabel('Email', { exact: true })
+    const email = page.getByLabel('$ Email', { exact: true })
     const before = await email.evaluate(
       (el) => getComputedStyle(el).borderTopWidth,
     )
@@ -248,7 +236,7 @@ test.describe('an empty message', () => {
     await fill(page, { message: '' })
     await submit(page)
 
-    const message = page.getByLabel('What are you building?')
+    const message = page.getByLabel('$ What are you building?')
     await expect(message).toHaveAttribute('aria-invalid', 'true')
     await expect(message).toBeFocused()
     await expect(status(page)).toHaveAttribute('data-status', 'invalid')
@@ -289,10 +277,9 @@ test.describe('a bot that fills the honeypot', () => {
     await submit(page)
 
     await expect(status(page)).toHaveAttribute('data-status', 'sent')
-    await expect(page.getByLabel('Email', { exact: true })).not.toHaveAttribute(
-      'aria-invalid',
-      'true',
-    )
+    await expect(
+      page.getByLabel('$ Email', { exact: true }),
+    ).not.toHaveAttribute('aria-invalid', 'true')
   })
 
   test('clears the form the way a real success does', async ({ page }) => {
@@ -303,7 +290,7 @@ test.describe('a bot that fills the honeypot', () => {
     await submit(page)
 
     await expect(status(page)).toHaveAttribute('data-status', 'sent')
-    await expect(page.getByLabel('Name', { exact: true })).toHaveValue('')
+    await expect(page.getByLabel('$ Name', { exact: true })).toHaveValue('')
   })
 })
 
@@ -327,7 +314,7 @@ test.describe('a provider that cannot deliver', () => {
     await expect(status(page)).toHaveAttribute('data-status', 'failed')
 
     // Clearing the form on failure is the same as losing the enquiry twice.
-    await expect(page.getByLabel('What are you building?')).toHaveValue(
+    await expect(page.getByLabel('$ What are you building?')).toHaveValue(
       VALID.message,
     )
   })
@@ -442,6 +429,6 @@ test.describe('before the page can work', () => {
     await expect(
       page.getByRole('link', { name: 'hello@mehby.com', exact: true }).first(),
     ).toBeVisible()
-    await expect(page.getByLabel('What are you building?')).toBeVisible()
+    await expect(page.getByLabel('$ What are you building?')).toBeVisible()
   })
 })

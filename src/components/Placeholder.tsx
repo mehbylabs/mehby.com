@@ -18,10 +18,10 @@
 //    that reserves nothing hands the reflow to the day the real asset lands,
 //    which is the day nobody is looking at the layout.
 //
-// Its border reads --field-rule-strong, the inherited per-ground property
-// declared in styles.css, for the same reason SpecTable does: --color-rule-
-// strong measures 1.57 on ultramarine, so a placeholder that carried its paper
-// border would have no visible edge across the drenched half of the site.
+// It reads as provisional because it is drawn with a dashed edge-strong rule,
+// the structural border token: a dashed outline is the terminal's own marker
+// for "this is not real yet". The caption is Martian Mono, the same register
+// every note on this site uses.
 
 export type PlaceholderProps = {
   /** What belongs here, in the site's voice. Printed, and announced. */

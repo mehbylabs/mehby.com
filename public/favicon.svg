@@ -1,28 +1,23 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="mehby.com">
   <!--
-    Derived from the design system, not invented as a mark.
+    The terminal mark, drawn structurally rather than invented as a logo.
 
     The site has no logo and PRODUCT.md forbids inventing content, so this is
-    the two things the site actually is: the drenched ultramarine ground that
-    DESIGN.md commits 30 to 50 percent of the surface to, and the drawn grid
-    hairlines it calls "voice". The lines sit on the thirds, which is the
-    3-column tier of the 3/6/12 ladder in Grid.tsx, so the mark is the same
-    structure the pages are built on rather than a decoration resembling it.
+    the two things the site actually is: the warm near-black ground that every
+    page sits on, and a prompt glyph in the one loud orange. The `>` is the
+    prompt's chevron and the bar beneath is its cursor line, the same shapes
+    the hero prompt is built from.
 
     Colours are the token values from DESIGN.md, as hex because an SVG used as
     a favicon is rasterised by parts of the toolchain that predate oklch():
-      --ultramarine  oklch(0.52 0.19 264)  #2d5ed4
-      --paper        oklch(0.97 0.008 85)  #f8f5ef
-    Paper on ultramarine measures 5.26, which is the pair scripts/contrast.mjs
-    already gates. No new pair is introduced here.
-
-    A real mark is still outstanding. This is deliberately structural rather
-    than a letterform, because a wordmark is a brand decision the owner has not
-    made.
+      --bg      oklch(0.145 0.01 70)  #0d0906
+      --orange  oklch(0.66 0.2 45)    #f05d00
+    Orange on bg measures 5.90, the pair scripts/contrast.mjs already gates.
+    No new pair is introduced here.
   -->
-  <rect width="32" height="32" fill="#2d5ed4" />
-  <g fill="#f8f5ef" opacity="0.85">
-    <rect x="10" y="0" width="1.5" height="32" />
-    <rect x="21" y="0" width="1.5" height="32" />
+  <rect width="32" height="32" fill="#0d0906" />
+  <g fill="none" stroke="#f05d00" stroke-width="2.5" stroke-linecap="square">
+    <path d="M11 8 L18 15 L11 22" />
   </g>
+  <rect x="20" y="20.5" width="8" height="2.5" fill="#f05d00" />
 </svg>

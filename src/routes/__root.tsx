@@ -7,8 +7,7 @@ import {
 } from '@tanstack/react-router'
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
 import { TanStackDevtools } from '@tanstack/react-devtools'
-import { Grid } from '#/components/Grid'
-import { SectionField } from '#/components/SectionField'
+import { Button } from '#/components/ui/button'
 import { SiteFooter } from '#/components/SiteFooter'
 import { SITE_NAME } from './-seo'
 import type { ErrorComponentProps } from '@tanstack/react-router'
@@ -89,9 +88,44 @@ export const Route = createRootRoute({
   shellComponent: RootDocument,
 })
 
-// Both states are written as what they are: a specification for a page that
-// does not exist, and a specification for one that did not render. The
-// alternative shapes were all rejected deliberately.
+// The navigation, rendered by the shell so the failure states get it too: a
+// 404 with no way onward is the page that needs navigation most.
+const NAV = [
+  { to: '/', label: '~/work', exact: true },
+  { to: '/about', label: '~/about', exact: false },
+  { to: '/writing', label: '~/writing', exact: false },
+] as const
+
+function SiteNav() {
+  return (
+    <header className="site-nav" data-testid="site-nav">
+      <div className="shell site-nav-inner">
+        <nav aria-label="Main">
+          <ul className="nav-list">
+            {NAV.map((destination) => (
+              <li key={destination.to}>
+                <Link
+                  className="nav-link"
+                  to={destination.to}
+                  activeOptions={{ exact: destination.exact }}
+                  activeProps={{ 'aria-current': 'page' }}
+                >
+                  {destination.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </nav>
+        <Button asChild size="sm">
+          <Link to="/contact">Hire me</Link>
+        </Button>
+      </div>
+    </header>
+  )
+}
+
+// Both states are written as what they are: a terminal register line about a
+// page that does not exist, and one about a page that did not render.
 //
 // No apology paragraph, because an apology is a sentence the reader has to
 // finish before learning anything. No illustration, because the site has no
@@ -100,77 +134,75 @@ export const Route = createRootRoute({
 // visitor who mistyped an address wants the address, and PRODUCT.md's voice
 // does not exclaim.
 //
-// The table is the same specification table the case studies are presented
-// with, so the failure state reads as part of the same document rather than as
-// a page from another site. It is a plain <table> rather than the SpecTable
-// component because SpecTable's rows are a fixed vocabulary about a case study
-// (role, period, surfaces, source, stack) and none of them describe this.
+// The address that was asked for is printed back, because a 404 that does not
+// say what it could not find leaves a visitor unable to tell a typing slip
+// from a dead link somebody else published.
 
-function FailureField({
+function Failure({
   title,
-  caption,
-  rows,
+  lines,
   children,
 }: {
   title: string
-  caption: string
-  rows: Array<{ label: string; value: ReactNode }>
+  lines: Array<{ label: string; value: string }>
   children?: ReactNode
 }) {
   return (
-    <main>
-      {/* One band, carrying the page. A short field over an empty paper ground
-          reads as a render that stopped halfway, which is the one thing an
-          error state must not look like. */}
-      <SectionField tone="ultramarine" className="page-field">
-        <Grid>
-          <div className="page-head col-span-full lg:col-span-7">
-            <h1 className="page-title" data-testid="failure-title">
-              {title}
-            </h1>
-          </div>
-
-          <table className="timeline col-span-full lg:col-span-6">
-            <caption className="spec-caption">{caption}</caption>
-            <tbody>
-              {rows.map((row) => (
-                <tr key={row.label}>
-                  <th scope="row">{row.label}</th>
-                  <td>{row.value}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-
-          <p className="page-actions col-span-full">
-            <Link className="action" to="/">
-              Home
-            </Link>
-            {children}
+    <main data-testid="failure">
+      <section
+        className="shell section"
+        style={{
+          minHeight: '65vh',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+        }}
+      >
+        <p className="prompt" data-testid="failure-prompt">
+          <span className="prompt-user">mehby</span>
+          <span className="prompt-host">@dev:~$</span>
+          <span>echo</span>
+          <span className="cursor" aria-hidden="true" />
+        </p>
+        <h1
+          className="page-title"
+          data-testid="failure-title"
+          style={{ marginTop: '1rem' }}
+        >
+          {title}
+        </h1>
+        {lines.map((line) => (
+          <p
+            className="log-line"
+            key={line.label}
+            style={{ marginTop: '0.25rem' }}
+          >
+            <b>{line.label}</b> {line.value}
           </p>
-        </Grid>
-      </SectionField>
+        ))}
+        <div className="page-actions" style={{ marginTop: '1.5rem' }}>
+          <Link className="nav-link" to="/">
+            ~/work
+          </Link>
+          {children}
+        </div>
+      </section>
     </main>
   )
 }
 
 function NotFound() {
-  // The address that was asked for, printed back. A 404 that does not say what
-  // it could not find leaves a visitor unable to tell a typing slip from a
-  // dead link somebody else published.
   const pathname = useRouterState({
     select: (state) => state.location.pathname,
   })
 
   return (
-    <FailureField
-      title="No page at this address"
-      caption="Specification: a page that does not exist"
-      rows={[
-        { label: 'Status', value: '404' },
-        { label: 'Address', value: pathname },
-        { label: 'Cause', value: 'No route on this site matches it' },
-        { label: 'Content', value: 'None. Nothing was moved or removed' },
+    <Failure
+      title="error: page not found"
+      lines={[
+        { label: 'status', value: '404' },
+        { label: 'path', value: pathname },
+        { label: 'cause', value: 'no route on this site matches it' },
       ]}
     />
   )
@@ -178,40 +210,42 @@ function NotFound() {
 
 function ErrorState({ error, reset }: ErrorComponentProps) {
   return (
-    <FailureField
-      title="This page did not render"
-      caption="Specification: a page that failed"
-      rows={[
-        { label: 'Status', value: '500' },
-        { label: 'Cause', value: error.message || 'Unreported' },
+    <Failure
+      title="error: this page did not render"
+      lines={[
+        { label: 'status', value: '500' },
+        { label: 'cause', value: error.message || 'unreported' },
         {
-          label: 'Scope',
-          value: 'This page. The rest of the site is unaffected',
+          label: 'scope',
+          value: 'this page, the rest of the site is unaffected',
         },
       ]}
     >
       {/* Second action, not a replacement for the first. The error may be
           transient, and re-rendering is cheaper for the visitor than
           navigating away and coming back. */}
-      <button className="action" type="button" onClick={reset}>
+      <Button variant="outline" size="sm" type="button" onClick={reset}>
         Try again
-      </button>
-    </FailureField>
+      </Button>
+    </Failure>
   )
 }
 
-function RootDocument({ children }: { children: React.ReactNode }) {
+function RootDocument({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
       <head>
         <HeadContent />
       </head>
       <body>
+        {/* The navigation and footer sit outside {children}, so they are
+            siblings of the route's <main> rather than inside it. The route's
+            main element is what every page-level assertion scopes to, and the
+            chrome belongs to the contentinfo and banner landmarks, not the
+            main one. Rendered by the shell, so the failure states get them
+            too. */}
+        <SiteNav />
         {children}
-        {/* Outside {children}, so it is a sibling of the route's <main> and
-            lands in the contentinfo landmark rather than inside the main one.
-            Rendered by the shell, so the failure states get it too: a 404 with
-            no way onward is the page that needs navigation most. */}
         <SiteFooter />
         <TanStackDevtools
           config={{

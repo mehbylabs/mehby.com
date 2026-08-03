@@ -1,9 +1,12 @@
 import { Suspense, lazy } from 'react'
-import { Link, createFileRoute, notFound } from '@tanstack/react-router'
+import {
+  Link,
+  createFileRoute,
+  notFound,
+  useRouterState,
+} from '@tanstack/react-router'
 import { createServerFn } from '@tanstack/react-start'
-import { Grid } from '#/components/Grid'
 import { Placeholder } from '#/components/Placeholder'
-import { SectionField } from '#/components/SectionField'
 import { SpecTable } from '#/components/SpecTable'
 import { getCaseStudies } from '#/lib/content'
 import { pageHead } from '../-seo'
@@ -100,35 +103,34 @@ function CaseStudy() {
 
   return (
     <main>
-      <SectionField tone="ultramarine">
-        <Grid>
-          <div className="case-head col-span-full">
-            <p className="case-back">
-              <Link to="/">All work</Link>
-            </p>
-            <h1 className="case-title">{study.title}</h1>
-            <p className="case-summary">{study.summary}</p>
-          </div>
-        </Grid>
-      </SectionField>
+      <section className="shell section">
+        <div className="section-path">
+          <span className="section-path-code">{`~/work/${study.slug}`}</span>
+          <h1 className="page-title">{study.title}</h1>
+        </div>
+        <p className="hero-subline">{study.summary}</p>
+        <p style={{ marginTop: '1.25rem' }}>
+          <Link className="nav-link" to="/">
+            All work
+          </Link>
+        </p>
+      </section>
 
-      <SectionField tone="paper">
-        <Grid>
+      <section className="shell section" style={{ paddingTop: 0 }}>
+        <div className="grid gap-6 lg:grid-cols-12">
           {/* No cover image exists for any of the three. PRODUCT.md: ship a
               labelled placeholder that is obviously one, never an invented
               substitute, and reserve the space the real asset will take so the
               reflow does not land on the day nobody is watching. */}
-          <Placeholder
-            className="col-span-full lg:col-span-7"
-            label={`${study.title} cover`}
-            ratio={16 / 9}
-          />
+          <div className="lg:col-span-7">
+            <Placeholder label={`${study.title} cover`} ratio={16 / 9} />
+          </div>
 
-          {/* A plain block wrapper, and nothing else. A flex or grid parent
-              would recompute the table's own display and strip its role from
-              the accessibility tree, which changes nothing on screen and
-              everything for a screen reader. */}
-          <div className="case-spec col-span-full lg:col-span-4 lg:col-start-9">
+          {/* The specification table, above the narrative on purpose. A visitor
+              with two minutes reads the table; the prose is for the second
+              audience PRODUCT.md describes, who read more slowly and care how
+              the decisions were made. */}
+          <div className="lg:col-span-4 lg:col-start-9">
             <SpecTable
               caption={`Specification: ${study.title}`}
               role={study.role}
@@ -139,44 +141,47 @@ function CaseStudy() {
             />
           </div>
 
-          {/* The specification sits above the narrative on purpose. A visitor
-              with two minutes reads the table; the prose is for the second
-              audience PRODUCT.md describes, who read more slowly and care how
-              the decisions were made. */}
-          <div
-            className="case-narrative prose col-span-full lg:col-span-8"
-            data-testid="narrative"
-          >
+          <div className="prose lg:col-span-8" data-testid="narrative">
             <Suspense fallback={null}>
               {Narrative ? <Narrative /> : null}
             </Suspense>
           </div>
-        </Grid>
-      </SectionField>
+        </div>
+      </section>
     </main>
   )
 }
 
 function NotFound() {
+  const pathname = useRouterState({
+    select: (state) => state.location.pathname,
+  })
+
   return (
-    <main>
-      {/* The only band on the page, so it carries the page. A short field
-          above an empty paper ground reads as a render that stopped halfway,
-          which is the wrong thing for an error state to look like. */}
-      <SectionField tone="ultramarine" className="not-found-field">
-        <Grid>
-          <div className="case-head col-span-full" data-testid="not-found">
-            <h1 className="case-title">No case study here</h1>
-            <p className="case-summary">
-              That address does not match any of the work on this site. It may
-              have been a typing slip, or a link that was never real.
-            </p>
-            <p className="case-back">
-              <Link to="/">All work</Link>
-            </p>
-          </div>
-        </Grid>
-      </SectionField>
+    <main data-testid="not-found">
+      <section
+        className="shell section"
+        style={{
+          minHeight: '65vh',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+        }}
+      >
+        <div className="section-path">
+          <span className="section-path-code">{`~/work${pathname}`}</span>
+          <h1 className="page-title">No case study here</h1>
+        </div>
+        <p className="hero-subline">
+          That address does not match any of the work on this site. It may have
+          been a typing slip, or a link that was never real.
+        </p>
+        <p style={{ marginTop: '1.25rem' }}>
+          <Link className="nav-link" to="/">
+            All work
+          </Link>
+        </p>
+      </section>
     </main>
   )
 }

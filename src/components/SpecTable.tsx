@@ -1,22 +1,26 @@
 import type { ReactNode } from 'react'
+import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableHead,
+  TableRow,
+} from '#/components/ui/table'
 
 // The signature component. DESIGN.md calls the specification table "the primary
 // way work is presented", and PRODUCT.md's second design principle is why:
 // "the work is presented the way the work actually is: tabular, precise,
-// annotated". So this is a real <table>, with a real <caption> and real
-// <th scope="row">, and not a div grid that looks like one. The difference is
-// invisible on screen and total to a screen reader, which is why
-// tests/e2e/spec-table.spec.ts asserts on ARIA roles rather than on markup.
+// annotated". So this is a real <table> on the shadcn Table primitive, with a
+// real <caption> and real <th scope="row">, and not a div grid that looks like
+// one. The difference is invisible on screen and total to a screen reader,
+// which is why tests/e2e/spec-table.spec.ts asserts on ARIA roles rather than
+// on markup.
 //
-// Ground awareness is not a prop. The dividers need --color-rule-strong on
-// paper and --color-rule-on-color on ultramarine, where rule-strong measures
-// 1.57, and the component has no way to know which it is standing on. Rather
-// than take a `tone` prop that a caller can forget or contradict, it reads
-// --field-rule-strong: an inherited custom property that each ground declares
-// for itself, exactly as SectionField already does for --field-rule and
-// --focus-ring. A table nested three levels inside a drenched band gets the
-// right divider for free, and a table on plain paper falls back to the :root
-// value, which is the paper one. See the block in styles.css.
+// The borders come from styles.css: a structural edge-strong rule across the
+// top of the table, decorative edge rules between the rows. No tone prop is
+// needed because the whole site stands on one ground; the dividers are the
+// same everywhere.
 
 export type Surface = {
   label: string
@@ -104,24 +108,28 @@ export function SpecTable({
   }
 
   return (
-    <table className="spec-table" data-testid="spec-table">
+    <Table className="spec-table" data-testid="spec-table">
       {/* Visually hidden, not hidden. A table with no accessible name is
           announced as "table" and nothing else, and there are three of them on
           a work page. Hidden with the clip technique rather than `display:
           none`, which would delete the name it exists to provide. */}
-      <caption className="spec-caption">{caption}</caption>
-      <tbody>
+      <TableCaption className="spec-caption">{caption}</TableCaption>
+      <TableBody>
         {rows.map((row) => (
-          <tr key={row.label}>
+          <TableRow key={row.label} className="border-b-0">
             {/* scope="row" is load-bearing. Without it the association between
                 a label and the value beside it is left to the browser's
                 heuristics, and a table the browser reads as ambiguous
                 announces every value under the wrong header. */}
-            <th scope="row">{row.label}</th>
-            <td>{row.value}</td>
-          </tr>
+            <TableHead scope="row" className="whitespace-normal align-top">
+              {row.label}
+            </TableHead>
+            <TableCell className="whitespace-normal align-top">
+              {row.value}
+            </TableCell>
+          </TableRow>
         ))}
-      </tbody>
-    </table>
+      </TableBody>
+    </Table>
   )
 }

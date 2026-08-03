@@ -15,7 +15,9 @@ test('home page is served by our app', async ({ page }) => {
   await page.goto('/')
 
   await expect(page.locator('h1')).toHaveText('Mohamed Elhedi Ben Yedder')
-  await expect(page.getByTestId('proof-link').first()).toHaveText(
+  // The proof chip carries its live status and then the address; the address
+  // is the part that identifies the site.
+  await expect(page.getByTestId('proof-link').first()).toContainText(
     'coachess.net',
   )
 })

@@ -17,7 +17,11 @@ import { BODY_TEXT, installProbes, styleOf } from './support/probes'
 const NAME = 'Mohamed Elhedi Ben Yedder'
 const CREDENTIAL = 'CTO and co-founder of CoaChess'
 const DISPLAY = 'I build and ship full stack products, end to end.'
-const SUBLINE = 'Available for freelance product engineering.'
+// The credential line of the hero. The full sentence is
+// "CTO and co-founder of CoaChess / available for freelance product
+// engineering"; the two halves are asserted separately because the first is
+// set in the mono log-line's amber <b> and the second is the plain tail.
+const SUBLINE = 'available for freelance product engineering'
 
 const PROOF_LINKS = [
   { label: 'coachess.net', href: 'https://coachess.net' },
@@ -60,17 +64,18 @@ test.describe('hero', () => {
     const hero = page.getByTestId('hero')
 
     await expect(hero.getByText(CREDENTIAL, { exact: true })).toHaveCount(1)
-    await expect(hero.getByText(SUBLINE, { exact: true })).toHaveCount(1)
+    await expect(hero.getByText(SUBLINE, { exact: false })).toHaveCount(1)
   })
 
   test('sets the display line at the display step, expanded, on display leading', async ({
     page,
   }) => {
-    // Three facts that are only correct together. DESIGN.md gives the display
+    // Four facts that are only correct together. DESIGN.md gives the display
     // step its own leading token precisely because --text-display reaches
-    // 7.5rem and would otherwise inherit the body value of 1.6, producing a
-    // 12rem line box; and it puts Archivo's Expanded cut at the top of the
-    // width axis for display sizes. A line that loses any one of the three
+    // 6.4rem and would otherwise inherit the body value of 1.6, producing a
+    // 10rem line box; it sets the width axis to the 112% the rest of the
+    // structural type uses; and it caps the measure so the sentence breaks
+    // into three lines rather than four. A line that loses any one of them
     // still renders.
     const line = page.getByTestId('hero-display')
 
@@ -93,6 +98,14 @@ test.describe('hero', () => {
         ratio: parseFloat(s.lineHeight) / parseFloat(s.fontSize),
         stretch: parseFloat(s.fontStretch),
         family: s.fontFamily,
+        // Line count, derived from the rendered box rather than from the copy.
+        // The measure is the fix for the cramped headline and it is the part
+        // with no computed property of its own: `max-inline-size: 16ch` is
+        // still in the style when the wrap it exists to produce is not, if the
+        // width axis or the size moves under it.
+        lines: Math.round(
+          el.getBoundingClientRect().height / parseFloat(s.lineHeight),
+        ),
       }
     })
 
@@ -102,17 +115,28 @@ test.describe('hero', () => {
     ).toBeCloseTo(measured.expected, 1)
     expect(
       measured.ratio,
-      'the display line is not on --leading-display (0.95). At this size the ' +
-        'body value of 1.6 is a line box two thirds taller than the type',
-    ).toBeCloseTo(0.95, 2)
+      'the display line is not on --leading-display (1.02). Below 1 the ' +
+        'descenders of one line reach the caps of the next, and at the body ' +
+        'value of 1.6 the line box is two thirds taller than the type',
+    ).toBeCloseTo(1.02, 2)
     expect(
       measured.stretch,
-      'the display line is not at the top of Archivo\u2019s width axis (125%), ' +
-        'so it is not the Expanded cut DESIGN.md reserves for display sizes',
-    ).toBeCloseTo(125, 1)
+      'the display line is not on Archivo\u2019s 112% width instance, so it is ' +
+        'not the Expanded cut DESIGN.md reserves for display sizes',
+    ).toBeCloseTo(112, 1)
     expect(measured.family, 'the display line is not set in Archivo').toContain(
       'Archivo',
     )
+    expect(
+      measured.lines,
+      `the display line renders on ${measured.lines} lines at this viewport. ` +
+        'The measure is capped at 18ch to keep the statement to two or three ' +
+        'lines; four short lines is the cramped state it exists to prevent',
+    ).toBeLessThanOrEqual(3)
+    expect(
+      measured.lines,
+      'the display line does not wrap at all',
+    ).toBeGreaterThanOrEqual(2)
   })
 
   test('offers exactly two ways forward, to the work and to the owner', async ({
@@ -128,13 +152,14 @@ test.describe('hero', () => {
     ).toHaveAttribute('href', '/contact')
   })
 
-  test('is drenched, and sets its own text colour on that ground', async ({
+  test('keeps its statement legible on the ground it stands on', async ({
     page,
   }) => {
-    // DESIGN.md, the inheritance hazard: the base layer sets color on body, so
-    // a section that sets only a background inherits ink at 3.02 against
-    // ultramarine and fails body text. Measured rather than asserted against a
-    // class name, because the failure is a ratio and not a selector.
+    // DESIGN.md: the base layer sets color on body, and every text token is
+    // measured against the ground. Measured rather than asserted against a
+    // class name, because the failure is a ratio and not a selector: if the
+    // hero text ever drops below the body threshold it is a contrast failure,
+    // whatever class carries it.
     const measured = await page.getByTestId('hero').evaluate((el) => {
       let node: Element | null = el
       let ground = 'rgba(0, 0, 0, 0)'
@@ -156,8 +181,8 @@ test.describe('hero', () => {
     expect(
       measured.ratio,
       `hero text is ${measured.color} on ${measured.ground}, which measures ` +
-        `${measured.ratio.toFixed(2)}. Inherited ink on ultramarine is 3.02; ` +
-        `every drenched field has to set its text colour explicitly`,
+        `${measured.ratio.toFixed(2)}. Text on the ground must clear the body ` +
+        `threshold`,
     ).toBeGreaterThanOrEqual(BODY_TEXT)
   })
 })
@@ -177,21 +202,42 @@ test.describe('proof strip', () => {
     ).toHaveCount(PROOF_LINKS.length)
 
     for (const [i, expected] of PROOF_LINKS.entries()) {
-      await expect(links.nth(i)).toHaveText(expected.label)
+      // Each chip carries its status chip and then the address. The address
+      // is asserted as contained rather than as the whole text, because the
+      // live status precedes it inside the same chip.
+      await expect(links.nth(i)).toContainText(expected.label)
       await expect(
         links.nth(i),
         `proof link ${i} does not point at the surface it names. A URL ` +
           `printed as text is a claim a visitor cannot check`,
       ).toHaveAttribute('href', expected.href)
+      await expect(links.nth(i).getByTestId('proof-status')).toHaveCount(1)
+    }
+  })
+
+  test('reports a status, one of live, offline or checking, never nothing', async ({
+    page,
+  }) => {
+    const strip = page.getByTestId('proof-strip')
+
+    // The strip's whole job is to check these addresses for real, at request
+    // time, and render the honest result. The initial render is "checking";
+    // the result arrives over the wire. What it must never do is stay empty,
+    // and what a test must never do is assert a specific colour, because live
+    // and offline are both legitimate outcomes on a real network.
+    for (const link of await strip.getByTestId('proof-link').all()) {
+      await expect(link.getByTestId('proof-status')).toHaveText(
+        /LIVE · \d+|offline|checking…/,
+      )
     }
   })
 
   test('labels itself, and sets the addresses as data', async ({ page }) => {
     const strip = page.getByTestId('proof-strip')
 
-    await expect(strip.getByText('Shipping now', { exact: true })).toHaveCount(
-      1,
-    )
+    await expect(
+      strip.getByText('three products, checked just now', { exact: false }),
+    ).toHaveCount(1)
 
     // DESIGN.md: Martian Mono strictly for data, and it lists link URLs among
     // the places data type belongs.
@@ -203,37 +249,11 @@ test.describe('proof strip', () => {
       'proof link addresses are not set in Martian Mono',
     ).toContain('Martian Mono')
   })
-
-  test('sits on the same drenched field as the hero', async ({ page }) => {
-    const grounds = await page.evaluate(() => {
-      const ground = (selector: string) => {
-        let node = document.querySelector<HTMLElement>(selector)
-        while (node) {
-          const bg = getComputedStyle(node).backgroundColor
-          if (window.rgba(bg)[3] === 1) return bg
-          node = node.parentElement
-        }
-        return null
-      }
-      return {
-        hero: ground('[data-testid="hero"]'),
-        strip: ground('[data-testid="proof-strip"]'),
-        paper: getComputedStyle(document.documentElement).getPropertyValue(
-          '--color-paper',
-        ),
-      }
-    })
-
-    expect(
-      grounds.strip,
-      'the proof strip is on a different ground from the hero, so a neutral ' +
-        'band was hedged in between them',
-    ).toBe(grounds.hero)
-    expect(
-      grounds.strip,
-      'the proof strip is on paper, not on the drenched hero field',
-    ).not.toBe(grounds.paper.trim())
-  })
+  // DELETED: "sits on the same drenched field as the hero". The previous
+  // design alternated a drenched hero field with a neutral paper ground, and
+  // this test held the proof strip to the hero's ground so nobody hedged a
+  // neutral band between them. The terminal design has one ground for the
+  // whole document; hero and proof strip cannot disagree about it.
 })
 
 test.describe('selected work', () => {
@@ -251,9 +271,9 @@ test.describe('selected work', () => {
     }
   })
 
-  test('heads the section', async ({ page }) => {
+  test('heads the section with its path', async ({ page }) => {
     await expect(
-      page.getByRole('heading', { name: 'Selected work', exact: true }),
+      page.getByRole('heading', { name: 'Work that ships', exact: true }),
     ).toHaveCount(1)
   })
 })
@@ -261,7 +281,7 @@ test.describe('selected work', () => {
 test.describe('capabilities', () => {
   test('states three, as headings with prose beneath', async ({ page }) => {
     await expect(
-      page.getByRole('heading', { name: 'What I do', exact: true }),
+      page.getByRole('heading', { name: 'What I actually do', exact: true }),
     ).toHaveCount(1)
 
     const statements = page.getByTestId('capability')
@@ -414,33 +434,12 @@ test.describe('standing rules', () => {
       'PRODUCT.md bans em dashes in every piece of interface copy',
     ).toBe(false)
   })
-
-  test('commits at least 30 percent of its surface to colour', async ({
-    page,
-  }) => {
-    // DESIGN.md, Color: one saturated colour carries 30 to 50 percent of
-    // surface area through full-bleed section fields, "not a trim accent", and
-    // the alternation "cannot quietly erode during implementation". This is
-    // what stops it eroding: it is measured, in the browser, against whatever
-    // sections exist.
-    const share = await page.evaluate(() => {
-      let drenched = 0
-      let total = 0
-      for (const el of document.querySelectorAll<HTMLElement>(
-        '[data-testid^="section-field-"]',
-      )) {
-        const h = el.getBoundingClientRect().height
-        total += h
-        if (el.dataset.tone !== 'paper') drenched += h
-      }
-      return total ? drenched / total : 0
-    })
-
-    expect(
-      share,
-      `${(share * 100).toFixed(0)} percent of the page is drenched. Below 30 ` +
-        `the colour is a trim accent rather than the commitment DESIGN.md ` +
-        `specifies`,
-    ).toBeGreaterThanOrEqual(0.3)
-  })
+  // DELETED: "commits at least 30 percent of its surface to colour". It
+  // measured the share of the page carried by non-paper section fields, which
+  // was how the previous design enforced its committed colour bands. The
+  // terminal design commits its one colour differently: a warm near-black
+  // ground for the whole document with orange as a fill and display accent.
+  // There are no section-field bands to measure, and the ground is 100 percent
+  // of the surface by construction. The accent's legibility is gated instead,
+  // pair by pair, by scripts/contrast.mjs.
 })

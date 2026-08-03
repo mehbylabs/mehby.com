@@ -42,7 +42,7 @@ type FocusMeasurement = {
 
 declare global {
   interface Window {
-    measureFocus: () => FocusMeasurement | null
+    measureFocus: () => Promise<FocusMeasurement | null>
   }
 }
 
@@ -101,7 +101,19 @@ const scan = (page: Page) =>
     .analyze()
 
 /** Everything the site itself renders, and nothing the dev server adds. */
-const SITE_ROOTS = ['main', 'footer']
+const SITE_ROOTS = ['header', 'main', 'footer']
+
+/**
+ * The same landmarks, as query prefixes for the traversal tests.
+ *
+ * Not interchangeable with SITE_ROOTS. The hero is a `<header>` inside
+ * `<main>`, so the bare `header` selector matches both the site navigation and
+ * the hero, and every focusable element inside the hero would be counted
+ * twice, once per matching root. The site nav carries the `.site-nav` class,
+ * so this list targets it precisely while still scoping to the same three
+ * landmarks.
+ */
+const QUERY_ROOTS = ['header.site-nav', 'main', 'footer']
 
 const visit = async (page: Page, path: string) => {
   await installProbes(page)
@@ -110,6 +122,14 @@ const visit = async (page: Page, path: string) => {
   // commits. Scanning the pre-hydration document measures a page no visitor
   // uses. See `hydrated` in support/probes.
   await hydrated(page)
+  // The contact form's Send button is really `disabled` until a passive effect
+  // runs, and that effect can land after the three-frame settle above. The
+  // focus and keyboard walks count focusable elements, so a button that
+  // changes its disabled state mid-walk breaks the count. The contact spec
+  // waits for the same barrier; this makes the a11y walks wait too. Only the
+  // contact page has the button, so the wait is conditional.
+  const submit = page.getByTestId('contact-submit')
+  if ((await submit.count()) > 0) await expect(submit).toBeEnabled()
 }
 
 test.describe('axe, WCAG 2.2 AA, every prerendered page', () => {
@@ -147,7 +167,7 @@ test.describe('axe, in the states it cannot reach on its own', () => {
       'data-status',
       'invalid',
     )
-    await expect(page.getByLabel('Name', { exact: true })).toHaveAttribute(
+    await expect(page.getByLabel('$ Name', { exact: true })).toHaveAttribute(
       'aria-invalid',
       'true',
     )
@@ -165,7 +185,7 @@ test.describe('axe, in the states it cannot reach on its own', () => {
   test('the 404 page', async ({ page }) => {
     await visit(page, '/no-such-page')
     await expect(page.getByTestId('failure-title')).toHaveText(
-      'No page at this address',
+      'error: page not found',
     )
 
     const results = await scan(page)
@@ -289,16 +309,20 @@ test.describe('the focus ring is visible on the ground it lands on', () => {
     test(`${label} (${path})`, async ({ page }) => {
       await visit(page, path)
 
-      // The painted ground behind an element is the nearest ancestor whose
-      // background is not transparent. Reading the element's own background
-      // would report `rgba(0, 0, 0, 0)` for every link on the site and measure
-      // the ring against nothing.
+      // The ground the focus ring is drawn on. The ring is the outline, which
+      // sits outside the element's border box (with offset), so it is never
+      // drawn on the element's own background: an orange ring around an orange
+      // button still sits on the page behind it. Starting the walk at the
+      // parent finds that ground. Reading the element's own background would
+      // report rgba(0, 0, 0, 0) for every link on the site and measure the
+      // ring against nothing, and it would report the button's own fill for a
+      // filled control, which the ring does not touch.
       await page.evaluate(() => {
-        window.measureFocus = () => {
+        window.measureFocus = async () => {
           const el = document.activeElement as HTMLElement | null
           if (!el || el === document.body) return null
 
-          let node: HTMLElement | null = el
+          let node: HTMLElement | null = el.parentElement
           let ground = getComputedStyle(document.body).backgroundColor
           while (node) {
             const bg = getComputedStyle(node).backgroundColor
@@ -307,6 +331,23 @@ test.describe('the focus ring is visible on the ground it lands on', () => {
               break
             }
             node = node.parentElement
+          }
+
+          // The outline colour can transition in: a shadcn button carries
+          // `transition-all`, and its resting outline colour is currentColor,
+          // the dark label, so the first frame after focus lands is the old
+          // colour, not the ring a user ever sees. Sample until it holds
+          // still, the same settle `spec-table.spec.ts` puts on hover.
+          const readOutline = () => getComputedStyle(el).outlineColor
+          let previous = readOutline()
+          let held = 0
+          const started = performance.now()
+          while (performance.now() - started < 2000) {
+            await new Promise((resolve) => setTimeout(resolve, 30))
+            const current = readOutline()
+            held = current === previous ? held + 1 : 0
+            previous = current
+            if (held >= 3) break
           }
 
           const style = getComputedStyle(el)
@@ -332,7 +373,7 @@ test.describe('the focus ring is visible on the ground it lands on', () => {
             ])
             .filter((el) => el.tabIndex >= 0 && el.offsetParent !== null)
             .length,
-        SITE_ROOTS,
+        QUERY_ROOTS,
       )
 
       expect(
@@ -348,7 +389,6 @@ test.describe('the focus ring is visible on the ground it lands on', () => {
         if (m === null) break
         measurements.push(m)
       }
-
       expect(
         measurements.length,
         `tabbing through ${path} reached ${measurements.length} of ${stops} ` +
@@ -408,7 +448,7 @@ test.describe('the keyboard', () => {
               el.dataset.tabProbe = String(index)
               return String(index)
             }),
-        SITE_ROOTS,
+        QUERY_ROOTS,
       )
 
       expect(
@@ -495,7 +535,7 @@ test.describe('every interactive element has an accessible name', () => {
       // guess at what it would contain, which is why this is not done by
       // reading attributes off the DOM.
       const trees = await Promise.all(
-        SITE_ROOTS.map((root) => page.locator(root).ariaSnapshot()),
+        QUERY_ROOTS.map((root) => page.locator(root).ariaSnapshot()),
       )
       const snapshot = trees.join('\n')
 
@@ -537,7 +577,7 @@ test.describe('headings', () => {
               level: Number(el.tagName.slice(1)),
               text: el.textContent.trim().slice(0, 60),
             })),
-        SITE_ROOTS,
+        QUERY_ROOTS,
       )
 
       const h1s = headings.filter((h) => h.level === 1)
@@ -592,7 +632,7 @@ test.describe('images and placeholders carry meaningful alternative text', () =>
                 el.getAttribute('aria-hidden') === 'true',
               src: el.getAttribute('src') ?? '',
             })),
-        SITE_ROOTS,
+        QUERY_ROOTS,
       )
 
       for (const image of described) {

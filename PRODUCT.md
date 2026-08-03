@@ -58,12 +58,18 @@ introductions that repeat the section title.
 
 ## Anti-references
 
-- **The dark developer portfolio.** Near-black background, monospace everywhere, terminal
-  green or electric blue, a subtle dot grid, a gradient headline, a glow behind the hero.
-  This is the first-order default for the category and it is what the site must not be.
-- **The editorial-typographic brand page.** Display serif in italic, small tracked uppercase
-  labels above every section, ruled three-column layouts, monochrome, no imagery. This is the
-  second-order default, the trap for people with taste, and it is equally out.
+- **The generic terminal.** Green-on-black, monospace for everything, ASCII art, a glow
+  behind the hero, neon accents. This is the first-order reflex for this category and it
+  is what the site must not be. The terminal direction here is structural, not costumed:
+  a warm near-black ground, one warm orange, amber prompt glyphs, and Archivo carrying
+  the statements, with mono earned by data rather than worn as a costume.
+- **The vibecoded SaaS look.** Gradient mesh, glassmorphism, pill buttons, floating
+  product mockups, a "trusted by" logo strip. Reads as a template, which is fatal for a
+  site whose whole job is to prove real work.
+- **The editorial-typographic brand page.** Display serif in italic, small tracked
+  uppercase labels above every section, ruled three-column layouts, monochrome, no
+  imagery. This is the second-order default, the trap for people with taste, and it is
+  equally out.
 - **The badge wall.** A grid of framework logos or skill chips presented as capability.
   Reads as a checklist rather than judgement.
 - **The metric hero.** Enormous number, small label, three supporting stats.
@@ -73,11 +79,12 @@ introductions that repeat the section title.
 
 1. **Proof over claim.** Every assertion is anchored to something a visitor can click,
    verify, or read. A dead or stale link is worse than no link, so the live-links strip is
-   checked at build time and degrades honestly rather than lying.
+   checked at build time and re-checked at request time, and degrades honestly rather
+   than lying.
 
-2. **Specification, not gallery.** The work is presented the way the work actually is:
-   tabular, precise, annotated. Case studies read as specification documents, not as
-   screenshots with captions.
+2. **Session, not gallery.** The work is presented the way the work actually is:
+   tabular, precise, annotated. Case studies read as specification documents with a
+   specification table first, not as screenshots with captions.
 
 3. **Judgement over inventory.** Capability is expressed through what was chosen and why,
    named in context inside case studies. Never as a fixed stack list, because the owner's
@@ -117,12 +124,13 @@ instinct and must survive into future sessions.
 
 ## Accessibility & Inclusion
 
-- WCAG 2.2 AA minimum, verified rather than assumed. Both colour directions, ink on paper
-  and paper on ultramarine, are contrast-checked before any component is built on them.
+- WCAG 2.2 AA minimum, verified rather than assumed. The ground pairs, text on bg and
+  the structural edge-strong on bg, are contrast-checked before any component is built
+  on them.
 - `prefers-reduced-motion` disables all entrance and scroll motion. No parallax at any
   setting.
-- Full keyboard operability with visible focus states that work on both the paper and the
-  ultramarine grounds.
+- Full keyboard operability with visible focus states that work on the warm near-black
+  ground.
 - Semantic landmarks and a logical heading order. The specification tables use real table
   semantics with proper headers, not divs.
 - All imagery carries alt text written in the site's voice, describing what the image shows
