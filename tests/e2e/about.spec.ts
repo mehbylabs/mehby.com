@@ -28,7 +28,7 @@ test.describe('the page', () => {
 
     await expect(body.locator('p')).toHaveCount(4)
     await expect(body.locator('p').first()).toContainText(
-      'full stack product engineer based in Tunisia',
+      'full stack product engineer',
     )
     await expect(body.locator('p').nth(1)).toContainText(
       'the rules are not negotiable',

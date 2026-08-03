@@ -67,9 +67,9 @@ const PAGES = [
   {
     path: '/about',
     file: 'about',
-    title: 'About Mohamed Elhedi Ben Yedder, product engineer in Tunisia',
+    title: 'About Mohamed Elhedi Ben Yedder, full stack product engineer',
     description:
-      'I am a full stack product engineer in Tunisia. I work in React and TypeScript on the front, Python on the back, and I own the infrastructure underneath when the product needs it.',
+      'I am a full stack product engineer. I work in React and TypeScript on the front, Python on the back, and I own the infrastructure underneath when the product needs it.',
     image: '/og/default.png',
   },
   {

@@ -23,7 +23,7 @@ import { pageHead } from './-seo'
 // The one prose block. Written here rather than inline so a paragraph cannot
 // be added in the middle of markup without going past the list.
 const PARAGRAPHS = [
-  'I am a full stack product engineer based in Tunisia, and the CTO and co-founder of CoaChess, a chess coaching platform I have been building since 2022.',
+  'I am a full stack product engineer, and the CTO and co-founder of CoaChess, a chess coaching platform I have been building since 2022.',
   'My work tends toward domains with real rules. Chess federation pairings, national electricity tariffs, tax exemptions, agent protocols. The common thread is that the rules are not negotiable and encoding them faithfully is most of the job. Software that gets those subtly wrong is worse than software that ships late.',
   'I work in React and TypeScript on the front, Python on the back, and I am comfortable owning the infrastructure underneath when the product needs it. I pick tools per problem rather than carrying a fixed stack from job to job.',
   'I am available for freelance product work.',
@@ -48,9 +48,9 @@ export const Route = createFileRoute('/about')({
   component: About,
   head: () =>
     pageHead({
-      title: 'About Mohamed Elhedi Ben Yedder, product engineer in Tunisia',
+      title: 'About Mohamed Elhedi Ben Yedder, full stack product engineer',
       description:
-        'I am a full stack product engineer in Tunisia. I work in React and TypeScript on the front, Python on the back, and I own the infrastructure underneath when the product needs it.',
+        'I am a full stack product engineer. I work in React and TypeScript on the front, Python on the back, and I own the infrastructure underneath when the product needs it.',
       path: '/about',
     }),
 })
@@ -69,8 +69,7 @@ function About() {
           Mohamed Elhedi Ben Yedder
         </h1>
         <p className="log-line" style={{ marginTop: '0.5rem' }}>
-          <b>Full stack product engineer</b> / based in Tunisia / CTO and
-          co-founder of CoaChess
+          <b>Full stack product engineer</b> / CTO and co-founder of CoaChess
         </p>
       </section>
 
@@ -110,7 +109,7 @@ function About() {
                 decoding="async"
               />
               <figcaption className="log-line">
-                <b>~/avatar</b> Tunisia
+                <b>~/avatar</b> Mohamed Elhedi Ben Yedder
               </figcaption>
             </figure>
           </div>

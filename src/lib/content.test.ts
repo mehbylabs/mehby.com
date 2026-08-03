@@ -49,7 +49,7 @@ describe('caseStudySchema', () => {
 
   it('rejects an em dash in the title', () => {
     expect(() =>
-      caseStudySchema.parse({ ...valid, title: 'Volt \u2014 Tunisia' }),
+      caseStudySchema.parse({ ...valid, title: 'Volt \u2014 Charge' }),
     ).toThrow(/em dash/i)
   })
 
