@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { expect, test } from '@playwright/test'
-import { clientDir, htmlFor } from './support/built'
+import { BUILD_DIR, clientDir, htmlFor } from './support/built'
 import { getCaseStudies } from '#/lib/content'
 
 // Prerendering, asserted against the files on disk.
@@ -22,6 +22,9 @@ import { getCaseStudies } from '#/lib/content'
 // this file deliberately fails rather than skips when it is absent, because a
 // test that quietly proves nothing is worse than no test. See support/built.ts
 // for where that directory is and why it is found rather than named.
+
+/** The one origin this site publishes itself under. */
+const SITE = 'https://mehby.com'
 
 /** Every path the build prerenders and advertises. */
 const PAGES = [
@@ -96,7 +99,7 @@ test.describe('every address the site publishes is one the gate checks', () => {
     // not the gate's business. mailto is not an HTTP resource; the canonical
     // and og:url point at this site's own pages, which prerender.spec.ts
     // already proves exist.
-    const OWN_ORIGIN = 'https://mehby.com'
+    const OWN_ORIGIN = SITE
 
     const unverified = new Map<string, Array<string>>()
     for (const { path } of PAGES) {
@@ -160,6 +163,119 @@ test.describe('the scratch harness is not published', () => {
       'the primitives harness was prerendered. It is a test fixture, not a ' +
         'page, and prerendering it publishes it',
     ).toBe(false)
+  })
+})
+
+test.describe('the routing table Vercel is handed', () => {
+  // config.json is the whole reason /sitemap.xml stopped being a 404, so it is
+  // asserted rather than assumed.
+  //
+  // On node-server the sitemap sat on disk and answered 404 over HTTP, because
+  // nitro bakes its public-asset manifest before the TanStack Start plugin
+  // writes the file, so nothing in the manifest knew it existed and every
+  // request fell through to the SSR handler. The vercel preset does not fix
+  // that manifest. It routes around it: `{ handle: "filesystem" }` runs before
+  // the catch-all, so Vercel serves whatever is in the static directory
+  // whether or not nitro's manifest ever heard of it.
+  //
+  // That means the fix is one line in a generated file, and the line is
+  // ordering-sensitive. If the catch-all were ever emitted above the
+  // filesystem handle, every static file on this site would go back to being
+  // rendered by the app, and the only symptom would be a sitemap and a
+  // robots.txt that 404 in production while passing every test that reads
+  // disk.
+  const config = () =>
+    JSON.parse(readFileSync(join(BUILD_DIR, 'config.json'), 'utf8')) as {
+      routes: Array<{ handle?: string; src?: string; dest?: string }>
+    }
+
+  test('serves files before it falls through to the server function', () => {
+    const routes = config().routes
+
+    const filesystem = routes.findIndex(
+      (route) => route.handle === 'filesystem',
+    )
+    const catchAll = routes.findIndex(
+      (route) => route.src === '/(.*)' && route.dest === '/__server',
+    )
+
+    expect(
+      filesystem,
+      'config.json has no `{ handle: "filesystem" }` entry, so nothing serves ' +
+        'the static output and every request is rendered by the app',
+    ).toBeGreaterThanOrEqual(0)
+    expect(
+      catchAll,
+      'config.json has no catch-all to the server function, so anything that ' +
+        'is not a prerendered file 404s',
+    ).toBeGreaterThanOrEqual(0)
+    expect(
+      filesystem,
+      'the catch-all is matched before the filesystem handle, so sitemap.xml ' +
+        'and robots.txt are handed to the SSR router, which has no route for ' +
+        'either and answers 404. This is exactly the node-server failure the ' +
+        'preset was changed to avoid',
+    ).toBeLessThan(catchAll)
+  })
+})
+
+test.describe('robots.txt', () => {
+  // Absent entirely before this. Not a preset problem and not fixed by one: no
+  // file existed to serve, so both presets were right to 404 it.
+  const robots = () => {
+    const file = join(clientDir(), 'robots.txt')
+    expect(
+      existsSync(file),
+      'no robots.txt was emitted. public/robots.txt is copied into the static ' +
+        'output by the build, so its absence means the file was deleted rather ' +
+        'than that the copy failed',
+    ).toBe(true)
+    return readFileSync(file, 'utf8')
+  }
+
+  test('names a sitemap that was actually built, at the address it claims', () => {
+    const line = robots().match(/^Sitemap:\s*(\S+)$/m)
+
+    expect(
+      line?.[1],
+      'robots.txt declares no Sitemap. A crawler that has not already found ' +
+        'sitemap.xml has no way to, which is most of what this file is for',
+    ).toBeTruthy()
+
+    const url = new URL(line![1])
+
+    // The origin, checked against the one the pages themselves declare. Two
+    // places write this host down and they can disagree silently: a robots.txt
+    // pointing at the wrong origin is still a valid robots.txt.
+    expect(
+      url.origin,
+      `robots.txt points at ${url.origin}, but every canonical on the site ` +
+        `points at ${SITE}`,
+    ).toBe(SITE)
+
+    // And the file is really there. An absolute URL to a 404 is worse than no
+    // Sitemap line, because a crawler stops looking once it has been given one.
+    expect(
+      existsSync(join(clientDir(), url.pathname)),
+      `robots.txt advertises ${url.href} but nothing was emitted at ` +
+        `${url.pathname}`,
+    ).toBe(true)
+  })
+
+  test('closes nothing the site is prerendered to expose', () => {
+    // The site is prerendered so a crawler that does not run JavaScript can
+    // read it. A Disallow with a path in it would be undoing that, and it is
+    // the kind of line that gets added during a staging deploy and left.
+    const disallowed = [...robots().matchAll(/^Disallow:\s*(\S+)$/gm)].map(
+      (match) => match[1],
+    )
+
+    expect(
+      disallowed,
+      `robots.txt closes ${disallowed.join(', ')} to crawlers. Every page on ` +
+        `this site is prerendered specifically to be readable without ` +
+        `JavaScript; a Disallow is working against that`,
+    ).toEqual([])
   })
 })
 
