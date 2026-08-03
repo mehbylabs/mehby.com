@@ -113,7 +113,7 @@ test.describe('nothing spills out of the column it was given', () => {
 })
 
 test.describe('the hero display line', () => {
-  // The one display-step line on the site, at up to 7.5rem, set in Archivo
+  // The one display-step line on the site, at up to 6.4rem, set in Archivo
   // Expanded. It is the element most likely to overflow, because a clamp on
   // font-size is not a constraint on the width of the longest word.
   for (const { width } of WIDTHS) {

@@ -28,7 +28,7 @@ const TOKENS: Record<string, string> = {
   '--font-body': "'Archivo', system-ui, sans-serif",
   '--font-data': "'Martian Mono', ui-monospace, monospace",
 
-  '--text-display': 'clamp(3rem, 9vw, 7.5rem)',
+  '--text-display': 'clamp(2.8rem, 7.6vw, 6.4rem)',
   '--text-h1': 'clamp(2.25rem, 4.5vw, 3.75rem)',
   '--text-h2': 'clamp(1.75rem, 2.8vw, 2.5rem)',
   '--text-h3': '1.333rem',

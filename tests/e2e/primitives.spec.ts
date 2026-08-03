@@ -49,7 +49,7 @@ const TOKENS = {
 } as const
 
 const LEADING = {
-  '--leading-display': 0.95,
+  '--leading-display': 1.02,
   '--leading-h1': 1.05,
   '--leading-h2': 1.15,
   '--leading-body': 1.6,
@@ -623,7 +623,7 @@ test.describe('the tokens these primitives depend on', () => {
     // change. What matters is that each token resolves on the element that
     // consumes it, because the failure the old comment described is real and
     // is reached the other way: a declaration deleted from styles.css leaves
-    // the heading inheriting 1.6, which at --text-display is a 12rem line box.
+    // the heading inheriting 1.6, which at --text-display is a 10rem line box.
     //
     // One element per token, and each is the only place that token is used at
     // this size on the site.
@@ -657,7 +657,7 @@ test.describe('the tokens these primitives depend on', () => {
         `${consumer.selector} on ${consumer.path} resolves to a leading of ` +
           `${resolved.toFixed(3)} rather than ${consumer.token}. A missing ` +
           `line-height declaration inherits 1.6, which at --text-display is a ` +
-          `12rem line box`,
+          `10rem line box`,
       ).toBeCloseTo(LEADING[consumer.token], 2)
     }
   })

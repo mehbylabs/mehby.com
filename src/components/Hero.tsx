@@ -40,10 +40,10 @@ export function Hero() {
         <p className="hero-credential">CTO and co-founder of CoaChess</p>
       </div>
 
-      {/* The one display-step line on the site. Its size, its width axis and
-          its leading are set together in .hero-display: at up to 7.5rem the
-          inherited body leading of 1.6 is a 12rem line box, and Archivo's
-          Expanded cut is what DESIGN.md reserves for this step. */}
+      {/* The one display-step line on the site. Its size, its width axis, its
+          leading and its measure are set together in .hero-display: at up to
+          6.4rem the inherited body leading of 1.6 is a 10rem line box, and
+          Archivo's Expanded cut is what DESIGN.md reserves for this step. */}
       <p className="hero-display" data-testid="hero-display" style={step(1)}>
         I build and ship full stack products, end to end.
       </p>

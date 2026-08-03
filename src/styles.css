@@ -40,7 +40,7 @@
   --font-body: 'Archivo', system-ui, sans-serif;
   --font-data: 'Martian Mono', ui-monospace, monospace;
 
-  --text-display: clamp(3rem, 9vw, 7.5rem);
+  --text-display: clamp(2.8rem, 7.6vw, 6.4rem);
   --text-h1: clamp(2.25rem, 4.5vw, 3.75rem);
   --text-h2: clamp(1.75rem, 2.8vw, 2.5rem);
   --text-h3: 1.333rem;
@@ -50,7 +50,7 @@
 
   /* Leading is a token, not an afterthought. The --text-* tokens set font size
      only, so without these everything inherits the body value of 1.6 — which at
-     --text-display, up to 7.5rem, is a 12rem line box.
+     --text-display, up to 6.4rem, is a 10rem line box.
 
      `--leading-*` is a real Tailwind 4 theme namespace (it is where the stock
      --leading-tight/snug/normal live), so each of these also generates a
@@ -58,7 +58,11 @@
      tests/e2e/primitives.spec.ts rather than taken on trust: if the namespace
      were wrong the class would compile to nothing and headings would silently
      fall back to 1.6. */
-  --leading-display: 0.95;
+  /* 1.02, not the 0.95 this shipped with. Below 1 the line box is shorter
+     than the type it holds, and with the Expanded cut of Archivo at display
+     size the descenders of one line came within a few pixels of the cap
+     heights of the next. It read as damage rather than as tension. */
+  --leading-display: 1.02;
   --leading-h1: 1.05;
   --leading-h2: 1.15;
   --leading-body: 1.6;
@@ -479,15 +483,32 @@ body {
     line-height: var(--leading-h2);
   }
 
-  /* The one display-step line on the site, and the three facts that make it
-     one. Size without leading is a 12rem line box at the top of the clamp;
-     leading without the width axis is Archivo's normal cut at a size DESIGN.md
-     reserves for Expanded; either without the family is system-ui. */
+  /* The one display-step line on the site, and the facts that make it one.
+     Size without leading is a 10rem line box at the top of the clamp; leading
+     without the width axis is Archivo's normal cut at a size DESIGN.md reserves
+     for Expanded; either without the family is system-ui.
+
+     The measure is the fourth, and it is the one that was wrong. At 18ch this
+     sentence broke into four lines, two of them a couple of words long, and a
+     four-line ragged block at display size reads as a paragraph that has been
+     enlarged rather than as a statement. 16ch is the approved comp's value and
+     puts it on three, with the first two nearly full.
+
+     125% was the widest instance the variable font carries and it is what
+     forced the narrow measure: at the top of the clamp there was no room for
+     more. 112% is the width the comp sets, and the same one .case-title and
+     .page-title already use, so the display step is now the same cut as the
+     rest of the structural type rather than a different one.
+
+     No `text-wrap: balance`. It evens the lines against each other, which is
+     the opposite of what a three-line block with two full lines wants: it pulls
+     words down out of line one to shorten it toward the length of line three.
+     The greedy wrap is the rag the comp was approved with. */
   .hero-display {
-    max-inline-size: 18ch;
+    max-inline-size: 16ch;
     font-family: var(--font-display);
     font-size: var(--text-display);
-    font-stretch: 125%;
+    font-stretch: 112%;
     font-weight: 700;
     line-height: var(--leading-display);
     letter-spacing: -0.02em;
@@ -495,7 +516,6 @@ body {
        it reads better; against a page that hangs off one left margin it does
        not. */
     text-align: start;
-    text-wrap: balance;
   }
 
   .hero-subline {

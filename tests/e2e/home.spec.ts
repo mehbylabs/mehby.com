@@ -66,11 +66,12 @@ test.describe('hero', () => {
   test('sets the display line at the display step, expanded, on display leading', async ({
     page,
   }) => {
-    // Three facts that are only correct together. DESIGN.md gives the display
+    // Four facts that are only correct together. DESIGN.md gives the display
     // step its own leading token precisely because --text-display reaches
-    // 7.5rem and would otherwise inherit the body value of 1.6, producing a
-    // 12rem line box; and it puts Archivo's Expanded cut at the top of the
-    // width axis for display sizes. A line that loses any one of the three
+    // 6.4rem and would otherwise inherit the body value of 1.6, producing a
+    // 10rem line box; it sets the width axis to the 112% the rest of the
+    // structural type uses; and it caps the measure so the sentence breaks
+    // into three lines rather than four. A line that loses any one of them
     // still renders.
     const line = page.getByTestId('hero-display')
 
@@ -93,6 +94,14 @@ test.describe('hero', () => {
         ratio: parseFloat(s.lineHeight) / parseFloat(s.fontSize),
         stretch: parseFloat(s.fontStretch),
         family: s.fontFamily,
+        // Line count, derived from the rendered box rather than from the copy.
+        // The measure is the fix for the cramped headline and it is the part
+        // with no computed property of its own: `max-inline-size: 16ch` is
+        // still in the style when the wrap it exists to produce is not, if the
+        // width axis or the size moves under it.
+        lines: Math.round(
+          el.getBoundingClientRect().height / parseFloat(s.lineHeight),
+        ),
       }
     })
 
@@ -102,17 +111,24 @@ test.describe('hero', () => {
     ).toBeCloseTo(measured.expected, 1)
     expect(
       measured.ratio,
-      'the display line is not on --leading-display (0.95). At this size the ' +
-        'body value of 1.6 is a line box two thirds taller than the type',
-    ).toBeCloseTo(0.95, 2)
+      'the display line is not on --leading-display (1.02). Below 1 the ' +
+        'descenders of one line reach the caps of the next, and at the body ' +
+        'value of 1.6 the line box is two thirds taller than the type',
+    ).toBeCloseTo(1.02, 2)
     expect(
       measured.stretch,
-      'the display line is not at the top of Archivo\u2019s width axis (125%), ' +
-        'so it is not the Expanded cut DESIGN.md reserves for display sizes',
-    ).toBeCloseTo(125, 1)
+      'the display line is not on Archivo\u2019s 112% width instance, so it is ' +
+        'not the Expanded cut DESIGN.md reserves for display sizes',
+    ).toBeCloseTo(112, 1)
     expect(measured.family, 'the display line is not set in Archivo').toContain(
       'Archivo',
     )
+    expect(
+      measured.lines,
+      `the display line renders on ${measured.lines} lines at this viewport. ` +
+        'It was rejected at four, two of them a couple of words long; the ' +
+        'measure is capped at 16ch to put it on three',
+    ).toBe(3)
   })
 
   test('offers exactly two ways forward, to the work and to the owner', async ({
