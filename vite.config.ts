@@ -159,6 +159,31 @@ const config = defineConfig({
       // node-server all of it went through the SSR handler, which is why
       // /sitemap.xml answered 404 while sitting on disk.
       preset: 'vercel',
+      // Pinned, because otherwise it is decided by how somebody typed the
+      // build command, and the two answers are different products.
+      //
+      // Nitro resolves this itself when it is not set, and the rule is
+      // `"Bun" in globalThis ? "bun1.x" : "nodejs<major>.x"` off the process
+      // running the build. Measured on this repository, same commit, same
+      // machine:
+      //
+      //   bun run build          ->  "runtime": "nodejs22.x"
+      //   bun --bun run build    ->  "runtime": "bun1.x"
+      //
+      // The difference is that `bun run` honours the `vite` bin's node
+      // shebang and `bun --bun` overrides it, so the flag that looks like a
+      // local speed preference silently changes which serverless runtime the
+      // deployed function asks Vercel for. README.md recommended the second
+      // form until this was found. Nothing would have failed: both build,
+      // both deploy, and the SSR handler would simply be running somewhere
+      // nobody chose.
+      //
+      // nodejs22.x rather than bun1.x because the server half of this site is
+      // React 19 SSR plus resend and zod, and Node is the runtime that
+      // combination is exercised on everywhere else, including in this repo's
+      // own tests. Bump it deliberately, not by changing a build command.
+      // tests/e2e/prerender.spec.ts asserts what was emitted.
+      vercel: { functions: { runtime: 'nodejs22.x' } },
       rollupConfig: { external: [/^@sentry\//] },
       // `compressPublicAssets` is deliberately absent, and its absence is a
       // decision rather than an oversight.

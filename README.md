@@ -6,7 +6,7 @@ To run this application:
 
 ```bash
 bun install
-bun --bun run dev
+bun run dev
 ```
 
 # Building For Production
@@ -14,7 +14,7 @@ bun --bun run dev
 To build this application for production:
 
 ```bash
-bun --bun run build
+bun run build
 ```
 
 ## Styling
@@ -35,9 +35,9 @@ If you prefer not to use Tailwind CSS:
 This project uses [eslint](https://eslint.org/) and [prettier](https://prettier.io/) for linting and formatting. Eslint is configured using [tanstack/eslint-config](https://tanstack.com/config/latest/docs/eslint). The following scripts are available:
 
 ```bash
-bun --bun run lint
-bun --bun run format
-bun --bun run check
+bun run lint
+bun run format
+bun run check
 ```
 
 ## Testing

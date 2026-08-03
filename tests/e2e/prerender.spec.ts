@@ -217,6 +217,35 @@ test.describe('the routing table Vercel is handed', () => {
         'preset was changed to avoid',
     ).toBeLessThan(catchAll)
   })
+
+  test('asks for the serverless runtime we chose, not the one the build ran on', () => {
+    // Unpinned, nitro resolves this from the process doing the build:
+    // `"Bun" in globalThis ? "bun1.x" : "nodejs<major>.x"`. Measured on this
+    // repository, same commit, same machine:
+    //
+    //   bun run build         ->  nodejs22.x
+    //   bun --bun run build   ->  bun1.x
+    //
+    // So a flag that reads as a local speed preference decides which runtime
+    // the deployed function asks Vercel for, and nothing fails either way:
+    // both build, both deploy, and the SSR handler runs somewhere nobody
+    // chose. vite.config.ts pins it; this is what notices if the pin is
+    // removed, because the symptom otherwise is a diff in a generated file
+    // nobody reads.
+    const config = JSON.parse(
+      readFileSync(
+        join(BUILD_DIR, 'functions/__server.func/.vc-config.json'),
+        'utf8',
+      ),
+    ) as { runtime?: string }
+
+    expect(
+      config.runtime,
+      'the emitted function runtime is not the pinned one. If this says ' +
+        '"bun1.x", the `vercel.functions.runtime` pin has been removed from ' +
+        'vite.config.ts and the build was run under `bun --bun`',
+    ).toBe('nodejs22.x')
+  })
 })
 
 test.describe('robots.txt', () => {
