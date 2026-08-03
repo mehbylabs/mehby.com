@@ -232,7 +232,7 @@ test.describe('the routing table Vercel is handed', () => {
     // chose. vite.config.ts pins it; this is what notices if the pin is
     // removed, because the symptom otherwise is a diff in a generated file
     // nobody reads.
-    const config = JSON.parse(
+    const fn = JSON.parse(
       readFileSync(
         join(BUILD_DIR, 'functions/__server.func/.vc-config.json'),
         'utf8',
@@ -240,7 +240,7 @@ test.describe('the routing table Vercel is handed', () => {
     ) as { runtime?: string }
 
     expect(
-      config.runtime,
+      fn.runtime,
       'the emitted function runtime is not the pinned one. If this says ' +
         '"bun1.x", the `vercel.functions.runtime` pin has been removed from ' +
         'vite.config.ts and the build was run under `bun --bun`',
