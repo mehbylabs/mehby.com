@@ -41,42 +41,46 @@ const hex = (c) =>
     .join('')
 
 const TOKENS = {
-  paper: [0.97, 0.008, 85],
-  ink: [0.22, 0.02, 265],
-  ultramarine: [0.52, 0.19, 264],
-  'ultramarine-deep': [0.34, 0.15, 264],
-  rule: [0.88, 0.01, 85],
-  'rule-strong': [0.62, 0.012, 85],
-  signal: [0.56, 0.16, 45],
-  // On-colour variants. The ultramarine ground covers 30 to 50 percent of the
-  // site by design, so every role that appears on it needs its own value. The
-  // paper-ground tokens above are unusable there: signal measures 1.15 and
-  // rule-strong 1.57 against ultramarine.
-  'rule-on-color': [0.82, 0.05, 264],
-  'signal-on-color': [0.85, 0.13, 70],
+  // Direction: terminal, engineered. Warm near-black ground, one loud orange,
+  // amber prompts, and green and red reserved for live status. Mono carries
+  // the terminal voice, Archivo carries the statements. Deliberately not the
+  // generic green-on-black cliche: the ground is warm, not pure black.
+  bg: [0.145, 0.01, 70],
+  panel: [0.185, 0.012, 70],
+  'panel-lift': [0.225, 0.014, 70],
+  text: [0.93, 0.012, 75],
+  muted: [0.64, 0.02, 72],
+  // Orange is a fill and a display accent. Button labels are always bg, which
+  // measures 5.90, because text on orange is only 2.73.
+  orange: [0.66, 0.2, 45],
+  amber: [0.85, 0.13, 85],
+  green: [0.75, 0.16, 150],
+  red: [0.6, 0.2, 25],
+  // edge is decorative only, 1.75 on bg. Structural borders use edge-strong.
+  edge: [0.35, 0.015, 70],
+  'edge-strong': [0.52, 0.02, 70],
 }
 
 // threshold: 4.5 body text, 3.0 large text and non-text UI.
 const PAIRS = [
-  ['ink', 'paper', 4.5],
-  ['ultramarine', 'paper', 4.5],
-  ['paper', 'ultramarine', 4.5],
-  ['paper', 'ultramarine-deep', 4.5],
-  ['ultramarine-deep', 'paper', 4.5],
-  ['signal', 'paper', 4.5],
-  ['ink', 'rule', 4.5],
-  ['rule-strong', 'paper', 3.0],
+  ['text', 'bg', 4.5],
+  ['muted', 'bg', 4.5],
+  ['text', 'panel', 4.5],
+  ['muted', 'panel', 4.5],
+  ['amber', 'bg', 4.5],
+  ['green', 'bg', 4.5],
+  ['red', 'bg', 4.5],
 
-  // Focus ring. On paper it is ultramarine; on colour it must invert to paper,
-  // or the ring is literally invisible at 1.00 against its own ground.
-  ['ultramarine', 'paper', 3.0],
-  ['paper', 'ultramarine', 3.0],
+  // Orange button fill, dark label.
+  ['bg', 'orange', 4.5],
 
-  // Structural borders and live indicators on the ultramarine ground. Non-text
-  // threshold. The indicator dot carries the signal; its label uses paper,
-  // because no usable lightness of signal reaches 4.5 against ultramarine.
-  ['rule-on-color', 'ultramarine', 3.0],
-  ['signal-on-color', 'ultramarine', 3.0],
+  // Focus ring, visible on every ground.
+  ['orange', 'bg', 3.0],
+  ['orange', 'panel', 3.0],
+
+  // Structural borders a user must perceive.
+  ['edge-strong', 'bg', 3.0],
+  ['edge-strong', 'panel', 3.0],
 ]
 
 const rgb = {}
@@ -105,10 +109,12 @@ for (const [fg, bg, min] of PAIRS) {
 }
 
 // --rule is decorative only. Asserted here so nobody promotes it to a meaningful border.
-const ruleRatio = contrast(rgb.rule, rgb.paper)
+const edgeRatio = contrast(rgb.edge, rgb.bg)
 console.log(
-  `\nNote: --rule on paper is ${ruleRatio.toFixed(2)}:1. Decorative hairlines only.\n` +
-    'Any border that carries meaning must use --rule-strong.',
+  `
+Note: --edge on bg is ${edgeRatio.toFixed(2)}:1. Decorative outlines only.
+` +
+    'Any border a user must perceive uses --edge-strong.',
 )
 
 if (failed > 0) {

@@ -1,79 +1,114 @@
-import type { CSSProperties } from 'react'
+import { useEffect, useState } from 'react'
+import { checkLive, type LiveStatus } from '#/lib/live'
 
-// Three live URLs, directly under the hero and still on the drenched field.
+// Three live URLs, directly under the hero, and the one place the site is
+// allowed to assert "live".
 //
-// This is the site's answer to the strategic problem PRODUCT.md names: the
-// owner's substantial recent work is private, and a visitor who checks GitHub
-// finds university projects from 2020. The credibility has to be carried here,
-// by addresses a visitor can open in a second tab, rather than delegated to a
-// public repository list.
+// This is the answer to the strategic problem PRODUCT.md names: the owner's
+// substantial recent work is private, and a visitor who checks GitHub finds
+// university projects from 2020. The credibility is carried here, by addresses
+// a visitor can open in a second tab, rather than delegated to a public
+// repository list.
 //
-// Set in Martian Mono because DESIGN.md lists link URLs among the things that
-// are data. The typeface is earned by the content and is not worn as a
-// technical costume: nothing else on this page is monospaced.
-//
-// No border and no fill on the links, deliberately. Three short enclosed
-// labels sharing a parent is the badge wall PRODUCT.md bans, and it is exactly
-// the shape this component would take if the links were styled as chips.
-// tests/e2e/home.spec.ts measures for that shape rather than for a class name.
+// Each address is checked for real, at request time, by a server function that
+// pings the same frontmatter the build gate verifies. The initial render shows
+// the honest "checking" state; the result arrives over the wire. Green is
+// earned by a live response and used nowhere else on the site.
 
 export type ProofLink = {
   label: string
   href: string
 }
 
-// Taken as a prop, never declared here, and that is the whole point of this
-// component's shape.
-//
-// It used to hold its own hardcoded array of the three CoaChess addresses.
-// Those same URLs are already in content/work/coachess.mdx as `surfaces`, and
-// scripts/verify-links.mjs reads the frontmatter, not this file. So the build
-// gate that exists to stop the site claiming a dead product is live was
-// checking a different list from the one the page painted. A URL added only
-// here shipped unverified; a URL removed from the frontmatter stopped being
-// checked while this went on publishing it. The drift was invisible precisely
-// because both lists looked right in isolation.
-//
-// The home route already calls the content loader for the case study index, so
-// the surfaces come down that same path. One source, and the gate reads it.
 export type ProofStripProps = {
-  /** Live surfaces, from case study frontmatter. */
   surfaces: ReadonlyArray<ProofLink>
 }
 
+const initial: Record<string, LiveStatus | 'pending'> = {}
+
 export function ProofStrip({ surfaces }: ProofStripProps) {
-  // Nothing to prove, so nothing is claimed. An empty strip with its heading
-  // still painted would be a "Shipping now" label over no evidence, which is
-  // worse than the section being absent: PRODUCT.md's first design principle
-  // is proof over claim, and a claim with the proof removed is just a claim.
+  const [states, setStates] = useState<Record<string, LiveStatus | 'pending'>>(initial)
+
+  useEffect(() => {
+    let alive = true
+    checkLive()
+      .then((results) => {
+        if (!alive) return
+        const next: Record<string, LiveStatus> = {}
+        for (const result of results) next[result.url] = result
+        setStates(next)
+      })
+      .catch(() => {
+        // Leave every address in its checking state. A failed check is not
+        // evidence of a dead product, and claiming one either way would lie.
+      })
+    return () => {
+      alive = false
+    }
+  }, [])
+
   if (surfaces.length === 0) return null
 
   return (
-    <div
-      className="proof-strip col-span-full"
-      data-testid="proof-strip"
-      style={{ '--reveal-index': 4 } as CSSProperties}
-    >
-      {/* Names the list for assistive technology as well as painting the
-          label, so the three addresses are not announced as a bare list of
-          links with no reason to exist. */}
-      <p className="proof-label" id="proof-label">
-        Shipping now
+    <div className="section" data-testid="proof-strip">
+      <p className="log-line" id="proof-label" style={{ marginBottom: '1rem' }}>
+        <b># live</b> three products, checked just now
       </p>
-      <ul className="proof-list" aria-labelledby="proof-label">
-        {surfaces.map((link) => (
-          <li key={link.href}>
-            <a className="proof-link" data-testid="proof-link" href={link.href}>
-              {/* The signal dot carries the "live" meaning, and the label is
-                  set in paper. DESIGN.md: --signal-on-color reaches 3.50
-                  against ultramarine, which clears the non-text threshold and
-                  not the 4.5 body-text one, and no usable lightness of a warm
-                  hue does. Decorative, so it is hidden rather than described. */}
-              <span className="proof-dot" aria-hidden="true" />
-              {link.label}
-            </a>
-          </li>
-        ))}
+      <ul
+        className="proof-list"
+        aria-labelledby="proof-label"
+        style={{
+          listStyle: 'none',
+          margin: 0,
+          padding: 0,
+          display: 'flex',
+          flexWrap: 'wrap',
+          gap: '0.75rem',
+        }}
+      >
+        {surfaces.map((link) => {
+          const state = states[link.href]
+          const live = state !== undefined && state !== 'pending' && state.ok
+          const checking = state === undefined || state === 'pending'
+          const cls = live
+            ? 'status status-live'
+            : checking
+              ? 'status status-checking'
+              : 'status status-dead'
+
+          return (
+            <li key={link.href}>
+              <a
+                className="tcard tcard-chip"
+                data-testid="proof-link"
+                href={link.href}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.75rem',
+                  padding: '0.55rem 1rem',
+                  border: '1px solid var(--color-edge-strong)',
+                  borderRadius: '0.375rem',
+                  background: 'var(--color-panel)',
+                  textDecoration: 'none',
+                  color: 'var(--color-text)',
+                  fontFamily: 'var(--font-data)',
+                  fontSize: 'var(--text-data)',
+                }}
+              >
+                <span className={cls} data-testid="proof-status">
+                  <span className="status-dot" aria-hidden="true" />
+                  {checking
+                    ? 'checking…'
+                    : live
+                      ? `LIVE · ${state.status}`
+                      : 'offline'}
+                </span>
+                {link.label}
+              </a>
+            </li>
+          )
+        })}
       </ul>
     </div>
   )
