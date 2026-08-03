@@ -399,10 +399,27 @@ body {
   }
 
   /* Martian Mono, earned by the content rather than worn as a costume:
-     DESIGN.md lists table cells among the places data type belongs. */
+     DESIGN.md lists table cells among the places data type belongs.
+
+     `anywhere`, and specifically not `break-word`, which is the version that
+     looks equivalent and does not work here. The two wrap identically once a
+     box has been sized; they differ in whether the browser counts the break
+     opportunity when it computes the cell's min-content width. `break-word`
+     does not, so a table still sizes itself to the longest unbroken token and
+     then overflows its container, which is precisely the bug: measured at a
+     375px viewport, /work/helmdeck rendered its specification table 343px wide
+     inside a 327px column, because
+     `github.com/MohamedElhedi-BenYedder/helmdeck` set in Martian Mono has no
+     break opportunity in it at all. `anywhere` is counted, so the table sizes
+     to its container and the address wraps.
+
+     Scoped to the data column on purpose. The label column beside it stays
+     nowrap: those are single short words, and breaking "Period" across two
+     lines to save eight pixels would be worse than the problem. */
   .spec-table td {
     font-family: var(--font-data);
     font-size: var(--text-data);
+    overflow-wrap: anywhere;
   }
 
   .spec-list {
@@ -950,6 +967,20 @@ body {
     vertical-align: baseline;
   }
 
+  /* The period column, shrunk to its own content by the `width: 1%` idiom so
+     the entries beside it all start on one line.
+
+     `white-space: nowrap` stays, and the alternative was measured rather than
+     reasoned about. Removing it does not merely relax the rule at narrow
+     widths: `width: 1%` is an explicit preferred width, so auto table layout
+     resolves the column to max(min-content, 1%) and never to max-content.
+     With nowrap gone, "2022 to present" broke across two lines at 1280px as
+     well as at 320px, which is worse than the thing it was meant to fix.
+
+     Known, and deliberately left: at a 320px viewport this table extends 14px
+     past its grid column, because a phrase that cannot wrap sets the table's
+     minimum width. It stays inside the viewport and causes no horizontal
+     scroll. Clean at 375, 768 and 1280. */
   .timeline th {
     width: 1%;
     padding-inline-end: 2rem;
