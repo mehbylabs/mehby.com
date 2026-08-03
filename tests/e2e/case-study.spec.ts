@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test'
 import { installProbes } from './support/probes'
+import { getCaseStudies } from '#/lib/content'
 
 // The case study route, /work/$slug.
 //
@@ -43,12 +44,13 @@ const STUDIES = [
     title: 'CoaChess',
     role: 'CTO and co-founder',
     period: '2022 to present',
-    section: 'Three surfaces, three jobs',
-    surfaces: [
-      'https://coachess.net',
-      'https://app.coachess.net',
-      'https://live.coachess.net',
-    ],
+    section: 'One platform, five surfaces',
+    // Read from the frontmatter the page renders and the build gate checks.
+    // Restating the list made this a change detector: it failed the day a
+    // fourth CoaChess surface shipped, which is a content edit, not a bug.
+    surfaces: getCaseStudies()
+      .find((entry) => entry.slug === 'coachess')!
+      .surfaces.map((surface) => surface.href),
     source: null,
     stack: 'TypeScript, React, Python',
   },

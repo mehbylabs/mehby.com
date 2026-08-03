@@ -59,7 +59,7 @@ export function ProofStrip({ surfaces }: ProofStripProps) {
       style={{ '--stagger-index': 4 } as CSSProperties}
     >
       <p className="log-line" id="proof-label" style={{ marginBottom: '1rem' }}>
-        <b># live</b> three products, checked just now
+        <b># live</b> {surfaces.length} surfaces, checked just now
       </p>
       <ul
         className="proof-list"

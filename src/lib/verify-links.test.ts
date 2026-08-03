@@ -9,7 +9,7 @@ import type { IncomingMessage, Server, ServerResponse } from 'node:http'
 
 // scripts/verify-links.mjs is the site's single most load-bearing gate.
 //
-// PRODUCT.md makes the three live URLs carry the whole burden of proof, because
+// PRODUCT.md makes the live URLs carry the whole burden of proof, because
 // the owner's recent source is private and no metrics may be published. A dead
 // link in that strip is not a cosmetic bug, it is the site making a false claim
 // about a product being live. So the rule is: if the link cannot be shown to

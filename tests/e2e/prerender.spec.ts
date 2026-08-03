@@ -123,7 +123,11 @@ test.describe('every address the site publishes is one the gate checks', () => {
 
 test.describe('every case study is on disk, rendered', () => {
   const STUDIES = [
-    { slug: 'coachess', title: 'CoaChess', body: 'Three surfaces, three jobs' },
+    {
+      slug: 'coachess',
+      title: 'CoaChess',
+      body: 'One platform, five surfaces',
+    },
     {
       slug: 'helmdeck',
       title: 'Helmdeck',

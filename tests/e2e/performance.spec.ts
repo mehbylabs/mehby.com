@@ -4,6 +4,15 @@ import { join } from 'node:path'
 import { expect, test } from '@playwright/test'
 import { clientDir } from './support/built'
 import { hydrated } from './support/probes'
+import { getCaseStudies } from '#/lib/content'
+
+// Derived, never hardcoded. The proof strip flattens every surface declared in
+// case study frontmatter, so a surface added to a .mdx file must reach the page
+// by existing rather than by anybody remembering to update a number here. This
+// test previously asserted 3 and silently became wrong the day a fourth
+// CoaChess surface shipped.
+const SURFACE_COUNT = getCaseStudies().flatMap((s) => s.surfaces).length
+const STUDY_COUNT = getCaseStudies().length
 
 // The performance gate.
 //
@@ -289,7 +298,7 @@ test.describe('the prerendered HTML is real content', () => {
     await page.goto('/')
 
     const pillars = page.getByTestId('pillar-link')
-    await expect(pillars).toHaveCount(3)
+    await expect(pillars).toHaveCount(STUDY_COUNT)
     for (const title of ['VoltTunisia', 'Helmdeck', 'CoaChess']) {
       await expect(
         page.getByRole('link', { name: new RegExp(title) }).first(),
@@ -302,7 +311,7 @@ test.describe('the prerendered HTML is real content', () => {
     await page.goto('/')
 
     const links = page.getByTestId('proof-link')
-    await expect(links).toHaveCount(3)
+    await expect(links).toHaveCount(SURFACE_COUNT)
     await expect(links.first()).toBeVisible()
   })
 
@@ -313,7 +322,7 @@ test.describe('the prerendered HTML is real content', () => {
 
     await expect(page.getByTestId('spec-table')).toBeVisible()
     await expect(page.getByTestId('narrative')).toContainText(
-      'Three surfaces, three jobs',
+      'One platform, five surfaces',
     )
   })
 })

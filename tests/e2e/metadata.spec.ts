@@ -93,7 +93,7 @@ const PAGES = [
     file: 'work/coachess',
     title: 'CoaChess, a case study by Mohamed Elhedi Ben Yedder',
     description:
-      'A chess coaching platform with three distinct product surfaces and self-hosted live video.',
+      'A chess coaching platform with four customer-facing surfaces, a B2B side for academies, and self-hosted live video.',
     image: '/og/coachess.png',
   },
   {

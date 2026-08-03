@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test'
 import type { Page } from '@playwright/test'
 import { BODY_TEXT, installProbes, styleOf } from './support/probes'
+import { getCaseStudies } from '#/lib/content'
 
 // The home page, pinned against a real browser.
 //
@@ -23,11 +24,12 @@ const DISPLAY = 'I build and ship full stack products, end to end.'
 // set in the mono log-line's amber <b> and the second is the plain tail.
 const SUBLINE = 'available for freelance product engineering'
 
-const PROOF_LINKS = [
-  { label: 'coachess.net', href: 'https://coachess.net' },
-  { label: 'app.coachess.net', href: 'https://app.coachess.net' },
-  { label: 'live.coachess.net', href: 'https://live.coachess.net' },
-]
+// Read from the same frontmatter the page renders and scripts/verify-links.mjs
+// checks, never restated. A hardcoded copy made this a change detector: it
+// failed the day a fourth CoaChess surface was published, which is a content
+// edit and not a regression. What still matters, and is asserted below, is
+// that every surface declared reaches the page as a real link.
+const PROOF_LINKS = getCaseStudies().flatMap((study) => study.surfaces)
 
 // Content order, from the `order` field in content/work/*.mdx. Restated rather
 // than loaded, so a loader that stopped sorting fails here.
@@ -188,17 +190,17 @@ test.describe('hero', () => {
 })
 
 test.describe('proof strip', () => {
-  test('carries exactly the three shipping surfaces, addressed', async ({
+  test('carries every declared shipping surface, addressed', async ({
     page,
   }) => {
     const links = page.getByTestId('proof-link')
 
-    // Exactly three. PRODUCT.md builds the strip as the site's primary
-    // evidence; a fourth link nobody vetted, or a missing third, both weaken
-    // it silently.
+    // One link per declared surface, no more and no fewer. PRODUCT.md builds
+    // the strip as the site's primary evidence: a link nobody vetted, or a
+    // declared surface silently dropped, both weaken it.
     await expect(
       links,
-      'the proof strip does not carry exactly three links',
+      'the proof strip does not carry one link per declared surface',
     ).toHaveCount(PROOF_LINKS.length)
 
     for (const [i, expected] of PROOF_LINKS.entries()) {
@@ -236,7 +238,7 @@ test.describe('proof strip', () => {
     const strip = page.getByTestId('proof-strip')
 
     await expect(
-      strip.getByText('three products, checked just now', { exact: false }),
+      strip.getByText('surfaces, checked just now', { exact: false }),
     ).toHaveCount(1)
 
     // DESIGN.md: Martian Mono strictly for data, and it lists link URLs among

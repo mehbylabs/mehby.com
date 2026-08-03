@@ -1,6 +1,6 @@
 ---
 title: CoaChess
-summary: A chess coaching platform with three distinct product surfaces and self-hosted live video.
+summary: A chess coaching platform with four customer-facing surfaces, a B2B side for academies, and self-hosted live video.
 role: CTO and co-founder
 period: 2022 to present
 order: 3
@@ -9,6 +9,8 @@ surfaces:
     href: https://coachess.net
   - label: app.coachess.net
     href: https://app.coachess.net
+  - label: org.coachess.net
+    href: https://org.coachess.net
   - label: live.coachess.net
     href: https://live.coachess.net
 cover: /work/coachess.png
@@ -21,15 +23,24 @@ model the lesson as a video with a comment thread underneath.
 
 CoaChess is built the other way round.
 
-## Three surfaces, three jobs
+## One platform, five surfaces
 
-The marketing site is where a player finds a bootcamp, a group, or a coach for
-one to one work. The application is where practice happens between sessions:
-lessons, puzzles, challenges and games. The live classroom is the session
-itself, with a shared board, video, real time annotation and replays afterwards.
+The landing site is where a player finds a bootcamp, a weekly group, or a coach
+for one to one work. The player app is where practice happens between sessions:
+lessons, puzzles, challenges and games. The academy app is the other side of the
+market, where a school schedules classes, manages its students and trainers,
+assigns homework and tracks progress. The live classroom is the session itself,
+with a shared board, video, real time annotation and replays afterwards. Behind
+all of them sits an internal back office.
 
-They are separate products with separate rhythms, sharing one identity and one
-data model.
+Two of those serve players, one serves the schools that teach them, one is the
+lesson, and one is for us. They keep separate rhythms and share one identity and
+one data model.
+
+That last part is the whole problem. A student in a group class, an academy
+administrator, and a coach mid-session are three different people looking at the
+same underlying objects, and the moment those objects diverge per surface the
+platform starts lying to somebody.
 
 ## Video that had to be owned
 
@@ -50,4 +61,6 @@ It was consolidated into a typed front end and a Python service layer, which is
 where it runs today.
 
 The interesting part of that migration was not the rewrite. It was deciding
-which boundaries were real and which were organisational accidents.
+which boundaries were real and which were organisational accidents. Five
+surfaces sharing one data model makes that judgement permanent: a boundary drawn
+in the wrong place shows up four more times.

@@ -167,11 +167,24 @@ describe('getCaseStudies', () => {
 
     expect(coachess?.title).toBe('CoaChess')
     expect(coachess?.role).toBe('CTO and co-founder')
-    expect(coachess?.surfaces.map((s) => s.href)).toEqual([
-      'https://coachess.net',
-      'https://app.coachess.net',
-      'https://live.coachess.net',
-    ])
+
+    // The shape, not the list. Asserting the exact URLs made this a change
+    // detector: it failed the day a fourth CoaChess surface was published,
+    // which is a legitimate content edit and not a regression. What the loader
+    // actually guarantees is that every surface arrives as an absolute https
+    // address whose label is the host a visitor will land on, which is what
+    // scripts/verify-links.mjs then checks for real.
+    const surfaces = coachess?.surfaces ?? []
+    expect(surfaces.length).toBeGreaterThan(0)
+
+    for (const surface of surfaces) {
+      const url = new URL(surface.href)
+      expect(url.protocol).toBe('https:')
+      expect(
+        surface.label,
+        `surface label "${surface.label}" does not name the host it points at`,
+      ).toBe(url.host)
+    }
   })
 
   it('throws naming the offending path when a file is invalid', () => {

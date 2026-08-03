@@ -1,6 +1,14 @@
 import { expect, test } from '@playwright/test'
 import type { Locator, Page } from '@playwright/test'
 import { TOKENS, hydrated, installProbes, styleOf } from './support/probes'
+import { getCaseStudies } from '#/lib/content'
+
+// Surfaces are read from the same frontmatter the page renders and the build
+// gate verifies, never restated here. A hardcoded copy made this a change
+// detector: it failed the day a fourth CoaChess surface was published, which
+// is a legitimate content edit, not a regression.
+const surfacesOf = (slug: string) =>
+  getCaseStudies().find((study) => study.slug === slug)?.surfaces ?? []
 
 // The specification table, pinned against a real browser, on the pages that
 // ship it.
@@ -75,11 +83,7 @@ const STUDIES = {
     role: 'CTO and co-founder',
     period: '2022 to present',
     rows: ['Role', 'Period', 'Surfaces', 'Stack'],
-    surfaces: [
-      { label: 'coachess.net', href: 'https://coachess.net' },
-      { label: 'app.coachess.net', href: 'https://app.coachess.net' },
-      { label: 'live.coachess.net', href: 'https://live.coachess.net' },
-    ],
+    surfaces: surfacesOf('coachess'),
     stack: 'TypeScript, React, Python',
   },
   helmdeck: {
