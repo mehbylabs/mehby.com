@@ -32,6 +32,9 @@ declare global {
     /** Any CSS colour resolved to sRGB plus alpha, each channel in 0..1. */
     rgba: (color: string) => [number, number, number, number]
     contrast: (a: string, b: string) => number
+    /** Scratch state for the settle loop in `hydrated`. */
+    __lastSignature?: number
+    __signatureHeld?: number
   }
 }
 
@@ -94,10 +97,34 @@ export const installProbes = (page: Page) =>
 // node it owns when it commits, so its presence on `document.body` is the
 // commit itself rather than a proxy for it. Verified absent at `load` and
 // present afterwards, so this cannot pass vacuously.
-export const hydrated = (page: Page) =>
-  page.waitForFunction(() =>
+//
+// The commit is necessary and not sufficient, which is the second half. React
+// flushes passive effects after it, and this app changes the DOM in one:
+// /contact renders its Send button really `disabled` until a useEffect sets
+// `ready`, because before hydration nothing stops a native form submission.
+// A test that enumerated the focusable elements between the commit and that
+// effect got a set with the button missing from it, and then met the button
+// while tabbing. Measured: 6 failures in 6 at 4 workers, each stopping after
+// 4 of 9 stops on <button> "Send".
+//
+// So the barrier also waits for the rendered document to stop changing. Held
+// for three consecutive animation frames rather than sampled once, for the
+// same reason the colour probes in spec-table.spec.ts settle rather than read:
+// a single sample cannot tell "finished" from "between two passes".
+export const hydrated = async (page: Page) => {
+  await page.waitForFunction(() =>
     Object.keys(document.body).some((key) => key.startsWith('__reactFiber$')),
   )
+
+  await page.waitForFunction(() => {
+    const signature = document.documentElement.innerHTML.length
+    const previous = window.__lastSignature
+    const held = previous === signature ? (window.__signatureHeld ?? 0) + 1 : 0
+    window.__lastSignature = signature
+    window.__signatureHeld = held
+    return held >= 3
+  })
+}
 
 export const styleOf = (locator: Locator, props: Array<string>) =>
   locator.evaluate((el, names: Array<string>) => {
