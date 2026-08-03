@@ -6,13 +6,13 @@
     "#/*": "./src/*"
   },
   "scripts": {
-    "dev": "vite dev --port 3100 --strictPort",
+    "dev": "vite dev --port 3001 --strictPort",
     "generate-routes": "tsr generate",
     "verify:contrast": "node scripts/contrast.mjs",
     "verify:links": "bun scripts/verify-links.mjs",
     "generate:og": "bun scripts/og.mjs",
     "build": "bun run verify:contrast && bun run verify:links && bun run generate:og && vite build",
-    "preview": "vite preview --port 3100 --strictPort",
+    "preview": "vite preview --port 3001 --strictPort",
     "lint": "eslint",
     "format": "prettier --write . && eslint --fix",
     "check": "prettier --check .",

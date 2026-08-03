@@ -33,7 +33,7 @@ All three proof URLs returned 200 on 2026-08-02. Task 11 turns that into a build
 
 **Environment gotchas, learned the hard way during Task 1:**
 
-- **The dev and preview port is 3100, never 3000.** Port 3000 on this machine is
+- **The dev and preview port is 3001, never 3000.** Port 3000 on this machine is
   permanently held by an unrelated Dokploy container that answers HTTP 200 on `/`. A
   Playwright `webServer` pointed at 3000 with `reuseExistingServer: true` will happily
   reuse that foreign service, never start our app, and pass tests against it. Both `dev`
@@ -83,7 +83,7 @@ bunx playwright install chromium --with-deps
 **Step 2: Configure**
 
 `vitest.config.ts` with `environment: 'node'` and `include: ['src/**/*.test.ts']`.
-`playwright.config.ts` with `testDir: './tests/e2e'`, `baseURL: 'http://localhost:3100'`,
+`playwright.config.ts` with `testDir: './tests/e2e'`, `baseURL: 'http://localhost:3001'`,
 and a `webServer` running `bun run dev` with `reuseExistingServer: true`.
 
 **Step 3: Add scripts**

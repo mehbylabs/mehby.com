@@ -50,7 +50,7 @@ bun run test                       # unit
 bun run test:e2e                   # end-to-end
 ```
 
-`test:e2e` starts the dev server itself. Note that `dev` and `preview` bind port **3100**, not the usual 3000, because port 3000 is already occupied on this machine by an unrelated service that answers HTTP 200 — pointing tests at it produces passes against the wrong application. Both scripts use `--strictPort` so a port conflict fails loudly instead of silently drifting to another port.
+`test:e2e` starts the dev server itself. Note that `dev` and `preview` bind port **3001**, not the usual 3000, because port 3000 is already occupied on this machine by an unrelated service that answers HTTP 200, and pointing tests at it produces passes against the wrong application. Both scripts use `--strictPort` so a port conflict fails loudly instead of silently drifting to another port.
 
 ## Deploy
 

@@ -89,7 +89,7 @@ export const installProbes = (page: Page) =>
 //
 // Measured, not assumed. Scrolling to 900 immediately after `goto` and
 // sampling `scrollY` every 50ms:
-//   built server on :3100   reset to 0 within ~50ms of load, 4 runs of 4
+//   built server on :3001   reset to 0 within ~50ms of load, 4 runs of 4
 //   dev server, 4 workers   reset to 0 at 450-650ms after load, 14 runs of 16
 // That window is what made spec-table.spec.ts "tints the row under the
 // pointer" fail roughly one run in eight under parallel load: reproduced 3
