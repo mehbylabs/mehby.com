@@ -1,7 +1,8 @@
-import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs'
+import { readFileSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
+import { clientDir } from './support/built'
 import { NON_TEXT, hydrated, installProbes } from './support/probes'
 import type { AxeResults, Result } from 'axe-core'
 import type { Page } from '@playwright/test'
@@ -81,7 +82,7 @@ const describeViolations = (results: AxeResults) =>
 // the keyboard walk and the heading order below were failing on.
 //
 // It is not part of the site and it is not shipped. Measured against the built
-// output rather than asserted: `.output/public/index.html` contains the string
+// output rather than asserted: the prerendered index.html contains the string
 // "devtools" zero times, and the only match anywhere in the client bundle is
 // React's own `__REACT_DEVTOOLS_GLOBAL_HOOK__`. The suite runs against the dev
 // server, which is the only place this panel exists.
@@ -101,31 +102,6 @@ const scan = (page: Page) =>
 
 /** Everything the site itself renders, and nothing the dev server adds. */
 const SITE_ROOTS = ['main', 'footer']
-
-// Same walk as tests/e2e/prerender.spec.ts, and for the same reason: the
-// client output directory is the adapter's to name, so pinning
-// ".output/public" here would turn an adapter change into a failure that
-// blames accessibility.
-const clientDir = () => {
-  expect(
-    existsSync('.output'),
-    '.output does not exist. Run `bun run build` before `bun run test:e2e`',
-  ).toBe(true)
-
-  const found: Array<string> = []
-  const walk = (dir: string) => {
-    for (const entry of readdirSync(dir)) {
-      const path = join(dir, entry)
-      if (statSync(path).isDirectory()) walk(path)
-      else if (entry === 'index.html') found.push(dir)
-    }
-  }
-  walk('.output')
-
-  const root = found.sort((a, b) => a.length - b.length)[0]
-  expect(root, 'no index.html anywhere under .output').toBeTruthy()
-  return root
-}
 
 const visit = async (page: Page, path: string) => {
   await installProbes(page)

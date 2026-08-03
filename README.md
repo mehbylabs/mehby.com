@@ -52,18 +52,20 @@ bun run test:e2e                   # end-to-end
 
 `test:e2e` starts the dev server itself. Note that `dev` and `preview` bind port **3100**, not the usual 3000, because port 3000 is already occupied on this machine by an unrelated service that answers HTTP 200 — pointing tests at it produces passes against the wrong application. Both scripts use `--strictPort` so a port conflict fails loudly instead of silently drifting to another port.
 
-## Deploy with Nitro
+## Deploy
 
-This project uses Nitro as a generic server adapter, so it can run on any Node-compatible host.
+Vercel, via Nitro's `vercel` preset, which is pinned in `vite.config.ts` rather than left to
+auto-detection so a local build and a build on Vercel produce the same thing. `bun run build`
+writes Vercel's Build Output API layout:
 
-```bash
-npm run build
-node dist/server/index.mjs
+```
+.vercel/output/config.json                  routing, filesystem before the catch-all
+.vercel/output/static/                      the seven prerendered pages, assets, sitemap
+.vercel/output/functions/__server.func/     the SSR handler, for anything that misses
 ```
 
-The build output is a self-contained Node server. To deploy, push the `dist/` directory to your host (Render, Fly.io, your own VPS, etc.) and run the server command above.
-
-For host-specific presets (Vercel, Netlify, Cloudflare, AWS Lambda, etc.) and tuning, see https://v3.nitro.build/deploy.
+**The full runbook is [docs/DEPLOY.md](docs/DEPLOY.md)**: environment variables, first-time DNS
+for `mehby.com`, and the two build behaviours that look like outages if you meet them cold.
 
 ## Routing
 

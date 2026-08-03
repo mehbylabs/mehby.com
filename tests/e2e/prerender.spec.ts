@@ -1,6 +1,7 @@
-import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { expect, test } from '@playwright/test'
+import { clientDir, htmlFor } from './support/built'
 import { getCaseStudies } from '#/lib/content'
 
 // Prerendering, asserted against the files on disk.
@@ -17,11 +18,10 @@ import { getCaseStudies } from '#/lib/content'
 // SEO value that is the entire reason this site is prerendered. So the check
 // reads bytes.
 //
-// Requires a build. `bun run build` writes .output; this file deliberately
-// fails rather than skips when it is absent, because a test that quietly
-// proves nothing is worse than no test.
-
-const OUTPUT = '.output'
+// Requires a build. `bun run build` writes the adapter's output directory;
+// this file deliberately fails rather than skips when it is absent, because a
+// test that quietly proves nothing is worse than no test. See support/built.ts
+// for where that directory is and why it is found rather than named.
 
 /** Every path the build prerenders and advertises. */
 const PAGES = [
@@ -33,48 +33,6 @@ const PAGES = [
   { path: '/work/helmdeck' },
   { path: '/work/volt-tunisia' },
 ] as const
-
-const clientDir = () => {
-  expect(
-    existsSync(OUTPUT),
-    `${OUTPUT} does not exist. Run \`bun run build\` before \`bun run test:e2e\`; ` +
-      `these assertions read the prerendered HTML from disk`,
-  ).toBe(true)
-
-  // Found rather than hard-coded: the client output directory is the adapter's
-  // to name, and pinning ".output/public" here would turn an adapter change
-  // into a failure that blames prerendering.
-  const found: Array<string> = []
-  const walk = (dir: string) => {
-    for (const entry of readdirSync(dir)) {
-      const path = join(dir, entry)
-      if (statSync(path).isDirectory()) walk(path)
-      else if (entry === 'index.html') found.push(dir)
-    }
-  }
-  walk(OUTPUT)
-
-  const root = found
-    .slice()
-    .sort((a, b) => a.length - b.length)
-    .find((dir) => existsSync(join(dir, 'index.html')))
-
-  expect(root, `no index.html anywhere under ${OUTPUT}`).toBeTruthy()
-  return root!
-}
-
-const htmlFor = (path: string) => {
-  const base = clientDir()
-  const file =
-    path === '/' ? join(base, 'index.html') : join(base, path, 'index.html')
-
-  expect(
-    existsSync(file),
-    `${file} was not emitted, so ${path} ships as a client-rendered page and ` +
-      `a crawler that does not run JavaScript sees an empty document`,
-  ).toBe(true)
-  return readFileSync(file, 'utf8')
-}
 
 test.describe('the home page is on disk, rendered', () => {
   test('carries the hero copy in the HTML, not only after hydration', async () => {

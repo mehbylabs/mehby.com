@@ -2,6 +2,7 @@ import { gzipSync } from 'node:zlib'
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 import { expect, test } from '@playwright/test'
+import { clientDir } from './support/built'
 import { hydrated } from './support/probes'
 
 // The performance gate.
@@ -21,7 +22,8 @@ import { hydrated } from './support/probes'
 // file sizes.
 //
 // The numbers below were taken with Lighthouse 13.4.1 against the built
-// server, mobile profile, on a cold load of `/`:
+// node-server, mobile profile, on a cold load of `/`, when this site still
+// shipped precompressed twins and served its HTML through the SSR handler:
 //
 //   Font        129 123 B   126.1 KiB   two woff2, already Brotli internally
 //   Script       96 648 B    94.4 KiB   from 328.4 KiB uncompressed
@@ -32,44 +34,27 @@ import { hydrated } from './support/probes'
 //
 //   Performance 97, Accessibility 100, Best practices 100, SEO 100
 //   FCP 1.9s  LCP 2.4s  TBT 0ms  CLS 0  Speed Index 1.9s
-
-const OUTPUT = '.output'
-
-const clientDir = () => {
-  expect(
-    existsSync(OUTPUT),
-    `${OUTPUT} does not exist. Run \`bun run build\` before \`bun run test:e2e\`; ` +
-      `these assertions read the built bundle from disk`,
-  ).toBe(true)
-
-  const found: Array<string> = []
-  const walk = (dir: string) => {
-    for (const entry of readdirSync(dir)) {
-      const path = join(dir, entry)
-      if (statSync(path).isDirectory()) walk(path)
-      else if (entry === 'index.html') found.push(dir)
-    }
-  }
-  walk(OUTPUT)
-
-  const root = found.sort((a, b) => a.length - b.length)[0]
-  expect(root, `no index.html anywhere under ${OUTPUT}`).toBeTruthy()
-  return root
-}
+//
+// The target is now Vercel, and two of those lines change. The document is a
+// file in the static output rather than an SSR response, so it is compressed
+// like everything else; and the twins are gone, because Vercel negotiates
+// encoding at its edge and never looks at a `.gz` sibling. See vite.config.ts.
+//
+// That is a claim about somebody else's CDN, and this suite cannot reach it.
+// What it can do is stop pretending: `wireBytes` gzips in process, which is
+// the same thing the edge does and is measurable here, and the budget below is
+// re-derived from those numbers rather than carried over.
 
 /**
  * What a byte-counting client actually pays for one file.
  *
- * Prefers the precompressed twin the build emits, because that is what the
- * server sends under content negotiation. Falls back to gzipping in process
- * rather than to the raw size, so a file that lost its twin is reported at
- * roughly what a compressing proxy would send instead of being counted at four
- * times its real cost and failing the budget for the wrong reason.
+ * gzip level 9, in process, because that models what Vercel's CDN sends and
+ * there is no longer a precompressed twin on disk to read instead. Deliberately
+ * gzip and not brotli: brotli is what the edge will actually pick for a modern
+ * browser and it is smaller, so counting gzip keeps the budget on the
+ * pessimistic side of the truth rather than on the flattering side.
  */
 const wireBytes = (file: string) => {
-  for (const encoding of ['.br', '.gz']) {
-    if (existsSync(file + encoding)) return statSync(file + encoding).size
-  }
   const raw = readFileSync(file)
   // woff2 carries its own Brotli stream; recompressing it measures nothing.
   if (file.endsWith('.woff2')) return raw.length
@@ -110,24 +95,24 @@ test.describe('the built home page fits its budget', () => {
     return { html, files }
   }
 
-  test('costs under 260 KiB on the wire, fonts included', async () => {
+  test('costs under 250 KiB on the wire, fonts included', async () => {
     const { html, files } = homeResources()
 
-    // Counted raw, because that is what goes over the wire. The prerendered
-    // documents get no precompressed twin: nitro bakes its public-asset
-    // manifest before the prerenderer writes the HTML, so the pages are served
-    // by the SSR handler instead, chunked and unencoded. Verified against the
-    // built server: `curl -H 'Accept-Encoding: br, gzip' -D-` returns
-    // content-encoding: br for /assets/*.css and no content-encoding at all
-    // for /.
+    // Counted compressed, and that is the one line the preset change moved.
     //
-    // gzip would take this document from 16.4 KiB to 3.2 KiB, so it is the
-    // largest remaining saving on the critical path and it is deliberately
-    // inside the budget rather than excused out of it.
-    const document = readFileSync(join(clientDir(), 'index.html')).length
-    const documentIfCompressed = gzipSync(Buffer.from(html), {
-      level: 9,
-    }).length
+    // On node-server the document was counted raw at 16 808 B, because nitro
+    // bakes its public-asset manifest before the prerenderer writes the HTML:
+    // the pages had no twin, fell through to the SSR handler, and went out
+    // chunked and unencoded. Verified at the time with `curl -H 'Accept-
+    // Encoding: br, gzip' -D-`, which returned content-encoding: br for
+    // /assets/*.css and no content-encoding at all for /.
+    //
+    // Under the vercel preset the same file lands in the static output, where
+    // `{ handle: "filesystem" }` in config.json serves it before the catch-all
+    // ever runs, so it is compressed on the way out like every other file. The
+    // raw number is kept in the breakdown so a reader can see both.
+    const documentRaw = readFileSync(join(clientDir(), 'index.html')).length
+    const document = gzipSync(Buffer.from(html), { level: 9 }).length
     const byType = new Map<string, number>()
     for (const { href, file } of files) {
       const type = href.endsWith('.css')
@@ -145,46 +130,72 @@ test.describe('the built home page fits its budget', () => {
       ...[...byType, ['document', document] as [string, number]]
         .sort((a, b) => b[1] - a[1])
         .map(([type, bytes]) => `${type.padEnd(10)} ${bytes} B`),
-      `(the document would be ${documentIfCompressed} B gzipped, but the ` +
-        `preset serves it unencoded)`,
+      `(the document is ${documentRaw} B on disk and ${document} B gzipped)`,
     ].join('\n    ')
 
-    // 260 KiB, against a measured 242.9 KiB. Headroom for a chunk or two, not
+    // 250 KiB, against a measured 238.9 KiB. Headroom for a chunk or two, not
     // for a category. The number is deliberately close: the point of a budget
     // is to fail before somebody adds a font or an analytics bundle, and a
     // budget with 3x headroom fails only after it is far too late.
+    //
+    // It moved down from 260 KiB, and the move is smaller than the preset
+    // change might suggest, which is worth writing down because the intuition
+    // is wrong. Two things went in opposite directions:
+    //
+    //   document   16 808 -> 3 234 B    now a static file, so it is encoded
+    //   script     96 648 -> 106 709 B  brotli twin on disk -> gzip in process
+    //   TOTAL     248 697 -> 244 600 B  238.9 KiB
+    //
+    // A net 4 KiB. The document saving is real and the script rise is an
+    // artefact of measuring gzip where the edge will send brotli, so the true
+    // number is better than this and the budget is set against the pessimistic
+    // one on purpose. Neither is the headline: 128 596 B of the 244 600 is two
+    // woff2 faces, which no preset touches and which is where the next real
+    // saving on this page would have to come from.
     expect(
       total,
       `a cold load of the home page costs ${(total / 1024).toFixed(1)} KiB:\n` +
         `    ${breakdown}\n`,
-    ).toBeLessThan(260 * 1024)
+    ).toBeLessThan(250 * 1024)
   })
 
-  test('emits a precompressed twin for every text asset it serves', async () => {
-    // Without these the node-server preset sends the bytes on disk verbatim.
-    // Measured before compressPublicAssets was enabled: the home page cost
-    // 494.0 KiB on the wire instead of 242.9, and Lighthouse's mobile
-    // performance score was 83 rather than 97.
-    const { files } = homeResources()
-
-    // Nitro documents a 1 KB floor: below it the compressed form plus the
-    // extra round trip is not worth the bytes, and jsx-runtime at 961 B sits
-    // under it legitimately. The floor is honoured here rather than worked
-    // around, so this fails for a real regression and not for a small chunk.
-    const COMPRESSION_FLOOR = 1024
-
-    const uncompressed = files
-      .filter(({ href }) => href.endsWith('.js') || href.endsWith('.css'))
-      .filter(({ file }) => statSync(file).size >= COMPRESSION_FLOOR)
-      .filter(
-        ({ file }) => !existsSync(`${file}.br`) && !existsSync(`${file}.gz`),
-      )
-      .map(({ href }) => href)
+  test('ships no precompressed twin, because nothing on Vercel serves one', async () => {
+    // The inverse of the test this replaces, and for a measured reason.
+    //
+    // `compressPublicAssets` was right while the target was node-server, which
+    // serves the bytes on disk verbatim: without twins the home page cost
+    // 494.0 KiB on the wire instead of 242.9 and Lighthouse's mobile score was
+    // 83 rather than 97.
+    //
+    // Vercel's Build Output API has no concept of a `.gz` sibling. A file
+    // named `foo.js.gz` in the static output is reachable only by asking for
+    // `/assets/foo.js.gz`, which no browser does; encoding is negotiated at
+    // the edge from the real file. So the twins are not insurance, they are 28
+    // files and 254 695 B of freight, a quarter of the entire static output,
+    // uploaded on every deploy and served to nobody.
+    //
+    // This fails if the option comes back, which is the failure worth
+    // catching: re-enabling it looks like a performance fix, passes every
+    // other test in this file, and makes the deployment 25 percent larger for
+    // no change on the wire at all.
+    const client = clientDir()
+    const twins: Array<string> = []
+    const walk = (dir: string) => {
+      for (const entry of readdirSync(dir)) {
+        const path = join(dir, entry)
+        if (statSync(path).isDirectory()) walk(path)
+        else if (entry.endsWith('.gz') || entry.endsWith('.br'))
+          twins.push(path)
+      }
+    }
+    walk(client)
 
     expect(
-      uncompressed,
-      'these text assets have no precompressed twin, so the server sends ' +
-        'them uncompressed under any Accept-Encoding',
+      twins,
+      'the static output holds precompressed twins. Vercel never requests ' +
+        'them, so these are bytes uploaded on every deploy and served to no ' +
+        'one. Remove `compressPublicAssets` from the nitro options in ' +
+        'vite.config.ts',
     ).toEqual([])
   })
 

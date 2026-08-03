@@ -1,6 +1,7 @@
-import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { expect, test } from '@playwright/test'
+import { clientDir, htmlFor } from './support/built'
 
 // Per route metadata, read off the prerendered HTML on disk.
 //
@@ -13,45 +14,10 @@ import { expect, test } from '@playwright/test'
 // `response.ok()` and calling it a test.
 //
 // So this reads bytes, like tests/e2e/prerender.spec.ts, and requires a build.
-// It fails rather than skips when .output is missing, because a metadata test
-// that quietly proves nothing is worse than no metadata test.
+// It fails rather than skips when the build output is missing, because a
+// metadata test that quietly proves nothing is worse than no metadata test.
 
-const OUTPUT = '.output'
 const SITE = 'https://mehby.com'
-
-const clientDir = () => {
-  expect(
-    existsSync(OUTPUT),
-    `${OUTPUT} does not exist. Run \`bun run build\` before \`bun run test:e2e\`; ` +
-      `these assertions read the prerendered HTML from disk`,
-  ).toBe(true)
-
-  const found: Array<string> = []
-  const walk = (dir: string) => {
-    for (const entry of readdirSync(dir)) {
-      const path = join(dir, entry)
-      if (statSync(path).isDirectory()) walk(path)
-      else if (entry === 'index.html') found.push(dir)
-    }
-  }
-  walk(OUTPUT)
-
-  const root = found
-    .slice()
-    .sort((a, b) => a.length - b.length)
-    .find((dir) => existsSync(join(dir, 'index.html')))
-
-  expect(root, `no index.html anywhere under ${OUTPUT}`).toBeTruthy()
-  return root!
-}
-
-const htmlFor = (path: string) => {
-  const base = clientDir()
-  const file =
-    path === '/' ? join(base, 'index.html') : join(base, path, 'index.html')
-  expect(existsSync(file), `${file} was not emitted`).toBe(true)
-  return readFileSync(file, 'utf8')
-}
 
 /** React escapes attribute values, so they come back out before comparison. */
 const decode = (value: string) =>

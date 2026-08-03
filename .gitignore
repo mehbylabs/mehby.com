@@ -14,6 +14,10 @@ dist-ssr
 .tanstack
 .wrangler
 .output
+# The vercel preset's build directory. `.vercel/` also holds the project link
+# `vercel` writes on first deploy, which carries the project and org ids; both
+# halves stay out of the repository.
+.vercel
 
 # Generated share images. A pure function of the case study frontmatter,
 # public/fonts/archivo.woff2 and scripts/og.mjs, all of which are committed.

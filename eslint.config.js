@@ -19,6 +19,7 @@ export default [
       'eslint.config.js',
       'prettier.config.js',
       '.output',
+      '.vercel',
       '.nitro',
       '.tanstack',
       'test-results',

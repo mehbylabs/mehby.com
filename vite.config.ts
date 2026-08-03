@@ -117,26 +117,50 @@ const config = defineConfig({
   plugins: [
     devtools(),
     nitro({
+      // The deploy target, named here rather than left to auto-detection.
+      //
+      // Nitro detects `vercel` from the VERCEL environment variable when it
+      // builds on Vercel, so omitting this would still deploy correctly. It is
+      // pinned anyway because the alternative is that `bun run build` on a
+      // laptop and `bun run build` on Vercel produce different output shapes,
+      // and every assertion in tests/e2e that reads the built files off disk
+      // would then be checking an artefact nobody deploys.
+      //
+      // What it changes, measured against the node-server preset:
+      //
+      //   .output/public/        ->  .vercel/output/static/
+      //   .output/server/        ->  .vercel/output/functions/__server.func/
+      //   (nothing)              ->  .vercel/output/config.json
+      //
+      // config.json is the part that matters. It routes `{ handle:
+      // "filesystem" }` before the `/(.*) -> /__server` catch-all, so every
+      // prerendered document, the sitemap and the fonts are served as files by
+      // Vercel's CDN and only a genuine miss reaches the server function. On
+      // node-server all of it went through the SSR handler, which is why
+      // /sitemap.xml answered 404 while sitting on disk.
+      preset: 'vercel',
       rollupConfig: { external: [/^@sentry\//] },
-      // Precompressed twins for every public asset, served by content
-      // negotiation when the client sends Accept-Encoding.
+      // `compressPublicAssets` is deliberately absent, and its absence is a
+      // decision rather than an oversight.
       //
-      // Measured, not assumed. Without this the node-server preset serves the
-      // bytes on disk verbatim, and Lighthouse's network records showed
-      // transfer size equal to resource size for every text asset: the home
-      // page cost 494 KiB on the wire, of which 328 KiB was JavaScript and
-      // 22.9 KiB was CSS that gzip takes to 79.7 KiB and 5.1 KiB. At the slow
-      // 4G profile Lighthouse throttles mobile to, that difference is most of
-      // a second of the critical path.
+      // It used to be on, and it was right while the target was node-server:
+      // that preset serves the bytes on disk verbatim, so without twins the
+      // home page cost 494 KiB on the wire instead of 242.9 and Lighthouse's
+      // mobile performance score was 83 rather than 97.
       //
-      // Fonts are already woff2, which is Brotli-compressed internally, so
-      // they are unaffected and remain the largest thing on the wire.
+      // Vercel does not read them. Its CDN negotiates Content-Encoding itself
+      // for every response it serves, static or function, and the Build Output
+      // API has no notion of a `.gz` sibling: `foo.js.gz` is just a file named
+      // `foo.js.gz`, reachable only by asking for it by name, which no browser
+      // does. Measured on the vercel preset with the option still set: 28
+      // extra files, 254 695 B, a quarter of the whole static output, that
+      // nothing would ever request.
       //
-      // This is a property of what is built, not of where it is deployed. A
-      // CDN in front of the origin would compress on the fly, but the site
-      // must not be fast only when something else is doing the work, and the
-      // deploy target is not decided here.
-      compressPublicAssets: { gzip: true, brotli: true },
+      // So this is not "we dropped compression". It is "the compression moved
+      // to the edge, and shipping a second copy of every asset to a CDN that
+      // ignores it is not insurance, it is freight."
+      // tests/e2e/performance.spec.ts asserts the twins are gone and gzips in
+      // process to model what the edge sends.
     }),
     tailwindcss(),
     tanstackStart({
