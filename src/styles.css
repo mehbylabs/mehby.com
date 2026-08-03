@@ -49,6 +49,13 @@
   --leading-h1: 1.08;
   --leading-h2: 1.2;
   --leading-body: 1.65;
+
+  /* Custom easing curves. The built-in CSS easings are too weak; these are
+     the strong variants (easing.dev) that make motion feel intentional.
+     Defining them in @theme also makes the Tailwind `ease-out` utility
+     resolve to the strong curve everywhere it is used. */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
 }
 
 /* shadcn/ui variable mapping. The components read --color-* tokens
@@ -322,7 +329,14 @@
   }
 
   /* A terminal card: panel ground, edge border, mono header line.
-     The header is the "filename" of the card. */
+     The header is the "filename" of the card.
+
+     Motion: the hover lift is a decorative transform, so it is gated behind
+     the pointer-fine media query. Touch devices trigger :hover on tap, which
+     would leave the card permanently lifted. Press feedback lives on :active,
+     which both device classes feel, and presses slightly into the page
+     (scale down, not lift up). Custom ease-out curve, not the built-in:
+     ease-out's default curve is too weak to feel intentional. */
   .tcard {
     display: flex;
     flex-direction: column;
@@ -334,13 +348,19 @@
     text-decoration: none;
     color: var(--color-text);
     transition:
-      border-color 120ms ease-out,
-      transform 120ms ease-out;
+      border-color 120ms var(--ease-out),
+      transform 160ms var(--ease-out);
   }
 
-  .tcard:hover {
-    border-color: var(--color-orange);
-    transform: translateY(-2px);
+  @media (hover: hover) and (pointer: fine) {
+    .tcard:hover {
+      border-color: var(--color-orange);
+      transform: translateY(-2px);
+    }
+  }
+
+  .tcard:active {
+    transform: scale(0.98);
   }
 
   .tcard-path {
@@ -584,11 +604,13 @@
     font-size: var(--text-fine);
     color: var(--color-muted);
     text-decoration: none;
-    transition: color 120ms ease-out;
+    transition: color 120ms var(--ease-out);
   }
 
-  .nav-link:hover {
-    color: var(--color-text);
+  @media (hover: hover) and (pointer: fine) {
+    .nav-link:hover {
+      color: var(--color-text);
+    }
   }
 
   .nav-link[aria-current='page'] {
@@ -682,5 +704,32 @@
     font-size: var(--text-fine);
     color: var(--color-amber);
     white-space: nowrap;
+  }
+
+  /* One orchestrated entrance, on first load, and then nothing. The terminal
+     hero reads top to bottom as a session, so the elements arrive in the order
+     they would be typed: prompt, identity, statement, actions, proof.
+
+     Stagger is short, 45ms between elements, and decorative: nothing here
+     blocks interaction while it plays. Base state is visible; the animation
+     fills backwards from opacity 0, so under prefers-reduced-motion the base
+     layer collapses every duration to 0.01ms and the elements land instantly
+     in their end state. `both` is what makes that safe, and it is why the
+     from-state lives in the keyframes rather than on the element. */
+  @keyframes rise-in {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  .rise-in {
+    animation: rise-in 300ms var(--ease-out) both;
+    animation-delay: calc(var(--stagger-index, 0) * 45ms);
   }
 }

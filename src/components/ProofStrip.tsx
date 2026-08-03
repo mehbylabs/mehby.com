@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import type { CSSProperties } from 'react'
 import { checkLive } from '#/lib/live'
 import type { LiveStatus } from '#/lib/live'
 
@@ -52,7 +53,7 @@ export function ProofStrip({ surfaces }: ProofStripProps) {
   if (surfaces.length === 0) return null
 
   return (
-    <div className="section" data-testid="proof-strip">
+    <div className="section rise-in" data-testid="proof-strip" style={{ '--stagger-index': 4 } as CSSProperties}>
       <p className="log-line" id="proof-label" style={{ marginBottom: '1rem' }}>
         <b># live</b> three products, checked just now
       </p>
