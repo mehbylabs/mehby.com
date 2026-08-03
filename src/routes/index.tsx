@@ -133,9 +133,6 @@ function Home() {
           style={{
             fontFamily: 'var(--font-data)',
             fontSize: 'var(--text-h3)',
-            color: 'var(--color-orange)',
-            textDecoration: 'underline',
-            textUnderlineOffset: '0.25em',
           }}
         >
           {CONTACT_DESTINATION}

@@ -256,13 +256,20 @@
   }
 
   /* Status chip: dot plus label. Green and red are status colours and
-     used nowhere else. */
+     used nowhere else.
+
+     The checking-to-live swap is a state change the visitor is watching,
+     so it transitions rather than snapping: a colour transition aids
+     comprehension, which is the class of motion reduced-motion settings
+     are allowed to keep. The base layer collapses it anyway, which is
+     fine: an instant answer is not a broken answer. */
   .status {
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
     font-family: var(--font-data);
     font-size: var(--text-fine);
+    transition: color 200ms var(--ease-out);
   }
 
   .status-dot {
@@ -270,6 +277,7 @@
     block-size: 0.5rem;
     border-radius: 50%;
     flex: none;
+    transition: background-color 200ms var(--ease-out);
   }
 
   .status-live .status-dot {
@@ -465,6 +473,13 @@
     text-decoration-thickness: 1px;
     text-underline-offset: 0.25em;
     color: var(--color-orange);
+    transition: text-decoration-thickness 120ms var(--ease-out);
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .spec-table a:hover {
+      text-decoration-thickness: 3px;
+    }
   }
 
   /* The placeholder: a ruled box that is unmistakably not content. */
@@ -520,6 +535,13 @@
     text-decoration: underline;
     text-decoration-thickness: 1px;
     text-underline-offset: 0.25em;
+    transition: text-decoration-thickness 120ms var(--ease-out);
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .prose a:hover {
+      text-decoration-thickness: 3px;
+    }
   }
 
   /* The honeypot. Off screen rather than display:none, which a form
@@ -644,6 +666,14 @@
     text-decoration: underline;
     text-decoration-thickness: 1px;
     text-underline-offset: 0.25em;
+    transition: text-decoration-thickness 120ms var(--ease-out);
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .footer-address a:hover,
+    .contact-address:hover {
+      text-decoration-thickness: 3px;
+    }
   }
 
   /* Contact form. Fields are a mono label with an amber `$` glyph, a shadcn
@@ -731,5 +761,15 @@
   .rise-in {
     animation: rise-in 300ms var(--ease-out) both;
     animation-delay: calc(var(--stagger-index, 0) * 45ms);
+  }
+
+  /* The submit button while a message is in flight. The label swaps from
+     "Send" to "Sending", which cannot itself transition, so the button
+     fades gently to carry the state change. Same duration class as the
+     other state changes on the site: fast enough to feel responsive,
+     slow enough to register. */
+  [data-slot='button'][data-pending] {
+    opacity: 0.75;
+    transition: opacity 150ms var(--ease-out);
   }
 }
