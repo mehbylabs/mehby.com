@@ -151,29 +151,42 @@ test.describe('the timeline', () => {
 })
 
 test.describe('the portrait', () => {
-  test('ships as a labelled placeholder, not as a stock photograph', async ({
+  test('ships a real, self-hosted portrait with an accessible name', async ({
     page,
   }) => {
-    const placeholder = page.getByTestId('placeholder')
+    const img = page.getByTestId('portrait').locator('img')
 
-    await expect(placeholder).toHaveCount(1)
-    await expect(placeholder).toHaveAccessibleName(/headshot/)
-    // Announced as absent, not merely as an image. role="img" with a name that
-    // does not say "placeholder" tells a screen reader user that something is
-    // there rather than that something is missing.
-    await expect(placeholder).toHaveAccessibleName(/not supplied/i)
-    await expect(page.locator('main img')).toHaveCount(0)
+    await expect(img).toHaveCount(1)
+    await expect(img).toHaveAccessibleName(/Ben Yedder/)
+
+    // Same origin, deliberately. tests/e2e/no-third-party.spec.ts fails a page
+    // on any off-origin request, and a portrait served from someone else's CDN
+    // would both break that and report every visit to them.
+    const src = await img.getAttribute('src')
+    expect(src, 'the portrait is not served from our own origin').toMatch(/^\//)
+
+    // The file actually decoded. A broken src still renders an <img> with an
+    // accessible name, so the name alone proves nothing about the bytes.
+    const natural = await img.evaluate(
+      (el) => (el as HTMLImageElement).naturalWidth,
+    )
+    expect(natural, 'the portrait file did not load').toBeGreaterThan(0)
   })
 
-  test('reserves a portrait shape so the real photograph cannot shift the page', async ({
+  test('reserves its box so the page cannot shift when the file lands', async ({
     page,
   }) => {
-    const box = (await page.getByTestId('placeholder').boundingBox())!
+    const img = page.getByTestId('portrait').locator('img')
 
-    expect(
-      box.height,
-      'the portrait is not taller than it is wide',
-    ).toBeGreaterThan(box.width)
+    // Intrinsic dimensions as attributes, not only in CSS. The box is reserved
+    // during layout, before the bytes arrive, which is what stops the
+    // paragraph beside it reflowing on a slow connection.
+    await expect(img).toHaveAttribute('width', /\d+/)
+    await expect(img).toHaveAttribute('height', /\d+/)
+
+    const box = (await img.boundingBox())!
+    expect(box.width, 'the portrait renders at zero width').toBeGreaterThan(0)
+    expect(box.height, 'the portrait renders at zero height').toBeGreaterThan(0)
   })
 })
 // DELETED: "the grounds". Both tests measured the two-colour band architecture

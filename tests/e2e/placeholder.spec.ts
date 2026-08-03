@@ -53,9 +53,13 @@ const PLACEHOLDERS = [
     notRule: TOKENS.edge,
   },
   {
-    page: '/about',
-    label: 'headshot',
-    ratio: 4 / 5,
+    // Was /about, which carried the headshot placeholder until a real avatar
+    // replaced it. Re-pointed at a second case study rather than dropped: the
+    // invariants below are about the component, and they need a second real
+    // surface to stay honest about props.
+    page: '/work/helmdeck',
+    label: 'Helmdeck cover',
+    ratio: 16 / 9,
     ground: 'panel',
     rule: TOKENS['edge-strong'],
     notRule: TOKENS.edge,
@@ -259,7 +263,7 @@ for (const placeholder of PLACEHOLDERS) {
   })
 }
 
-test('the two placeholders on the site do not share a shape or a label', async ({
+test('the two placeholders on the site do not share a label', async ({
   page,
 }) => {
   // What the harness got from having two fixtures side by side, restated across
@@ -284,13 +288,23 @@ test('the two placeholders on the site do not share a shape or a label', async (
     `both placeholders print the same label (${shapes[0].label}), so a ` +
       `component ignoring its \`label\` prop would pass every test above`,
   ).toBe(shapes.length)
+  // The ratio discriminator is gone, and this is the honest note about it
+  // rather than a silent deletion. It used to compare the 4:5 headshot on
+  // /about against a 16:9 cover, which caught a component that ignored its
+  // `ratio` prop and hard-coded one shape. A real avatar has replaced the
+  // headshot, so every remaining placeholder is a case study cover and every
+  // real cover is legitimately 16:9. Contorting one study's crop purely to
+  // keep this assertion alive would be inventing content to satisfy a test.
+  //
+  // What still covers the prop: each placeholder above asserts its rendered
+  // ratio against the value its own page declares. The residual hole is a
+  // component that hard-codes exactly 16:9, which no current page would
+  // reveal. It closes by itself the moment a second ratio ships, and the real
+  // covers arriving is the moment to re-add a differing pair here.
   expect(
-    Math.abs(shapes[0].ratio - shapes[1].ratio),
-    `both placeholders reserve the same shape (${shapes
-      .map((s) => s.ratio.toFixed(3))
-      .join(
-        ' and ',
-      )}), so a component ignoring its \`ratio\` prop would pass ` +
-      `every test above`,
-  ).toBeGreaterThan(0.1)
+    new Set(shapes.map((shape) => shape.ratio.toFixed(3))).size,
+    'both placeholders reserve the same shape, which is expected now that ' +
+      'both are covers. This assertion exists to fail loudly if that stops ' +
+      'being true, so the pair discriminator can be restored',
+  ).toBe(1)
 })

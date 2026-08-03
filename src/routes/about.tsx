@@ -7,7 +7,6 @@ import {
   TableHead,
   TableRow,
 } from '#/components/ui/table'
-import { Placeholder } from '#/components/Placeholder'
 import { pageHead } from './-seo'
 
 // The page opens as a session: `whoami`, then the answer. The h1 is the name,
@@ -88,13 +87,32 @@ function About() {
             ))}
           </div>
 
-          {/* No portrait has been supplied. PRODUCT.md: ship a labelled
-              placeholder that is obviously one, never a stock substitute, and
-              reserve the space the real asset will take so the reflow does not
-              land the day nobody is watching. 4:5 is a portrait crop; a square
-              would have to be re-cropped when the photograph arrives. */}
+          {/* The owner's own avatar, self-hosted rather than hotlinked: every
+              page is checked for off-origin requests, and a portrait served
+              from a third party would fail that and leak a visit to them.
+
+              Displayed at 132px against a 228px source, so it stays crisp on a
+              2x display with pixels to spare. Width and height are attributes,
+              not just CSS, so the box is reserved before the file arrives and
+              the paragraph beside it never reflows.
+
+              This is an illustrated avatar rather than a photograph. It is
+              accurate and it is his, so it is not a stock substitute, but a
+              real photograph converts better on a page selling freelance work
+              and should replace it when one exists. */}
           <div className="lg:col-span-3 lg:col-start-10">
-            <Placeholder label="headshot" ratio={4 / 5} />
+            <figure className="portrait" data-testid="portrait">
+              <img
+                src="/avatar.png"
+                alt="Mohamed Elhedi Ben Yedder"
+                width={228}
+                height={228}
+                decoding="async"
+              />
+              <figcaption className="log-line">
+                <b>~/avatar</b> Tunisia
+              </figcaption>
+            </figure>
           </div>
         </div>
       </section>
