@@ -116,7 +116,28 @@ const config = defineConfig({
   resolve: { tsconfigPaths: true },
   plugins: [
     devtools(),
-    nitro({ rollupConfig: { external: [/^@sentry\//] } }),
+    nitro({
+      rollupConfig: { external: [/^@sentry\//] },
+      // Precompressed twins for every public asset, served by content
+      // negotiation when the client sends Accept-Encoding.
+      //
+      // Measured, not assumed. Without this the node-server preset serves the
+      // bytes on disk verbatim, and Lighthouse's network records showed
+      // transfer size equal to resource size for every text asset: the home
+      // page cost 494 KiB on the wire, of which 328 KiB was JavaScript and
+      // 22.9 KiB was CSS that gzip takes to 79.7 KiB and 5.1 KiB. At the slow
+      // 4G profile Lighthouse throttles mobile to, that difference is most of
+      // a second of the critical path.
+      //
+      // Fonts are already woff2, which is Brotli-compressed internally, so
+      // they are unaffected and remain the largest thing on the wire.
+      //
+      // This is a property of what is built, not of where it is deployed. A
+      // CDN in front of the origin would compress on the fly, but the site
+      // must not be fast only when something else is doing the work, and the
+      // deploy target is not decided here.
+      compressPublicAssets: { gzip: true, brotli: true },
+    }),
     tailwindcss(),
     tanstackStart({
       pages: prerenderPages,

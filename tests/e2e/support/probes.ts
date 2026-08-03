@@ -35,6 +35,8 @@ declare global {
     /** Scratch state for the settle loop in `hydrated`. */
     __lastSignature?: number
     __signatureHeld?: number
+    /** Cumulative layout shift, accumulated by performance.spec.ts. */
+    __cls: number
   }
 }
 
