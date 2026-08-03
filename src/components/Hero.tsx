@@ -16,10 +16,10 @@ import type { CSSProperties } from 'react'
 //    are answered separately here.
 //
 // 2. Left aligned. DESIGN.md permits the display line to be centred and only
-//    if it reads better that way. It does not: the whole layout is a strict
-//    visible grid whose voice is a datasheet, and a centred line inside it
-//    reads as a different page pasted in. The permission is declined
-//    deliberately rather than overlooked.
+//    if it reads better that way. It does not: everything else on the page
+//    hangs off one left margin, and a centred line inside that reads as a
+//    different page pasted in. The permission is declined deliberately rather
+//    than overlooked.
 //
 // 3. `Hire me` is a plain <a>, not a <Link>. There is no /contact route yet,
 //    and a typed Link to a route that does not exist does not compile. See

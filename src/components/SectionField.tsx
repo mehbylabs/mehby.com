@@ -6,13 +6,13 @@ import type { ReactNode } from 'react'
 // accent.
 //
 // The tone is passed as an attribute, not as classes, on purpose. Every ground
-// owes five declarations — background, text colour, leading, focus-ring colour
-// and hairline colour — and three of them are invisible when omitted: text
-// silently inherits --color-ink at 3.02 on ultramarine, the focus ring silently
-// inherits --color-ultramarine at 1.00 on ultramarine, and hairlines inherit a
-// value never measured against that ground. A caller writing utility classes
+// owes four declarations — background, text colour, leading and focus-ring
+// colour — and two of them are invisible when omitted: text silently inherits
+// --color-ink at 3.02 on ultramarine, and the focus ring silently inherits
+// --color-ultramarine at 1.00 on ultramarine. A caller writing utility classes
 // can apply the background and stop. A caller writing `tone="ultramarine"`
-// cannot: the five live together in one rule block in styles.css.
+// cannot: the four live together in one rule block in styles.css, alongside
+// --field-rule-strong on the same selectors.
 export type Tone = 'paper' | 'ultramarine' | 'ultramarine-deep'
 
 export function SectionField({

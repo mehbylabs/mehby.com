@@ -113,10 +113,11 @@ body {
 @layer base {
   /* Ground-dependent roles, as inherited properties.
 
-     Two things about a surface cannot be read off the surface itself: what
-     colour a focus ring must be to be seen on it, and what colour a hairline
-     must be to be seen on it. Both are declared here as their paper-ground
-     value and redefined by every coloured tone in the components layer.
+     One thing about a surface cannot be read off the surface itself: what
+     colour a focus ring must be to be seen on it. It is declared here as its
+     paper-ground value and redefined by every coloured tone in the components
+     layer. --field-rule-strong, in the components layer, is the same mechanism
+     for the borders that carry meaning.
 
      They are custom properties rather than extra `:focus-visible` and rule
      selectors because inheritance is the part that is hard to break. A
@@ -128,7 +129,6 @@ body {
      that must agree on adjacent lines. */
   :root {
     --focus-ring: var(--color-ultramarine);
-    --field-rule: var(--color-rule);
   }
 
   body {
@@ -202,25 +202,24 @@ body {
     padding-inline: clamp(1.5rem, 4vw, 4rem);
   }
 
-  /* One tone, one block, five declarations. Ground, text colour, leading, focus
-     ring and hairline colour are only ever correct as a set, so they are
-     written together and nowhere else: adding a tone means copying a block that
-     already shows every line the new tone owes.
+  /* One tone, one block, four declarations. Ground, text colour, leading and
+     focus ring colour are only ever correct as a set, so they are written
+     together and nowhere else: adding a tone means copying a block that already
+     shows every line the new tone owes.
 
-     The three that are easy to forget, with the ratio you get for forgetting:
-       colour      body inherits --color-ink from the base layer .......... 3.02
+     The two that are easy to forget, with the ratio you get for forgetting:
+       colour        body inherits --color-ink from the base layer ........ 3.02
        --focus-ring  ring inherits --color-ultramarine, on ultramarine .... 1.00
-       --field-rule  hairlines inherit --color-rule, unmeasured there
 
      A structural border inside a coloured field belongs to the same family and
      is not covered by anything here: it must use --color-rule-on-color, never
-     --color-rule-strong, which measures 1.57 on ultramarine. */
+     --color-rule-strong, which measures 1.57 on ultramarine. That is
+     --field-rule-strong, declared against the same selectors below. */
   .section-field[data-tone='paper'] {
     background: var(--color-paper);
     color: var(--color-ink);
     line-height: var(--leading-body);
     --focus-ring: var(--color-ultramarine);
-    --field-rule: var(--color-rule);
   }
 
   .section-field[data-tone='ultramarine'] {
@@ -228,7 +227,6 @@ body {
     color: var(--color-paper);
     line-height: var(--leading-on-color);
     --focus-ring: var(--color-paper);
-    --field-rule: var(--color-rule-on-color);
   }
 
   .section-field[data-tone='ultramarine-deep'] {
@@ -236,28 +234,26 @@ body {
     color: var(--color-paper);
     line-height: var(--leading-on-color);
     --focus-ring: var(--color-paper);
-    --field-rule: var(--color-rule-on-color);
   }
 
   /* Twelve columns at desktop, stepping down through 6 to 3. DESIGN.md says
      twelve; twelve literally, at a 375px viewport, is 327px of content cut into
-     27px columns by eleven hairlines — no column wide enough to hold anything
-     and a grid that reads as hatching. 3 and 6 are divisors of 12, so the
-     drawn lines at each step are a subset of the lines at the next one and the
-     grid never shifts under the content — it only ever subdivides further.
+     27px columns — no column wide enough to hold anything. 3 and 6 are divisors
+     of 12, so the boundaries at each step are a subset of the boundaries at the
+     next one and the grid never shifts under the content: it only ever
+     subdivides further.
 
-     No column-gap, because the gutter here IS the hairline: the line sits
-     exactly on the track boundary, which is also what lets the test derive the
-     expected positions from the browser's own resolved track sizes instead of
-     re-implementing the component's arithmetic. */
+     The gutter is a real gap now. It used to be zero, because the gutter WAS
+     the drawn hairline and a gap would have put the line off the track
+     boundary. Nothing is drawn any more, so the tracks have to be separated by
+     something, and whitespace is the thing the approved direction separates
+     them with. */
   .grid-field {
     --grid-columns: 3;
 
-    position: relative;
-    isolation: isolate;
     display: grid;
     grid-template-columns: repeat(var(--grid-columns), minmax(0, 1fr));
-    column-gap: 0;
+    column-gap: clamp(1.5rem, 3.75vw, 3rem);
     row-gap: 1.5rem;
     width: 100%;
     max-width: 80rem;
@@ -276,59 +272,18 @@ body {
     }
   }
 
-  /* Behind the content and out of the hit-testing path. Both are needed and
-     neither is the other's backstop: z-index alone still leaves the layer
-     covering the grid wherever the content does not, and pointer-events alone
-     leaves hairlines painted across the text.
+  /* The ground-dependent hairline, and the one that carries meaning. Its
+     decorative counterpart, --field-rule, is gone with the grid rules that were
+     its only consumer; --color-rule survives as a token because contrast.mjs
+     still measures it at 1.37 on paper, which is the ceiling this project
+     records so nobody promotes a decorative value to a structural one.
 
-     The negative z-index is why .grid-field isolates. Without a stacking
-     context of its own here, -1 would drop this layer behind the section
-     field's background as well, and the rules would vanish on exactly the
-     coloured bands they are meant to cross. */
-  .grid-rules {
-    position: absolute;
-    inset: 0;
-    z-index: -1;
-    pointer-events: none;
-  }
+     A table divider and the edge of a placeholder both carry meaning, so they
+     need their own pair of measured values: --color-rule-strong at 3.34 on
+     paper, --color-rule-on-color at 3.28 on ultramarine, where rule-strong
+     drops to 1.57.
 
-  /* Hidden by default and revealed by tier, never re-hidden, so the ladder only
-     adds selectors as the viewport widens and there is no specificity race
-     between a rule that shows a line and a later one that hides it again. */
-  .grid-rule {
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    width: 1px;
-    background: var(--field-rule);
-    display: none;
-  }
-
-  .grid-rule[data-tier='1'] {
-    display: block;
-  }
-
-  @media (width >= 48rem) {
-    .grid-rule[data-tier='2'] {
-      display: block;
-    }
-  }
-
-  @media (width >= 64rem) {
-    .grid-rule[data-tier='3'] {
-      display: block;
-    }
-  }
-
-  /* The second ground-dependent hairline, and the one that carries meaning.
-     --field-rule above is the *decorative* value: on paper it resolves to
-     --color-rule at 1.32, which DESIGN.md permits for grid hatching and
-     explicitly forbids as "a border that carries meaning". A table divider and
-     the edge of a placeholder both carry meaning, so they need their own pair
-     of measured values: --color-rule-strong at 3.34 on paper, --color-rule-on-
-     color at 3.28 on ultramarine, where rule-strong drops to 1.57.
-
-     Same mechanism as --field-rule and --focus-ring, deliberately: an
+     Same mechanism as --focus-ring, deliberately: an
      inherited custom property that each ground declares for itself. That is
      what lets SpecTable and Placeholder be written once with no `tone` prop
      and no ancestor selectors, and still be correct at any nesting depth.
@@ -537,7 +492,8 @@ body {
     line-height: var(--leading-display);
     letter-spacing: -0.02em;
     /* Left aligned. DESIGN.md permits this one line to be centred and only if
-       it reads better; inside a strict visible grid it does not. */
+       it reads better; against a page that hangs off one left margin it does
+       not. */
     text-align: start;
     text-wrap: balance;
   }
@@ -637,19 +593,27 @@ body {
 
   /* An index entry, not a card. The rule above it is the structure and there
      is no box, no radius and no shadow; DESIGN.md bans cards as the default
-     container and this is the place they would arrive. */
-  /* The inline padding is not decoration. .grid-field sets column-gap to zero
-     on purpose, because the gutter IS the drawn hairline and a gap would put
-     the line off the track boundary. The consequence is that anything sitting
-     in adjacent tracks butts straight up against its neighbour unless it
-     insets itself, which is what this does. Trailing edge only, so the first
-     column still starts on the field's own inset and the left margin of the
-     page stays one measurement rather than two. */
+     container and this is the place they would arrive.
+
+     No inline padding. It used to carry 1.5rem on the trailing edge, because
+     .grid-field set column-gap to zero — the gutter was the drawn hairline and
+     a gap would have put the line off the track boundary — so anything in
+     adjacent tracks butted straight up against its neighbour unless it inset
+     itself. The grid has a real gap now, so the inset would be a second
+     measurement doing the first one's job and it would pull the rule above
+     each entry short of its own column.
+
+     The rule itself is heavier than every other structural border on the site,
+     and it is currentColor rather than --field-rule-strong. With the drawn grid
+     gone this is the only thing left dividing the work index into columns, so
+     it has to do the job the hairlines used to: a 1px rule-strong line reads as
+     a hint at a boundary, and three of them across a wide band read as nothing
+     at all. currentColor is the ground's own text colour, so it is correct on
+     any band by construction — the same argument the hover tint below makes. */
   .pillar {
     display: block;
     padding-block-start: 1rem;
-    padding-inline-end: 1.5rem;
-    border-block-start: 1px solid var(--field-rule-strong);
+    border-block-start: 2px solid currentColor;
     text-decoration: none;
   }
 
@@ -712,19 +676,19 @@ body {
   @media (width >= 64rem) {
     .capability {
       display: grid;
-      /* 3fr / 1fr / 8fr puts the two edges on the 25 percent and 33.3 percent
-         boundaries, which are drawn hairlines in the twelve-column grid. The
-         inner layout lands on the outer one rather than near it. */
-      grid-template-columns: 3fr 1fr 8fr;
-      column-gap: 0;
+      /* A fixed label column and one flexible column for the prose. This used
+         to be 3fr / 1fr / 8fr with no gap, so that the two inner edges landed
+         exactly on drawn hairlines of the twelve-column grid. There are no
+         drawn hairlines to land on, and a fractional label column re-flows the
+         three headings against each other every time the viewport moves. A
+         fixed measure holds them still, which is what makes three of these
+         stacked read as a specification. */
+      grid-template-columns: 15rem 1fr;
+      column-gap: 3rem;
     }
 
     .capability-heading {
       margin: 0;
-    }
-
-    .capability-body {
-      grid-column: 3;
     }
   }
 
@@ -898,13 +862,12 @@ body {
      down the viewport and the page reads as a render that stopped halfway,
      which is exactly the wrong signal on a page about something missing.
 
-     The floor is on the grid rather than on the field, which is not a detail.
-     The drawn hairlines are absolutely positioned inside .grid-field, so they
-     are exactly as tall as it is: putting the height on the section instead
-     produces a band whose rules stop a third of the way down and leave the
-     rest as flat colour. DESIGN.md calls the visible grid the voice, and a
-     page that is mostly empty is the page that most needs it to keep
-     speaking. */
+     The floor is on the grid rather than on the field, and it stays there now
+     that the drawn hairlines it was originally sized for are gone. The field
+     adds its own block padding on top, so a floor of 60vh here produces a band
+     comfortably taller than 60vh; the same floor moved onto the field would
+     produce one exactly 60vh tall, which is not taller than 60vh, which is what
+     tests/e2e/writing.spec.ts and tests/e2e/failure-states.spec.ts measure. */
   .page-field .grid-field {
     min-block-size: 60vh;
   }

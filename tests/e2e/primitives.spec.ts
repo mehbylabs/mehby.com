@@ -43,6 +43,7 @@ const TOKENS = {
   ultramarine: 'oklch(0.52 0.19 264)',
   'ultramarine-deep': 'oklch(0.34 0.15 264)',
   rule: 'oklch(0.88 0.01 85)',
+  'rule-strong': 'oklch(0.62 0.012 85)',
   'rule-on-color': 'oklch(0.82 0.05 264)',
   'signal-on-color': 'oklch(0.85 0.13 70)',
 } as const
@@ -72,7 +73,7 @@ const NON_TEXT = 3.0
  * looked for.
  */
 const GROUNDS = [
-  { tone: 'paper', copy: '.pillar-summary', rule: TOKENS.rule },
+  { tone: 'paper', copy: '.pillar-summary', rule: TOKENS['rule-strong'] },
   {
     tone: 'ultramarine',
     copy: '.hero-subline',
@@ -185,141 +186,80 @@ async function tabTo(page: Page, selector: string) {
   throw new Error(`never reached ${selector} by tabbing`)
 }
 
+// ---------------------------------------------------------------------------
+// The grid used to paint eleven hairlines per band and three tests here pinned
+// them: that they were drawn, that they sat behind the content, and that each
+// one landed on a real track edge at each breakpoint. The drawn rules are gone
+// — they read as a debug overlay across the headlines and tables they crossed,
+// and the approved direction has no visible grid — so those three assertions
+// were re-examined one at a time rather than deleted together.
+//
+//   "draws its gutters as real, painted hairlines"  DELETED. Every clause of it
+//   was about elements that no longer exist. There is no weaker version of
+//   "eleven painted lines" that is still true.
+//
+//   "draws every rule on a real column boundary, at every breakpoint" DELETED.
+//   Its surviving half — that the grid resolves to 3, 6 and 12 columns at the
+//   three tiers — is not lost: tests/e2e/responsive.spec.ts asserts exactly
+//   that, from the browser's own resolved track list, at 375, 768 and 1280. The
+//   half that is gone is the correspondence between a painted line and a track
+//   edge, which had nothing left to correspond to.
+//
+//   "draws its rules behind the content, never over it"  RE-POINTED, below. The
+//   overlay it guarded is deleted, so the test would now pass vacuously; what
+//   it was really protecting is that nothing the grid renders can intercept a
+//   click meant for the content. Turned into the assertion that the grid
+//   renders no painting layer at all, which fails the moment somebody puts one
+//   back, and which keeps the click-through check that caught the original bug.
+// ---------------------------------------------------------------------------
+
 test.describe('grid', () => {
-  test('draws its gutters as real, painted hairlines', async ({ page }) => {
-    await visit(page, '/')
-
-    const grid = field(page, 'paper').getByTestId('grid')
-    const rules = grid.getByTestId('grid-rule')
-
-    // Auto-retrying, so it also absorbs the reload the dev server triggers the
-    // first time it optimises a newly imported dependency. Everything after
-    // this point reads the DOM in one shot and would race that reload.
-    await expect(rules.first()).toBeVisible()
-
-    // Twelve columns have eleven interior gutters. This is the count at a
-    // desktop viewport; the breakpoint ladder is the next test's job.
-    const drawn = await rules.evaluateAll((els) =>
-      els.filter((el) => getComputedStyle(el).display !== 'none'),
-    )
-    expect(drawn, 'no grid rules are displayed at all').toHaveLength(11)
-
-    const gridBox = (await grid.boundingBox())!
-
-    for (let i = 0; i < 11; i++) {
-      const rule = rules.nth(i)
-      const box = (await rule.boundingBox())!
-      const style = await styleOf(rule, [
-        'background-color',
-        'visibility',
-        'opacity',
-      ])
-
-      // A hairline with no width, no height or no colour is not a drawn rule,
-      // and every one of those is a live failure mode: `inset: 0` on a static
-      // parent, a collapsed grid row, a background token that does not exist.
-      expect(box.width, `rule ${i} has no width`).toBeGreaterThan(0)
-      expect(box.width, `rule ${i} is not a hairline`).toBeLessThanOrEqual(2)
-      expect(box.height, `rule ${i} does not span the grid`).toBeCloseTo(
-        gridBox.height,
-        0,
-      )
-      expect(style['background-color'], `rule ${i} is not painted`).toBe(
-        TOKENS.rule,
-      )
-      expect(style.visibility).toBe('visible')
-      expect(Number(style.opacity)).toBeGreaterThan(0)
-    }
-
-    // Decoration, so it must not reach the accessibility tree.
-    const hidden = await rules.evaluateAll((els) =>
-      els.every((el) => el.closest('[aria-hidden="true"]') !== null),
-    )
-    expect(hidden, 'grid rules are exposed to assistive technology').toBe(true)
-  })
-
-  test('draws its rules behind the content, never over it', async ({
+  test('is geometry only, and paints nothing over the content', async ({
     page,
   }) => {
-    // The rules are an absolutely positioned overlay, and an absolutely
-    // positioned element paints above its in-flow siblings by default. Left
-    // alone it covers the whole grid: hairlines drawn across the text, and
-    // every link in the section swallowing its own clicks. Nothing about that
-    // looks wrong in a screenshot of a section with no links in it.
-    //
     // Measured on the case study hero, which is a link on a coloured band, so
-    // it is both the drenched half of the site and a real navigation rather
-    // than a fragment the harness could not get wrong.
+    // it is both the drenched half of the site and a real navigation.
     await visit(page, '/work/coachess')
+
+    const grid = field(page, 'ultramarine').getByTestId('grid')
+    await expect(grid).toBeVisible()
+
+    // The grid contributes no element of its own: every child of it is content
+    // a route put there. An absolutely positioned decoration layer is what this
+    // catches, and it is the shape the deleted hairlines had.
+    const painted = await grid.evaluate((el) =>
+      [...el.querySelectorAll('*')]
+        .filter((node) => {
+          const s = getComputedStyle(node)
+          return (
+            s.position === 'absolute' &&
+            (node.getAttribute('aria-hidden') === 'true' ||
+              node.closest('[aria-hidden="true"]') !== null)
+          )
+        })
+        // The two clipped, visually hidden elements are absolutely positioned
+        // on purpose and are not decoration: the table's accessible name and
+        // the spam trap. Neither is aria-hidden, so neither reaches here, but
+        // the filter is named so a reader does not have to work that out.
+        .filter((node) => !node.closest('.spec-caption, .honeypot'))
+        .map((node) => `${node.tagName.toLowerCase()}.${node.className}`),
+    )
+
+    expect(
+      painted,
+      'the grid renders an absolutely positioned decoration layer again. The ' +
+        'drawn hairlines were removed because they crossed the content; a ' +
+        'replacement that sits over it has the same defect',
+    ).toEqual([])
 
     const link = page.getByRole('link', { name: 'All work' })
     await expect(link).toBeVisible()
 
     // Playwright refuses to click through an intercepting element and names it,
-    // so the failure here reads "<div class=grid-rule> intercepts pointer
-    // events" rather than something about the link.
+    // so the failure here reads "<div class=...> intercepts pointer events"
+    // rather than something about the link.
     await link.click({ timeout: 5000 })
     await expect(page).toHaveURL(/\/$/)
-  })
-
-  test('draws every rule on a real column boundary, at every breakpoint', async ({
-    page,
-  }) => {
-    // The rules are positioned by React and the column count comes from a media
-    // query, so the two can drift apart with nothing failing to render. The
-    // expected positions below are derived from the browser's own resolved
-    // track sizes, never from the component's formula, so a rule that no longer
-    // sits on a track edge is caught rather than mirrored.
-    const LADDER = [
-      { width: 400, columns: 3 },
-      { width: 900, columns: 6 },
-      { width: 1280, columns: 12 },
-    ]
-
-    for (const { width, columns } of LADDER) {
-      await page.setViewportSize({ width, height: 800 })
-      await visit(page, '/work/coachess')
-
-      const grid = field(page, 'paper').getByTestId('grid')
-
-      const measured = await grid.evaluate((el) => {
-        const tracks = getComputedStyle(el)
-          .gridTemplateColumns.split(' ')
-          .map(parseFloat)
-        const left = el.getBoundingClientRect().left
-        return {
-          tracks,
-          rules: [...el.querySelectorAll('[data-testid="grid-rule"]')]
-            .filter((r) => getComputedStyle(r).display !== 'none')
-            .map((r) => r.getBoundingClientRect().left - left),
-        }
-      })
-
-      expect(
-        measured.tracks,
-        `at ${width}px the grid does not have ${columns} columns`,
-      ).toHaveLength(columns)
-
-      // Cumulative track widths are the actual gutter positions.
-      const boundaries = measured.tracks
-        .slice(0, -1)
-        .map((_, i) =>
-          measured.tracks.slice(0, i + 1).reduce((a, b) => a + b, 0),
-        )
-
-      expect(
-        measured.rules,
-        `at ${width}px a ${columns}-column grid should draw ` +
-          `${columns - 1} rules, not ${measured.rules.length}`,
-      ).toHaveLength(boundaries.length)
-
-      for (const [i, expected] of boundaries.entries()) {
-        expect(
-          measured.rules[i],
-          `at ${width}px rule ${i} is not on a column boundary`,
-        ).toBeCloseTo(expected, 0)
-      }
-    }
   })
 })
 
@@ -420,23 +360,32 @@ test.describe('section field', () => {
     }
   })
 
-  test('draws its grid rules in the on-colour rule token', async ({ page }) => {
+  // DELETED: "draws its grid rules in the on-colour rule token". It read the
+  // background of a .grid-rule on each of the three grounds, and there are no
+  // .grid-rules. The claim underneath it — that a border on a clay ground
+  // resolves to the token measured against that ground rather than to the paper
+  // one — is not lost with it. It is the same --field-rule-strong property, and
+  // it is still measured on both grounds by tests/e2e/spec-table.spec.ts
+  // ("every table on every page draws dividers that clear 3.0 on their own
+  // ground") and tests/e2e/placeholder.spec.ts, on elements that ship.
+  test('gives every structural border on a coloured ground a measured value', async ({
+    page,
+  }) => {
+    // The narrower replacement, kept here because this file is the pinned
+    // record for SectionField and the property is SectionField's. It asserts
+    // the declaration exists per tone, which is the edit a fourth tone copying
+    // one block and not the other would miss.
     await visit(page, '/')
 
     for (const ground of GROUNDS) {
-      const drawn = (
-        await styleOf(
-          field(page, ground.tone).getByTestId('grid-rule').first(),
-          ['background-color'],
-        )
-      )['background-color']
+      const resolved = (
+        await styleOf(field(page, ground.tone), ['--field-rule-strong'])
+      )['--field-rule-strong'].trim()
 
-      // --color-rule-strong measures 1.57 on ultramarine and --color-rule is
-      // not measured against it at all. Only --color-rule-on-color is.
       expect(
-        drawn,
-        `grid rules on ${ground.tone} are not using the rule token measured ` +
-          `against that ground`,
+        resolved,
+        `the ${ground.tone} field does not declare --field-rule-strong, so ` +
+          `every border inside it falls back to whatever an ancestor last set`,
       ).toBe(ground.rule)
     }
 
