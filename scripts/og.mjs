@@ -26,11 +26,17 @@ import { CASE_STUDY_DIR, getCaseStudies } from '../src/lib/content.ts'
 
 const WIDTH = 1200
 const HEIGHT = 630
-// DESIGN.md's two grounds, as sRGB. Written as hex rather than the OKLCH the
+// The terminal tokens, as sRGB. Written as hex rather than the OKLCH the
 // stylesheet uses because satori has no colour space machinery; these are the
-// values scripts/contrast.mjs converts those tokens to.
-const ULTRAMARINE = '#2d5ed4'
-const PAPER = '#f8f5ef'
+// values scripts/contrast.mjs converts those tokens to:
+//   --bg      oklch(0.145 0.01 70)  #0d0906
+//   --orange  oklch(0.66 0.2 45)    #f05d00
+//   --amber   oklch(0.85 0.13 85)   #f5c761
+//   --muted   oklch(0.64 0.02 72)   #948a7f
+const BG = '#0d0906'
+const ORANGE = '#f05d00'
+const AMBER = '#f5c761'
+const MUTED = '#948a7f'
 
 const arg = (name, fallback) => {
   const index = process.argv.indexOf(name)
@@ -40,6 +46,7 @@ const arg = (name, fallback) => {
 const outDir = arg('--out', 'public/og')
 const contentDir = arg('--content', CASE_STUDY_DIR)
 const fontPath = arg('--font', 'public/fonts/archivo.woff2')
+const fontMonoPath = arg('--font-mono', 'public/fonts/martian-mono.woff2')
 
 // ---------------------------------------------------------------------------
 // The font, and the two things that had to be worked around to get it in.
@@ -97,18 +104,22 @@ function hideTable(ttf, tag) {
   return patched
 }
 
+/** Loads one face for satori: decompressed to TTF, with fvar hidden. */
+async function loadFont(path) {
+  return hideTable(Buffer.from(await decompress(readFileSync(path))), 'fvar')
+}
+
 let archivo
+let martianMono
 try {
-  archivo = hideTable(
-    Buffer.from(await decompress(readFileSync(fontPath))),
-    'fvar',
-  )
+  archivo = await loadFont(fontPath)
+  martianMono = await loadFont(fontMonoPath)
 } catch (cause) {
   // Loud, and before anything is written. satori falls back to no font at all
   // rather than to a system face, so the alternative to failing here is a set
-  // of cards with a correct ultramarine ground and no type on them.
+  // of cards with a correct ground and no type on them.
   console.error(
-    `Cannot read the share image font at ${fontPath}: ${cause.message}`,
+    `Cannot read the share image font: ${cause.message}`,
   )
   process.exit(1)
 }
@@ -121,6 +132,11 @@ try {
 // from, what it is, and the one line of specification underneath. No logo,
 // because the site has no logo; no screenshot, because PRODUCT.md forbids
 // inventing one where the real asset does not exist.
+//
+// The layout is the terminal register: warm near-black ground, the title in
+// the one loud orange (display, never body text on bg), and the meta lines in
+// Martian Mono, with amber carrying the accent line. Every pair is one
+// scripts/contrast.mjs already gates.
 // ---------------------------------------------------------------------------
 
 const text = (content, style) => ({
@@ -138,20 +154,21 @@ const card = ({ kicker, title, footer }) => ({
       width: `${WIDTH}px`,
       height: `${HEIGHT}px`,
       padding: '72px 80px',
-      backgroundColor: ULTRAMARINE,
-      color: PAPER,
+      backgroundColor: BG,
+      color: MUTED,
       fontFamily: 'Archivo',
     },
     children: [
-      text(kicker, { fontSize: 26, letterSpacing: '0.08em', opacity: 0.85 }),
+      text(kicker, { fontFamily: 'Martian Mono', fontSize: 26 }),
       text(title, {
         // Long titles are rare and short ones are the norm, so the size steps
         // down rather than wrapping into the line above it.
+        color: ORANGE,
         fontSize: title.length > 28 ? 78 : 104,
         lineHeight: 1.05,
         letterSpacing: '-0.02em',
       }),
-      text(footer, { fontSize: 30, opacity: 0.85 }),
+      text(footer, { fontFamily: 'Martian Mono', fontSize: 30, color: AMBER }),
     ],
   },
 })
@@ -160,7 +177,15 @@ async function write(name, content) {
   const svg = await satori(card(content), {
     width: WIDTH,
     height: HEIGHT,
-    fonts: [{ name: 'Archivo', data: archivo, weight: 600, style: 'normal' }],
+    fonts: [
+      { name: 'Archivo', data: archivo, weight: 600, style: 'normal' },
+      {
+        name: 'Martian Mono',
+        data: martianMono,
+        weight: 500,
+        style: 'normal',
+      },
+    ],
   })
 
   const png = new Resvg(svg, {
@@ -168,7 +193,7 @@ async function write(name, content) {
     // The ground is painted by the card itself, so this only guarantees the
     // PNG is opaque. A transparent share image renders black in some clients
     // and white in others, which is a card nobody designed.
-    background: ULTRAMARINE,
+    background: BG,
   })
     .render()
     .asPng()

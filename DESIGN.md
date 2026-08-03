@@ -2,108 +2,98 @@
 
 ## Visual Theme
 
-**Specification.** The site presents engineering work as a technical specification document:
-warm paper ground, drawn rules, tabular data, precise figures. Reference objects are Braun
-and Vitsoe product datasheets, SBB timetable typography, and a utility bill tariff table.
+**Terminal session.** The site reads as a working terminal session: a prompt, real
+commands, honest status. Warm near-black ground, one loud orange, amber prompt glyphs,
+green and red reserved for live status. Martian Mono carries the terminal voice:
+prompts, paths, metadata, data. Archivo carries the statements and the prose.
 
-The theme is **light**, decided by a scene sentence rather than by category convention: a
-prospective client in Tunis opens the link on a laptop in a bright cafe at 11am, mid
-conversation, skimming for evidence. Bright ambient light, short attention, reading mode.
+The theme is **dark and warm**, decided by a scene sentence rather than by category
+convention: a prospective client in Tunis opens the link on a laptop in the evening,
+mid-conversation, skimming for evidence. The ground is warm near-black, never pure
+black, so the page reads as a session rather than as the generic terminal cliche.
 
-This is a deliberate rejection of two defaults. The dark terminal developer portfolio is the
-first order reflex for this category. The editorial serif brand page is the second order
-reflex. Neither is used here. Light also lets the product screenshots, which are themselves
-light interfaces, sit naturally instead of floating in a dark void.
+This is a deliberate rejection of two defaults. The generic terminal (green-on-black,
+monospace for everything, ASCII art, a glow behind the hero) is the first order reflex
+for the category. The light editorial-typographic brand page is the second order
+reflex. Neither is used here.
 
 ## Color
 
-**Strategy: Committed.** One saturated colour carries 30 to 50 percent of surface area
-through full bleed section fields, not a trim accent. The hero is fully drenched. Paper
-grounds carry reading passages. There is no hedging band of neutral between them.
+**Strategy: One ground, one accent.** A single warm near-black ground carries the whole
+site; the accent is one loud orange, used as a fill and as a display accent. Amber marks
+prompt glyphs and small highlights. Green and red are reserved for live status checks
+and used nowhere else.
 
 All values are OKLCH. No pure black, no pure white. Every neutral is tinted warm toward
-hue 85.
+hue 70.
 
-| Token                | OKLCH                  | Hex       | Role                                                 |
-| -------------------- | ---------------------- | --------- | ---------------------------------------------------- |
-| `--paper`            | `oklch(0.97 0.008 85)` | `#f8f5ef` | Primary ground                                       |
-| `--ink`              | `oklch(0.22 0.02 265)` | `#161b24` | Body and headings on paper                           |
-| `--ultramarine`      | `oklch(0.52 0.19 264)` | `#2d5ed4` | Hero drench, section fields, links                   |
-| `--ultramarine-deep` | `oklch(0.34 0.15 264)` | `#0c2d84` | Hover, pressed, dense text grounds                   |
-| `--rule`             | `oklch(0.88 0.01 85)`  | `#dad7d0` | Decorative hairlines, grid lines                     |
-| `--rule-strong`      | `oklch(0.62 0.012 85)` | `#89867e` | Structural borders and table dividers, on paper      |
-| `--signal`           | `oklch(0.56 0.16 45)`  | `#bd4d00` | Live indicators on paper, under 3 percent of surface |
-| `--rule-on-color`    | `oklch(0.82 0.05 264)` | `#b4c5e5` | Structural borders on ultramarine grounds            |
-| `--signal-on-color`  | `oklch(0.85 0.13 70)`  | `#ffbe69` | Live indicator dots on ultramarine grounds           |
+| Token         | OKLCH                 | Hex       | Role                                          |
+| ------------- | --------------------- | --------- | --------------------------------------------- |
+| `--bg`        | `oklch(0.145 0.01 70)`| `#0d0906` | Ground, the whole document                    |
+| `--panel`     | `oklch(0.185 0.012 70)`| `#16120d` | Cards, placeholders, chip fills               |
+| `--panel-lift`| `oklch(0.225 0.014 70)`| `#201b15` | Hover grounds, shadcn secondary               |
+| `--text`      | `oklch(0.93 0.012 75)` | `#ede7df` | Body and headings on ground                   |
+| `--muted`     | `oklch(0.64 0.02 72)`  | `#948a7f` | Metadata, log lines, secondary copy           |
+| `--orange`    | `oklch(0.66 0.2 45)`   | `#f05d00` | The one accent: fills, links, display type    |
+| `--amber`     | `oklch(0.85 0.13 85)`  | `#f5c761` | Prompt glyphs, path codes, small highlights   |
+| `--green`     | `oklch(0.75 0.16 150)` | `#55c975` | Live status only                              |
+| `--red`       | `oklch(0.6 0.2 25)`    | `#de3b3d` | Offline status only                           |
+| `--edge`      | `oklch(0.35 0.015 70)` | `#403932` | Decorative rules, row dividers                |
+| `--edge-strong`| `oklch(0.52 0.02 70)` | `#71675d` | Structural borders, focus boundaries          |
 
-### Every role needs two values
+### Colour rules
 
-The ultramarine ground covers 30 to 50 percent of the site by design, so a token
-validated only against paper is validated against half the site. Measured against
-ultramarine, `signal` is 1.15 and `rule-strong` is 1.57. Both are unusable there, which is
-why the on-colour variants above exist.
+The gate in `scripts/contrast.mjs` is the single source of truth, and `bun run build`
+refuses to build if any measured pair drops below its WCAG threshold. The rules the gate
+enforces, stated so nobody has to rediscover them from the numbers:
 
-The focus ring follows the same rule and is the sharpest case. On paper it is
-`--ultramarine` at 5.26. On an ultramarine ground it **must** invert to `--paper`, because
-an ultramarine ring on an ultramarine field measures 1.00 and is literally invisible.
-Keyboard users would lose focus entirely across half the site.
-
-`--signal-on-color` reaches 3.50 against ultramarine, which clears the non-text threshold
-but not the 4.5 body-text one. No usable lightness of a warm hue does. So on colour
-grounds the indicator **dot** carries the signal and its **label** is set in `--paper`.
-
-**Inheritance hazard.** The base layer sets `color: var(--color-ink)` on `body`. A section
-that sets only `background: var(--color-ultramarine)` therefore inherits ink at 3.02, which
-fails body text. Every ultramarine field must set its text colour explicitly. This is not
-optional styling; it is the difference between passing and failing.
+- **Orange is a fill and a display accent, never body-size text on bg.** Text on orange
+  measures 2.73; button labels on orange are always `bg`, which measures 5.90.
+- **Green and red only for live status.** The proof strip earns green with a live
+  response and red with a dead one, and neither is used anywhere else. Form errors are
+  amber, not red.
+- **Amber for prompt glyphs and small highlights.** The `$`, the path codes, the
+  timeline periods, the `PLACEHOLDER` labels.
+- **`edge` is decorative.** It measures 1.75 on bg, which is why structural borders use
+  `edge-strong`. A border a user must perceive to understand the layout is structural.
 
 ### Verified contrast
 
 Measured, not estimated. WCAG 2.2, body text threshold 4.5, large text and non text
 threshold 3.0.
 
-| Pair                           | Ratio | Verdict                                              |
-| ------------------------------ | ----- | ---------------------------------------------------- |
-| ink on paper                   | 15.88 | PASS body                                            |
-| paper on ultramarine           | 5.26  | PASS body                                            |
-| ultramarine on paper           | 5.26  | PASS body                                            |
-| paper on ultramarine-deep      | 11.18 | PASS body                                            |
-| ultramarine-deep on paper      | 11.18 | PASS body                                            |
-| signal on paper                | 4.56  | PASS body                                            |
-| ink on rule                    | 12.07 | PASS body                                            |
-| rule-strong on paper           | 3.34  | PASS non text                                        |
-| rule-on-color on ultramarine   | 3.28  | PASS non text                                        |
-| signal-on-color on ultramarine | 3.50  | PASS non text                                        |
-| rule on paper                  | 1.32  | Decorative only, never a border that carries meaning |
-
-Measured and deliberately excluded, recorded so nobody reintroduces them:
-
-| Pair                                  | Ratio | Why it is banned                                       |
-| ------------------------------------- | ----- | ------------------------------------------------------ |
-| ultramarine focus ring on ultramarine | 1.00  | Invisible. Invert to paper on colour grounds           |
-| signal on ultramarine                 | 1.15  | Use `--signal-on-color`                                |
-| rule-strong on ultramarine            | 1.57  | Use `--rule-on-color`                                  |
-| ink on ultramarine                    | 3.02  | Fails body text. Set text explicitly on colour grounds |
-
-Because paper on ultramarine clears 4.5, body copy is permitted directly on the drenched
-hero. No lightening of the brand colour is required anywhere.
+| Pair                    | Ratio | Verdict                         |
+| ----------------------- | ----- | ------------------------------- |
+| text on bg              | 16.10 | PASS body                       |
+| muted on bg             | 5.87  | PASS body                       |
+| text on panel           | 15.17 | PASS body                       |
+| muted on panel          | 5.53  | PASS body                       |
+| amber on bg             | 12.45 | PASS body                       |
+| green on bg             | 9.47  | PASS body                       |
+| red on bg               | 4.54  | PASS body                       |
+| bg on orange            | 5.90  | PASS body (button label)        |
+| orange on bg            | 5.90  | PASS large / non-text (display) |
+| orange on panel         | 5.56  | PASS non-text                   |
+| edge-strong on bg       | 3.58  | PASS non-text                   |
+| edge-strong on panel    | 3.38  | PASS non-text                   |
+| edge on bg              | 1.75  | Decorative only, never structural |
 
 Any new colour pair must be measured before use. The verification script lives in
 `scripts/contrast.mjs`.
 
 ## Typography
 
-Two families. Neither appears on the reflex reject list.
+Two families, each with one job.
 
-- **Archivo** (Omnibus Type) for all structural type. Sturdy grotesque with signage lineage
-  and true tabular figures. The **Expanded** cut carries display sizes.
-- **Martian Mono** strictly for data: figures, periods, versions, table cells, link URLs.
-  Never for body copy, never as decoration. Monospace here is earned by the tabular content,
-  not worn as a technical costume.
+- **Archivo** (Omnibus Type) for statements: headings, prose, button labels. Sturdy
+  grotesque with signage lineage. The **Expanded** cut carries display sizes.
+- **Martian Mono** strictly for data: prompts, paths, periods, table cells, link URLs,
+  captions. Never for body copy, never as decoration. Monospace here is earned by the
+  session's own register, not worn as a technical costume.
 
-Both self hosted. The `.woff2` files live in `public/fonts/`, the faces are declared by hand
-in `src/styles.css`, and both are preloaded from the server-rendered HTML. Nothing is
-fetched from a third party, which is a privacy obligation and not only a performance
+Both self hosted. The `.woff2` files live in `public/fonts/`, the faces are declared by
+hand in `src/styles.css`, and both are preloaded from the server-rendered HTML. Nothing
+is fetched from a third party, which is a privacy obligation and not only a performance
 preference.
 
 Reference the families as `Archivo` and `Martian Mono`. The fontsource package default
@@ -115,88 +105,101 @@ No display serif anywhere. No italic display. No all caps body.
 
 Modular, ratio 1.333, fluid via `clamp()`.
 
-| Step    | Size                             | Use                              |
-| ------- | -------------------------------- | -------------------------------- |
-| display | `clamp(3rem, 9vw, 7.5rem)`       | Hero, one line, Archivo Expanded |
-| h1      | `clamp(2.25rem, 4.5vw, 3.75rem)` | Page titles                      |
-| h2      | `clamp(1.75rem, 2.8vw, 2.5rem)`  | Section heads                    |
-| h3      | `1.333rem`                       | Subsections                      |
-| body    | `1.0625rem`                      | Reading copy                     |
-| data    | `0.9375rem`                      | Martian Mono, tabular figures    |
-| fine    | `0.8125rem`                      | Captions, table meta             |
+| Step    | Size                            | Use                              |
+| ------- | ------------------------------- | -------------------------------- |
+| display | `clamp(2.6rem, 7vw, 5.8rem)`    | Hero statement, one line, Archivo Expanded |
+| h1      | `clamp(2.1rem, 4.2vw, 3.4rem)`  | Page titles                      |
+| h2      | `clamp(1.6rem, 2.6vw, 2.3rem)`  | Section heads                    |
+| h3      | `1.25rem`                       | Subsections, card titles         |
+| body    | `1.0625rem`                     | Reading copy                     |
+| data    | `0.9375rem`                     | Martian Mono, tabular figures    |
+| fine    | `0.8125rem`                     | Captions, paths, table meta      |
 
 Body measure capped at 68ch.
 
 **Leading is a token, not an afterthought.** The `--text-*` tokens set font size only, so
-everything would otherwise inherit the body value of 1.6. At `--text-display`, which reaches
-7.5rem, that produces a 12rem line box and the hero falls apart.
+everything would otherwise inherit the body value of 1.65. At `--text-display`, which
+reaches 5.8rem, that produces a 9.6rem line box and the hero falls apart.
 
 | Token                | Value | Applies to                          |
 | -------------------- | ----- | ----------------------------------- |
-| `--leading-display`  | 0.95  | `--text-display`                    |
-| `--leading-h1`       | 1.05  | `--text-h1`                         |
-| `--leading-h2`       | 1.15  | `--text-h2`, `--text-h3`            |
-| `--leading-body`     | 1.6   | Reading copy on paper               |
-| `--leading-on-color` | 1.68  | Reading copy on ultramarine grounds |
-
-Light type on colour reads lighter and needs more air, which is why the on-colour value is
-higher.
+| `--leading-display`  | 1.02  | `--text-display`                    |
+| `--leading-h1`       | 1.08  | `--text-h1`                         |
+| `--leading-h2`       | 1.2   | `--text-h2`, `--text-h3`            |
+| `--leading-body`     | 1.65  | Reading copy                        |
 
 Hierarchy comes from scale and weight contrast, not from colour or from repeated small
 tracked labels above every heading.
 
 ## Layout
 
-A **strict, visible grid as voice.** Twelve columns, gutters drawn as real hairlines rather
-than implied by whitespace. Confident structure, not asymmetric collage, and never the
-generic centred stack that splits the difference between the two.
+Everything hangs off one left margin. The container is the **shell**: a single column,
+width-capped, with the site's inset padding. Every section is a **section** with the
+same generous vertical rhythm, and content within is one of three shapes:
 
-Sections alternate between paper and full bleed ultramarine fields. That alternation is
-what produces the 30 to 50 percent colour commitment structurally, so it cannot quietly
-erode during implementation.
+- **Section headers are paths.** A mono prefix in amber (`~/work`) with an Archivo
+  statement beside it. The path is the terminal's address for the content; the statement
+  is the heading.
+- **`tcard`** for open files: a panel card with a mono path line, a title, meta, a
+  summary, and an orange action line. The work index is a set of open files.
+- **Capability rows** for statements about the owner: a mono index in amber with prose
+  on the right, divided by a decorative rule.
+
+The grid ladder the previous design drew is gone. The layout is one fluid column that
+steps to 12 columns on wide screens for the case study layout only; nothing on the site
+is measured against a painted grid.
 
 Spacing varies deliberately for rhythm: tight inside tabular blocks, generous between
 sections. Uniform padding everywhere is the failure mode.
 
-Content is left aligned. Nothing is centred except the hero display line.
+Content is left aligned. Nothing is centred.
 
 ## Components
 
-**Specification table.** The signature element and the primary way work is presented. Real
-`<table>` semantics with `<th scope>`, `rule-strong` dividers, Martian Mono in data cells,
-Archivo in header cells. Rows tint on hover. Used for case study metadata: role, period,
-surfaces, architecture, links.
+**Prompt.** The session's opening line: `mehby@dev:~$`, a command, and a block cursor
+that blinks. The cursor's animation is the terminal's own; under reduced motion it
+collapses to a static block, which is the correct state.
 
-**Live links strip.** Three verified URLs in Martian Mono under the hero. Checked at build
-time. A URL that does not resolve renders dimmed with an explicit note rather than being
-presented as live.
+**Status chip.** A dot plus a mono label. Green is earned by a live response, red by a
+dead one, and the checking state is muted. Green and red appear nowhere else.
 
-**Section field.** Full bleed ultramarine band with paper type. Carries its own internal
-grid so rules stay continuous across the colour change.
+**Specification table.** The signature element and the primary way work is presented.
+Real `<table>` semantics on the shadcn Table primitive, with `<th scope>` and a visually
+hidden `<caption>`. A structural `edge-strong` rule across the top, decorative `edge`
+rules between rows, Martian Mono in data cells, Archivo in header cells. Used for case
+study metadata: role, period, surfaces, source, stack.
 
-**Placeholder.** A labelled, obviously provisional block for assets not yet supplied. Ruled
-border in `rule-strong`, Martian Mono caption naming what belongs there. It must never be
-mistakable for a finished element.
+**Placeholder.** A labelled, obviously provisional block for assets not yet supplied.
+Dashed `edge-strong` border, Martian Mono caption naming what belongs there. It must
+never be mistakable for a finished element.
+
+**Prose.** The MDX narrative: a capped measure, Archivo body, and section headings that
+echo the site's hierarchy.
 
 ### Banned
 
 Cards as the default container. Nested cards, always. Icon plus heading plus two lines,
 repeated. Badge or logo walls. Side stripe accent borders. Gradient text. Decorative
-glassmorphism. Big number metric heroes. Modals.
+glassmorphism (the nav's backdrop blur is functional, not decorative). Big number metric
+heroes. Modals.
 
 ## Motion
 
-Restrained by design, because the Specification voice is undermined by flourish.
+Restrained by design, because the terminal voice is undermined by flourish.
 
-One orchestrated hero reveal on first load, staggered, roughly 600ms total, ease out expo.
-After that: link underlines thicken, table rows tint, focus rings appear. Nothing else.
+Three motions, each one the thing it is:
 
-Transform and opacity only. Layout properties are never animated. Expanding regions
-transition `grid-template-rows`. No parallax at any setting, no scroll jacking, no counting
-numbers.
+- **Cursor blink.** The block cursor in a prompt, at a terminal's rate, step-end.
+- **Status pulse.** A live status dot rings at its edge; the pulse reads as "still
+  checking, still alive".
+- **Hover lifts.** A `tcard` lifts two pixels and its border goes orange; a link's colour
+  shifts. Hover states are colour and transform only.
 
-`prefers-reduced-motion: reduce` disables the entrance sequence entirely and every
-transition falls back to an instant state change.
+Transform, opacity and colour only. Layout properties are never animated. No parallax at
+any setting, no scroll jacking, no counting numbers.
+
+`prefers-reduced-motion: reduce` collapses every animation and transition to an instant
+state change.
 
 ## Imagery
 
