@@ -51,7 +51,7 @@ const PAGES = [
   { path: '/', label: 'home' },
   { path: '/about', label: 'about' },
   { path: '/contact', label: 'contact' },
-  { path: '/writing/', label: 'writing' },
+  { path: '/writing', label: 'writing' },
   { path: '/work/coachess', label: 'coachess case study' },
   { path: '/work/helmdeck', label: 'helmdeck case study' },
   { path: '/work/volt-tunisia', label: 'volt-tunisia case study' },

@@ -25,7 +25,7 @@ const PAGES = [
   '/',
   '/about',
   '/contact',
-  '/writing/',
+  '/writing',
   '/work/coachess',
   '/work/helmdeck',
   '/work/volt-tunisia',

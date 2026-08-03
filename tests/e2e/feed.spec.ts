@@ -63,10 +63,12 @@ test('the empty feed is a complete channel, not a stub', async ({
   expect(channel.root).toBe('rss')
   expect(channel.version).toBe('2.0')
   expect(channel.title).toContain('Mohamed Elhedi Ben Yedder')
-  // The same address the writing page declares as its canonical, trailing
-  // slash included. A feed that points at a second spelling of its own page is
-  // the same "two documents" mistake in a place nobody looks.
-  expect(channel.link).toBe('https://mehby.com/writing/')
+  // The same address the writing page declares as its canonical, with no
+  // trailing slash. A feed that points at a second spelling of its own page is
+  // the same "two documents" mistake in a place nobody looks, and this one is
+  // worse than most: `/writing/` answers 307, and a feed `id` is meant to be
+  // the document's stable identity for the life of the feed.
+  expect(channel.link).toBe('https://mehby.com/writing')
   expect(channel.description?.length ?? 0).toBeGreaterThan(20)
 
   // Zero, and valid. Not an error, not a placeholder item announcing that there

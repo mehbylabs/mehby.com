@@ -60,10 +60,25 @@ test('fills the viewport rather than reading as a render that stopped', async ({
   expect(height).toBeGreaterThan(viewport * 0.6)
 })
 
-test('serves the same page with a trailing slash', async ({ page }) => {
+test('serves the same page with a trailing slash, under the one canonical', async ({
+  page,
+}) => {
   // The route file is writing/index.tsx, so the router's own path carries the
-  // slash and the sitemap advertises it. Both spellings have to resolve or the
-  // advertised one is a 404 to anybody who typed the other.
+  // slash even though nothing on the site links to it that way. Somebody will
+  // type it, so it has to resolve.
+  //
+  // The second half is the part that regressed once. The canonical, the
+  // sitemap and every link agree on '/writing' because that is the address the
+  // server serves; '/writing/' answers 307 and sends you there. So arriving on
+  // the slashed spelling must land on the same document AND that document must
+  // still name the unslashed one as authoritative. A page that self-canonicals
+  // to whatever address it was reached at is how one document becomes two in a
+  // crawler's index, and it looks perfect in a browser.
   await page.goto('/writing/')
+
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Writing')
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
+    'href',
+    'https://mehby.com/writing',
+  )
 })

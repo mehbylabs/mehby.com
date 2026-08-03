@@ -50,14 +50,17 @@ const DESTINATIONS = [
   // than for its address.
   { to: '/', label: 'Work', exact: true },
   { to: '/about', label: 'About', exact: false },
-  // '/writing', not '/writing/', because the generated `to` type offers only
-  // the first and the route's canonical link is the second. That disagreement
-  // was latent while nothing linked to the page. This link is the first thing
-  // that does, so the prerenderer's crawler discovered the second spelling and
-  // listed both addresses in sitemap.xml, which is duplicate content handed to
-  // a crawler. The canonical stays '/writing/'; SITEMAP_ALIASES in
-  // vite.config.ts keeps this spelling out of the sitemap, and "advertises one
-  // address per page" in prerender.spec.ts is what holds it there.
+  // '/writing', which is now the only spelling anything on this site uses.
+  //
+  // It was not always. The generated `to` type offered only this one while the
+  // route's canonical and the sitemap both said '/writing/', and the
+  // disagreement stayed latent for as long as nothing linked to the page. This
+  // link was the first thing that did: the prerenderer's crawler found the
+  // second spelling through it and listed both addresses. That is settled at
+  // the source now, on the address the server actually serves, and
+  // SITEMAP_ALIASES in vite.config.ts keeps the redirecting spelling out of
+  // the sitemap. "advertises one address per page" in prerender.spec.ts is
+  // what holds it there.
   { to: '/writing', label: 'Writing', exact: false },
   { to: '/contact', label: 'Contact', exact: false },
 ] as const

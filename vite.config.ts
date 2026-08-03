@@ -79,25 +79,44 @@ export const NOT_PRERENDERED = [
  * kept out of the sitemap, because two <loc> entries for one document is
  * duplicate content handed to a crawler.
  *
- * `/writing` is here because the router's generated `to` type for that route
- * is `/writing` while its full path, its canonical link and the address the
- * sitemap advertises are all `/writing/`. So `<Link to="/writing">` is the
- * only spelling the typed API will accept and it is not the canonical one.
- * The disagreement was latent for as long as nothing linked to the page; the
- * site footer is the first thing that does, and the crawler immediately
- * discovered the second address and listed both.
+ * `/writing/` is here, and it used to be `/writing`, which is the whole story.
  *
- * The canonical stays `/writing/`, which is what src/routes/writing/index.tsx
- * already argues for at length. This is the other half: the alias resolves,
- * self-canonicalises in its own HTML, and is not advertised.
+ * The route file is writing/index.tsx, so the router's full path for it is
+ * `/writing/` and auto-discovery seeds that spelling. Its generated `to` type,
+ * however, is `/writing`, so `<Link to>` can only ever produce the other one.
+ * The canonical and the sitemap both used to follow the full path, on the
+ * reasonable-sounding rule that the router's own address is authoritative.
+ *
+ * It is not. Measured against the built server, `/writing/` answers
+ * `307 -> /writing`, so the address three declarations agreed on was the one
+ * address the site refuses to serve. The redirect target wins: canonical,
+ * sitemap and every link are `/writing` now, and this list holds the spelling
+ * that redirects rather than the spelling that resolves.
+ *
+ * Both are still prerendered. `/writing/` has to be, because auto-discovery
+ * seeds it and a filtered-out page that the crawler can still reach is how a
+ * 404 gets into a sitemap; and because somebody will type it.
  */
-const SITEMAP_ALIASES = ['/writing']
+const SITEMAP_ALIASES = ['/writing/']
+
+/**
+ * Addresses that resolve and are advertised, and that nothing else would put
+ * in the list.
+ *
+ * `/writing` is here because auto-discovery cannot find it: it seeds from the
+ * router's full paths, which spell this one `/writing/`. Without this line the
+ * canonical spelling would be excluded as an alias, the redirecting spelling
+ * would be the only one advertised, and the sitemap would point every crawler
+ * at a 307.
+ */
+const SITEMAP_CANONICAL_ONLY = ['/writing']
 
 export const prerenderPages: Array<{
   path: string
   sitemap?: { exclude: boolean }
 }> = [
   ...caseStudyPages,
+  ...SITEMAP_CANONICAL_ONLY.map((path) => ({ path })),
   ...SITEMAP_ALIASES.map((path) => ({
     path,
     sitemap: { exclude: true },

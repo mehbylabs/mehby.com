@@ -25,12 +25,30 @@ export const Route = createFileRoute('/writing/')({
       title: 'Writing by Mohamed Elhedi Ben Yedder',
       description:
         'Notes on the work behind the case studies. Nothing is published yet, so this page says so plainly rather than padding itself with placeholders.',
-      // The trailing slash is load bearing. This route's full path is
-      // `/writing/`, which is the address the generated sitemap advertises, and
-      // a canonical that disagrees with the sitemap hands a crawler two
-      // addresses for one document and lets it pick. Both resolve in a browser,
-      // which is why nothing else would ever catch it.
-      path: '/writing/',
+      // No trailing slash, and the absence is load bearing.
+      //
+      // This used to read '/writing/', on the argument that the route's full
+      // path carries the slash and a canonical must agree with the sitemap.
+      // The argument was right and the address was wrong, because it left out
+      // the only party that gets a vote: the server. Measured against the
+      // built output, `curl -sI /writing/` answers
+      //
+      //   307 Temporary Redirect
+      //   location: /writing
+      //
+      // so `/writing/` is not an address this site serves, it is an address it
+      // sends you away from. A canonical pointing at it told every crawler
+      // that the authoritative copy of this document lives at a URL which
+      // immediately redirects to the copy it was already reading, and the
+      // sitemap agreed with the canonical rather than with the server. Three
+      // declarations, two of them pointing at a redirect.
+      //
+      // So the served address wins. Canonical, sitemap and `<Link to>` are now
+      // all '/writing', which is also the only spelling the router's generated
+      // `to` type has ever accepted. '/writing/' still resolves, because
+      // somebody will type it, and vite.config.ts keeps it out of the sitemap
+      // so one document is advertised once.
+      path: '/writing',
     })
 
     return {

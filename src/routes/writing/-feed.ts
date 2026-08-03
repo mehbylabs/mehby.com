@@ -46,9 +46,12 @@ export function buildFeed(posts: ReadonlyArray<Post> = []): string {
     description: FEED_DESCRIPTION,
     // `id` is the feed's stable identity and `link` is where a human goes. They
     // are the same address here because the section is the feed's subject, and
-    // both carry the trailing slash the writing page declares as its canonical.
-    id: `${SITE}/writing/`,
-    link: `${SITE}/writing/`,
+    // both are the address the writing page declares as its canonical, which is
+    // also the one the server does not redirect away from. A feed `id` is meant
+    // to be stable forever, so it is the last place to leave a URL that answers
+    // 307.
+    id: `${SITE}/writing`,
+    link: `${SITE}/writing`,
     language: 'en',
     copyright: `Mohamed Elhedi Ben Yedder, ${new Date().getFullYear()}`,
     // Self reference. Without it a reader that found the feed through the page

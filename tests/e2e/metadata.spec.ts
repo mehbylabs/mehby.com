@@ -81,7 +81,7 @@ const PAGES = [
     image: '/og/default.png',
   },
   {
-    path: '/writing/',
+    path: '/writing',
     file: 'writing',
     title: 'Writing by Mohamed Elhedi Ben Yedder',
     description:

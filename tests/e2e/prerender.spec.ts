@@ -31,7 +31,7 @@ const PAGES = [
   { path: '/' },
   { path: '/about' },
   { path: '/contact' },
-  { path: '/writing/' },
+  { path: '/writing' },
   { path: '/work/coachess' },
   { path: '/work/helmdeck' },
   { path: '/work/volt-tunisia' },
