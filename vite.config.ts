@@ -41,38 +41,30 @@ const caseStudyPages = getCaseStudies().map((study) => ({
   path: `/work/${study.slug}`,
 }))
 
-/**
- * Paths that must be neither prerendered nor advertised, and why each one is
- * here. Both entries are temporary in different ways, so the list is exported
- * and asserted in src/lib/prerender-config.test.ts rather than left to rot.
- */
-export const NOT_PRERENDERED = [
-  // A scratch harness for tests/e2e/primitives.spec.ts. It is auto-discovered
-  // by the router generator whether or not anything links to it, so keeping it
-  // unpublished takes an explicit exclusion.
-  '/dev/primitives',
-  // '/contact' used to sit here, because the hero linked to a route that did
-  // not exist and failOnError would have stopped the build on its 404. The
-  // route landed, so the exclusion went: leaving it would have kept the site's
-  // primary call to action out of the sitemap permanently, which is the quiet
-  // failure the test named "holds no path that the router can actually serve"
-  // exists to force. /contact is prerendered like every other static page. Its
-  // form is a client-side RPC to a server function, so the HTML a crawler gets
-  // is complete and the endpoint behind it is unaffected by being static.
-]
+// There is no exclusion list any more, and its absence is the point.
+//
+// `NOT_PRERENDERED` held two paths over the life of this project and both were
+// temporary. '/contact' was excluded because the hero linked to a route that
+// did not exist yet and failOnError would have stopped the build on its 404;
+// it went when the route landed. '/dev/primitives' was a scratch harness for
+// the layout primitives, auto-discovered by the router generator whether or not
+// anything linked to it, so keeping it unpublished took an explicit exclusion;
+// it went when the harness was deleted before deploy.
+//
+// With both gone the list was empty, and so was the `prerender.filter` that
+// read it and the four unit tests that iterated it. An empty list behind a
+// filter that can no longer reject anything is not a safety net, it is four
+// tests that pass without asserting anything, which is the state this codebase
+// treats as worse than no test. So all of it is deleted.
+//
+// To bring it back, should a page ever need to exist and not be published: add
+// the path to `prerenderPages` with `sitemap: { exclude: true }` AND pass a
+// `filter` to the prerender options that rejects it. Both halves are required
+// and neither implies the other. The filter alone keeps the page out of the
+// output and still lists it in sitemap.xml, because the prerenderer pushes
+// crawled paths into the same array the sitemap is built from and the filter
+// runs after that push.
 
-/**
- * Everything the prerenderer should visit, plus the exclusions declared so the
- * sitemap can see them.
- *
- * The declarations are not redundant with the filter below, and this is the
- * least obvious line in this file. The prerenderer seeds its `seen` set from
- * this array before it starts crawling; a crawled path that was NOT seeded gets
- * pushed into the same array, which is what the sitemap is built from, and the
- * filter runs after that push. So `filter` alone keeps a path out of the output
- * and still lists it in sitemap.xml, pointing a crawler at a 404. Declaring the
- * path here, with `sitemap.exclude`, is what closes that half.
- */
 /**
  * Addresses that serve a page which is already advertised under another
  * spelling. Prerendered, because they resolve and a visitor can arrive on one;
@@ -111,6 +103,23 @@ const SITEMAP_ALIASES = ['/writing/']
  */
 const SITEMAP_CANONICAL_ONLY = ['/writing']
 
+/**
+ * Everything the prerenderer is told about before it starts crawling.
+ *
+ * Not the whole list of what gets prerendered: auto-discovery adds every static
+ * path the router serves, and crawling adds anything reachable by a link. This
+ * array is what has to be said out loud, either because nothing else would find
+ * it (the case studies, behind a `$slug` the generator refuses to enumerate,
+ * and `/writing`, which the router spells with a slash) or because it needs a
+ * `sitemap` option that only a declaration can carry.
+ *
+ * The declaration is what the sitemap is built from, and that is the least
+ * obvious thing here. The prerenderer seeds its `seen` set from this array
+ * before crawling, and pushes any crawled path that was not already seeded into
+ * the same array. So an alias that is only handled at prerender time still
+ * reaches the sitemap; `sitemap: { exclude: true }` on a declared path is the
+ * only thing that keeps it out.
+ */
 export const prerenderPages: Array<{
   path: string
   sitemap?: { exclude: boolean }
@@ -121,15 +130,7 @@ export const prerenderPages: Array<{
     path,
     sitemap: { exclude: true },
   })),
-  ...NOT_PRERENDERED.map((path) => ({
-    path,
-    sitemap: { exclude: true },
-  })),
 ]
-
-/** Prefix match, so a second harness page added later is covered for free. */
-export const isPrerendered = (page: { path: string }) =>
-  !NOT_PRERENDERED.includes(page.path) && !page.path.startsWith('/dev/')
 
 const config = defineConfig({
   resolve: { tsconfigPaths: true },
@@ -192,7 +193,9 @@ const config = defineConfig({
         // that becomes reachable without anybody adding it here.
         crawlLinks: true,
         failOnError: true,
-        filter: isPrerendered,
+        // No `filter`. Nothing on this site is built and withheld any more;
+        // see the note above `SITEMAP_ALIASES` for what it took to hold one
+        // back and what to do if that is ever needed again.
       },
       sitemap: { enabled: true, host: 'https://mehby.com' },
     }),

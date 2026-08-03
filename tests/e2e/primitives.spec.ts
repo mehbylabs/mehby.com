@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test'
+import { hydrated } from './support/probes'
 import type { Locator, Page } from '@playwright/test'
 
 // Grid and SectionField, pinned against a real browser.
@@ -11,10 +12,30 @@ import type { Locator, Page } from '@playwright/test'
 // assertion measures computed style, and the contrast ones re-measure the
 // ratio in the browser rather than trusting that the right token was named.
 //
-// Scratch-route caveat: these tests drive /dev/primitives, which is a
-// deliberately plain harness and is removed before deploy. When it goes, the
-// tone and focus-ring assertions must be re-pointed at the real sections that
-// replace it, or the invariant stops being covered on the pages that ship.
+// ---------------------------------------------------------------------------
+// This drove /dev/primitives, a scratch harness that rendered all three tones
+// side by side with a link and a paragraph in each. The harness is deleted and
+// these assertions are re-pointed at the pages that ship. Two notes on what
+// that cost and what it bought.
+//
+// It bought a real ultramarine-deep. The harness rendered one as a fixture;
+// the only ultramarine-deep on the site is the footer, which is on every page,
+// so the tone is now measured where a visitor actually meets it. That also
+// means the "every tone" test can no longer scope itself to <main>, which it
+// used to do precisely to avoid matching the footer.
+//
+// It cost the `leading-*` utility test, and the loss is instructive rather
+// than regrettable. That test asserted that Tailwind generates a `leading-h1`
+// class from the --leading-h1 theme token, and the only elements on the site
+// that ever carried such a class were the harness's own probes. Every real
+// heading reads `line-height: var(--leading-h1)` from styles.css instead. So
+// the assertion was testing a mechanism the site does not use, and deleting
+// the harness is what made that visible. It is replaced below by "the leading
+// tokens reach the elements that ship", which measures the resolved ratio on
+// the five real elements that consume the five tokens, and which fails for the
+// thing the old comment was actually worried about: a heading silently
+// inheriting 1.6.
+// ---------------------------------------------------------------------------
 
 const TOKENS = {
   paper: 'oklch(0.97 0.008 85)',
@@ -37,6 +58,43 @@ const LEADING = {
 // WCAG 2.2 thresholds. Body text 4.5, large text and non-text UI 3.0.
 const BODY_TEXT = 4.5
 const NON_TEXT = 3.0
+
+/**
+ * Where each ground is met on the site, and a real element standing on it.
+ *
+ * All three are on the home page, which is deliberate: measuring the tones
+ * against each other requires one document, and `/` is the only page that
+ * carries two of them in <main> plus the footer's third.
+ *
+ * The copy selectors name elements that set no line-height of their own, so
+ * what they report is what the tone handed down. That is the value a section
+ * which forgot to declare anything would get, which is the failure being
+ * looked for.
+ */
+const GROUNDS = [
+  { tone: 'paper', copy: '.pillar-summary', rule: TOKENS.rule },
+  {
+    tone: 'ultramarine',
+    copy: '.hero-subline',
+    rule: TOKENS['rule-on-color'],
+  },
+  {
+    tone: 'ultramarine-deep',
+    copy: '.footer-address',
+    rule: TOKENS['rule-on-color'],
+  },
+] as const
+
+/** Every prerendered page, for the assertions that discover rather than name. */
+const PAGES = [
+  '/',
+  '/about',
+  '/contact',
+  '/writing',
+  '/work/coachess',
+  '/work/helmdeck',
+  '/work/volt-tunisia',
+] as const
 
 declare global {
   interface Window {
@@ -85,6 +143,14 @@ const installProbes = (page: Page) =>
     }
   })
 
+const visit = async (page: Page, path: string) => {
+  await page.goto(path)
+  // The home page runs a staggered reveal on the hero, and every page restores
+  // scroll when React commits. Both move geometry under a measurement taken
+  // too early. See `hydrated` in support/probes.
+  await hydrated(page)
+}
+
 test.beforeEach(async ({ page }) => {
   await installProbes(page)
 })
@@ -95,27 +161,35 @@ const styleOf = (locator: Locator, props: Array<string>) =>
     return Object.fromEntries(names.map((n) => [n, s.getPropertyValue(n)]))
   }, props)
 
+/** The first band of a given tone on whatever page is loaded. */
+const field = (page: Page, tone: string) =>
+  page.locator(`[data-tone="${tone}"]`).first()
+
 // Walks focus with the keyboard rather than calling .focus(). :focus-visible is
 // a heuristic on input modality, so a programmatic focus on a link does not
 // necessarily match it, and a ring test that never engaged the selector would
 // pass against a completely broken ring.
-async function tabTo(page: Page, testId: string) {
-  for (let i = 0; i < 30; i++) {
+//
+// Takes a CSS selector rather than a test id, because the elements it has to
+// reach on the real pages are links inside composed sections and most of them
+// carry no test id of their own.
+async function tabTo(page: Page, selector: string) {
+  for (let i = 0; i < 40; i++) {
     await page.keyboard.press('Tab')
     const reached = await page.evaluate(
-      (id) => document.activeElement?.getAttribute('data-testid') === id,
-      testId,
+      (css) => document.activeElement?.matches(css) ?? false,
+      selector,
     )
     if (reached) return
   }
-  throw new Error(`never reached [data-testid="${testId}"] by tabbing`)
+  throw new Error(`never reached ${selector} by tabbing`)
 }
 
 test.describe('grid', () => {
   test('draws its gutters as real, painted hairlines', async ({ page }) => {
-    await page.goto('/dev/primitives')
+    await visit(page, '/')
 
-    const grid = page.getByTestId('section-field-paper').getByTestId('grid')
+    const grid = field(page, 'paper').getByTestId('grid')
     const rules = grid.getByTestId('grid-rule')
 
     // Auto-retrying, so it also absorbs the reload the dev server triggers the
@@ -172,16 +246,20 @@ test.describe('grid', () => {
     // alone it covers the whole grid: hairlines drawn across the text, and
     // every link in the section swallowing its own clicks. Nothing about that
     // looks wrong in a screenshot of a section with no links in it.
-    await page.goto('/dev/primitives')
+    //
+    // Measured on the case study hero, which is a link on a coloured band, so
+    // it is both the drenched half of the site and a real navigation rather
+    // than a fragment the harness could not get wrong.
+    await visit(page, '/work/coachess')
 
-    const link = page.getByTestId('field-link-ultramarine')
+    const link = page.getByRole('link', { name: 'All work' })
     await expect(link).toBeVisible()
 
     // Playwright refuses to click through an intercepting element and names it,
     // so the failure here reads "<div class=grid-rule> intercepts pointer
     // events" rather than something about the link.
     await link.click({ timeout: 5000 })
-    expect(new URL(page.url()).hash).toBe('#ultramarine')
+    await expect(page).toHaveURL(/\/$/)
   })
 
   test('draws every rule on a real column boundary, at every breakpoint', async ({
@@ -200,9 +278,9 @@ test.describe('grid', () => {
 
     for (const { width, columns } of LADDER) {
       await page.setViewportSize({ width, height: 800 })
-      await page.goto('/dev/primitives')
+      await visit(page, '/work/coachess')
 
-      const grid = page.getByTestId('section-field-paper').getByTestId('grid')
+      const grid = field(page, 'paper').getByTestId('grid')
 
       const measured = await grid.evaluate((el) => {
         const tracks = getComputedStyle(el)
@@ -246,118 +324,120 @@ test.describe('grid', () => {
 })
 
 test.describe('section field', () => {
-  const TONES = ['paper', 'ultramarine', 'ultramarine-deep'] as const
-
   test('renders every tone, full bleed, on its own ground', async ({
     page,
   }) => {
-    await page.goto('/dev/primitives')
+    await visit(page, '/')
 
     const viewport = await page.evaluate(
       () => document.documentElement.clientWidth,
     )
 
-    for (const tone of TONES) {
-      // Scoped to main. The site footer is itself an ultramarine-deep field,
-      // so the unscoped query matches two of that tone; the harness fixtures
-      // this test is about are the ones inside the page.
-      const field = page.locator('main').getByTestId(`section-field-${tone}`)
-      await expect(field, `no field rendered for tone ${tone}`).toBeVisible()
+    for (const ground of GROUNDS) {
+      // Unscoped, unlike the harness version, which scoped to <main> so the
+      // footer would not double the ultramarine-deep match. The footer IS the
+      // ultramarine-deep band now, so it has to be in scope, and `.first()`
+      // handles the two paper and two ultramarine bands on this page.
+      const band = field(page, ground.tone)
+      await expect(
+        band,
+        `no field rendered for tone ${ground.tone}`,
+      ).toBeVisible()
 
-      const style = await styleOf(field, ['background-color'])
+      const style = await styleOf(band, ['background-color'])
       expect(
         style['background-color'],
-        `${tone} is not on its own ground`,
-      ).toBe(TOKENS[tone])
+        `${ground.tone} is not on its own ground`,
+      ).toBe(TOKENS[ground.tone])
 
-      const box = (await field.boundingBox())!
-      expect(box.width, `${tone} is not full bleed`).toBeCloseTo(viewport, 0)
+      const box = (await band.boundingBox())!
+      expect(box.width, `${ground.tone} is not full bleed`).toBeCloseTo(
+        viewport,
+        0,
+      )
     }
   })
 
-  test('sets paper text on an ultramarine ground, not the inherited ink', async ({
+  test('sets paper text on a coloured ground, not the inherited ink', async ({
     page,
   }) => {
-    await page.goto('/dev/primitives')
+    await visit(page, '/')
 
-    const field = page.getByTestId('section-field-ultramarine')
-    const copy = field.getByTestId('field-copy')
+    for (const tone of ['ultramarine', 'ultramarine-deep'] as const) {
+      const ground = GROUNDS.find((g) => g.tone === tone)!
+      const band = field(page, tone)
+      const copy = band.locator(ground.copy).first()
 
-    const style = await styleOf(copy, ['color'])
-    const background = (await styleOf(field, ['background-color']))[
-      'background-color'
-    ]
+      const style = await styleOf(copy, ['color'])
+      const background = (await styleOf(band, ['background-color']))[
+        'background-color'
+      ]
 
-    expect(
-      style.color,
-      'body copy on the ultramarine field is still the ink inherited from ' +
-        'body. Ink on ultramarine measures 3.02 and fails body text. The tone ' +
-        'must set its text colour explicitly (DESIGN.md, Inheritance hazard)',
-    ).not.toBe(TOKENS.ink)
-    expect(style.color).toBe(TOKENS.paper)
+      expect(
+        style.color,
+        `body copy on the ${tone} field is still the ink inherited from body. ` +
+          `Ink on ultramarine measures 3.02 and fails body text. The tone must ` +
+          `set its text colour explicitly (DESIGN.md, Inheritance hazard)`,
+      ).not.toBe(TOKENS.ink)
+      expect(style.color).toBe(TOKENS.paper)
 
-    // Re-measured rather than inferred from the token name, so swapping in any
-    // other light-looking colour still has to clear the threshold.
-    const ratio = await page.evaluate(
-      ([fg, bg]) => window.contrast(fg, bg),
-      [style.color, background],
-    )
-    expect(
-      ratio,
-      `text on ultramarine measures ${ratio.toFixed(2)}`,
-    ).toBeGreaterThanOrEqual(BODY_TEXT)
+      // Re-measured rather than inferred from the token name, so swapping in
+      // any other light-looking colour still has to clear the threshold.
+      const ratio = await page.evaluate(
+        ([fg, bg]) => window.contrast(fg, bg),
+        [style.color, background],
+      )
+      expect(
+        ratio,
+        `text on ${tone} measures ${ratio.toFixed(2)}`,
+      ).toBeGreaterThanOrEqual(BODY_TEXT)
+    }
   })
 
   test('gives coloured grounds the on-colour leading', async ({ page }) => {
-    await page.goto('/dev/primitives')
+    await visit(page, '/')
 
-    const ratio = async (tone: string) => {
-      const copy = page
-        .getByTestId(`section-field-${tone}`)
-        .getByTestId('field-copy')
+    const ratio = async (tone: string, selector: string) => {
+      const copy = field(page, tone).locator(selector).first()
       const s = await styleOf(copy, ['line-height', 'font-size'])
       return parseFloat(s['line-height']) / parseFloat(s['font-size'])
     }
 
     expect(
-      await ratio('paper'),
+      await ratio('paper', '.pillar-summary'),
       'reading copy on paper should use --leading-body',
     ).toBeCloseTo(LEADING['--leading-body'], 2)
 
     // Light type on colour reads lighter and needs more air. DESIGN.md sets
     // 1.68 there against 1.6 on paper; inheriting the body value is the silent
-    // failure this catches.
-    for (const tone of ['ultramarine', 'ultramarine-deep']) {
+    // failure this catches. None of the three selectors sets a line-height of
+    // its own, so each reports what its tone handed down.
+    for (const ground of GROUNDS.filter((g) => g.tone !== 'paper')) {
       expect(
-        await ratio(tone),
-        `${tone} copy is not using --leading-on-color`,
+        await ratio(ground.tone, ground.copy),
+        `${ground.tone} copy is not using --leading-on-color`,
       ).toBeCloseTo(LEADING['--leading-on-color'], 2)
     }
   })
 
   test('draws its grid rules in the on-colour rule token', async ({ page }) => {
-    await page.goto('/dev/primitives')
+    await visit(page, '/')
 
-    const ruleOn = async (tone: string) =>
-      (
+    for (const ground of GROUNDS) {
+      const drawn = (
         await styleOf(
-          page
-            .getByTestId(`section-field-${tone}`)
-            .getByTestId('grid-rule')
-            .first(),
+          field(page, ground.tone).getByTestId('grid-rule').first(),
           ['background-color'],
         )
       )['background-color']
 
-    expect(await ruleOn('paper')).toBe(TOKENS.rule)
-
-    // --color-rule-strong measures 1.57 on ultramarine and --color-rule is not
-    // measured against it at all. Only --color-rule-on-color is.
-    for (const tone of ['ultramarine', 'ultramarine-deep']) {
+      // --color-rule-strong measures 1.57 on ultramarine and --color-rule is
+      // not measured against it at all. Only --color-rule-on-color is.
       expect(
-        await ruleOn(tone),
-        `grid rules on ${tone} are not using --color-rule-on-color`,
-      ).toBe(TOKENS['rule-on-color'])
+        drawn,
+        `grid rules on ${ground.tone} are not using the rule token measured ` +
+          `against that ground`,
+      ).toBe(ground.rule)
     }
 
     const ratio = await page.evaluate(
@@ -372,14 +452,16 @@ test.describe('focus ring', () => {
   test('inverts to paper inside an ultramarine field, and stays visible', async ({
     page,
   }) => {
-    await page.goto('/dev/primitives')
+    await visit(page, '/')
 
-    const field = page.getByTestId('section-field-ultramarine')
-    const background = (await styleOf(field, ['background-color']))[
+    const band = field(page, 'ultramarine')
+    const background = (await styleOf(band, ['background-color']))[
       'background-color'
     ]
 
-    await tabTo(page, 'field-link-ultramarine')
+    // The hero actions are the first two stops on the page and both sit on the
+    // drenched opening band, so this reaches a coloured ground in one Tab.
+    await tabTo(page, '.hero-actions a')
 
     const focused = await page.evaluate(() => {
       const el = document.activeElement!
@@ -389,9 +471,15 @@ test.describe('focus ring', () => {
         color: s.outlineColor,
         style: s.outlineStyle,
         width: s.outlineWidth,
+        onColour: el.closest('[data-tone]')?.getAttribute('data-tone') ?? null,
       }
     })
 
+    expect(
+      focused.onColour,
+      'the element this test tabbed to is no longer inside an ultramarine ' +
+        'band, so the inversion it measures is not the one under test',
+    ).toBe('ultramarine')
     expect(
       focused.visible,
       'the element took focus but :focus-visible did not engage, so this test ' +
@@ -423,101 +511,132 @@ test.describe('focus ring', () => {
   test('stays ultramarine on paper', async ({ page }) => {
     // The inversion must be scoped, not global: inverting everywhere would make
     // the ring paper-on-paper at 1.06 and move the bug rather than fix it.
-    await page.goto('/dev/primitives')
+    await visit(page, '/')
 
-    await tabTo(page, 'field-link-paper')
+    await tabTo(page, '[data-testid="pillar-link"]')
 
-    const color = await page.evaluate(
-      () => getComputedStyle(document.activeElement!).outlineColor,
-    )
-    expect(color).toBe(TOKENS.ultramarine)
+    const focused = await page.evaluate(() => ({
+      color: getComputedStyle(document.activeElement!).outlineColor,
+      onColour:
+        document.activeElement
+          ?.closest('[data-tone]')
+          ?.getAttribute('data-tone') ?? null,
+    }))
+
+    expect(
+      focused.onColour,
+      'the case study index is no longer on a paper band, so this measures ' +
+        'the wrong half of the inversion',
+    ).toBe('paper')
+    expect(focused.color).toBe(TOKENS.ultramarine)
   })
 
-  test('every field on the page keeps its text and its ring legible', async ({
+  test('every field on every page keeps its text and its ring legible', async ({
     page,
   }) => {
     // Deliberately generic. The named tests above pin the three tones we ship
-    // today; this one discovers whatever is on the page, so a fourth tone added
-    // later is covered the moment it is rendered rather than the moment
-    // somebody remembers to extend a list.
-    await page.goto('/dev/primitives')
+    // today on the page that carries all three; this one discovers whatever is
+    // on each page, so a fourth tone added later is covered the moment it is
+    // rendered rather than the moment somebody remembers to extend a list.
+    //
+    // Run across every prerendered page rather than one, which the harness
+    // could not do: a tone is only ever wrong in the composition it appears in,
+    // and a utility class applied on one page is exactly the failure below.
+    let fields = 0
 
-    const measured = await page.evaluate(() => {
-      const fields = [
-        ...document.querySelectorAll('[data-testid^="section-field-"]'),
-      ]
-      return fields.map((el) => {
-        const s = getComputedStyle(el)
-        const bg = s.backgroundColor
-        const ring = s.getPropertyValue('--focus-ring').trim()
+    for (const path of PAGES) {
+      await visit(page, path)
 
-        // Every element that actually renders text, not just the field itself.
-        // The tone sets its colour in the components layer, and a utility class
-        // sits in the layer above it: one `text-ink` on a paragraph inside a
-        // drenched section wins the cascade and puts 3.02:1 back on the page
-        // with the field's own computed colour still reading as correct.
-        //
-        // Nothing inside a field paints its own background, so the field's
-        // ground is the ground for all of them.
-        const worst = [...el.querySelectorAll('*')]
-          .filter((node) =>
-            [...node.childNodes].some(
-              (n) => n.nodeType === Node.TEXT_NODE && n.textContent?.trim(),
-            ),
-          )
-          .map((node) => ({
-            tag: node.tagName.toLowerCase(),
-            color: getComputedStyle(node).color,
-            ratio: window.contrast(getComputedStyle(node).color, bg),
-          }))
-          .sort((a, b) => a.ratio - b.ratio)[0]
+      const measured = await page.evaluate(() => {
+        const bands = [
+          ...document.querySelectorAll('[data-testid^="section-field-"]'),
+        ]
+        return bands.map((el) => {
+          const s = getComputedStyle(el)
+          const bg = s.backgroundColor
+          const ring = s.getPropertyValue('--focus-ring').trim()
 
-        return {
-          name: el.getAttribute('data-testid')!,
-          ring,
-          text: window.contrast(s.color, bg),
-          worst,
-          focus: ring ? window.contrast(ring, bg) : null,
-        }
+          // Every element that actually renders text, not just the field
+          // itself. The tone sets its colour in the components layer, and a
+          // utility class sits in the layer above it: one `text-ink` on a
+          // paragraph inside a drenched section wins the cascade and puts
+          // 3.02:1 back on the page with the field's own computed colour still
+          // reading as correct.
+          //
+          // Nothing inside a field paints its own background, so the field's
+          // ground is the ground for all of them.
+          const worst = [...el.querySelectorAll('*')]
+            .filter((node) =>
+              [...node.childNodes].some(
+                (n) => n.nodeType === Node.TEXT_NODE && n.textContent?.trim(),
+              ),
+            )
+            .map((node) => ({
+              tag: node.tagName.toLowerCase(),
+              color: getComputedStyle(node).color,
+              ratio: window.contrast(getComputedStyle(node).color, bg),
+            }))
+            .sort((a, b) => a.ratio - b.ratio)[0]
+
+          return {
+            name: el.getAttribute('data-testid')!,
+            ring,
+            text: window.contrast(s.color, bg),
+            worst,
+            focus: ring ? window.contrast(ring, bg) : null,
+          }
+        })
       })
-    })
 
-    expect(
-      measured.length,
-      'no section fields found on the page',
-    ).toBeGreaterThan(0)
+      expect(
+        measured.length,
+        `no section fields found on ${path}`,
+      ).toBeGreaterThan(0)
+      fields += measured.length
 
-    for (const field of measured) {
-      expect(
-        field.text,
-        `${field.name}: text measures ${field.text.toFixed(2)} against its own ground`,
-      ).toBeGreaterThanOrEqual(BODY_TEXT)
-      expect(
-        field.worst,
-        `${field.name}: renders no text at all, so it proves nothing here`,
-      ).toBeTruthy()
-      expect(
-        field.worst.ratio,
-        `${field.name}: its <${field.worst.tag}> renders ${field.worst.color} ` +
-          `at ${field.worst.ratio.toFixed(2)} against the field's ground`,
-      ).toBeGreaterThanOrEqual(BODY_TEXT)
-      expect(
-        field.ring,
-        `${field.name}: --focus-ring is not set, so the ring falls back to ` +
-          `whatever an ancestor last declared`,
-      ).not.toBe('')
-      expect(
-        field.focus,
-        `${field.name}: the focus ring measures ${field.focus?.toFixed(2)} ` +
-          `against its own ground`,
-      ).toBeGreaterThanOrEqual(NON_TEXT)
+      for (const band of measured) {
+        const where = `${path} ${band.name}`
+
+        expect(
+          band.text,
+          `${where}: text measures ${band.text.toFixed(2)} against its own ground`,
+        ).toBeGreaterThanOrEqual(BODY_TEXT)
+        expect(
+          band.worst,
+          `${where}: renders no text at all, so it proves nothing here`,
+        ).toBeTruthy()
+        expect(
+          band.worst.ratio,
+          `${where}: its <${band.worst.tag}> renders ${band.worst.color} at ` +
+            `${band.worst.ratio.toFixed(2)} against the field's ground`,
+        ).toBeGreaterThanOrEqual(BODY_TEXT)
+        expect(
+          band.ring,
+          `${where}: --focus-ring is not set, so the ring falls back to ` +
+            `whatever an ancestor last declared`,
+        ).not.toBe('')
+        expect(
+          band.focus,
+          `${where}: the focus ring measures ${band.focus?.toFixed(2)} against ` +
+            `its own ground`,
+        ).toBeGreaterThanOrEqual(NON_TEXT)
+      }
     }
+
+    // The harness rendered three fields and this walked all three. Across the
+    // real site it should be walking substantially more; a number this low
+    // means the selector stopped matching and every loop above ran empty.
+    expect(
+      fields,
+      'far fewer section fields were measured than the site renders, so the ' +
+        'discovery selector has stopped matching',
+    ).toBeGreaterThanOrEqual(PAGES.length * 2)
   })
 })
 
 test.describe('the tokens these primitives depend on', () => {
   test('reach the browser as custom properties', async ({ page }) => {
-    await page.goto('/dev/primitives')
+    await visit(page, '/')
 
     const expected: Record<string, string> = {
       '--color-rule-on-color': TOKENS['rule-on-color'],
@@ -542,22 +661,55 @@ test.describe('the tokens these primitives depend on', () => {
     }
   })
 
-  test('generate leading-* utilities', async ({ page }) => {
-    // --leading-* is a real Tailwind 4 theme namespace, so declaring the token
-    // is enough to get the utility. Verified here rather than assumed: if the
-    // namespace were wrong the class would compile to nothing and every heading
-    // would quietly inherit 1.6, which at --text-display is a 12rem line box.
-    await page.goto('/dev/primitives')
+  test('reach the elements that ship, as resolved leading', async ({
+    page,
+  }) => {
+    // The replacement for the harness's `leading-*` utility test, and a
+    // different assertion rather than the same one moved.
+    //
+    // That test proved Tailwind generates a utility from the --leading-*
+    // namespace. Nothing on this site uses those utilities: every real element
+    // reads `line-height: var(--leading-h1)` and friends from styles.css, so
+    // the utilities could stop being generated tomorrow and no page would
+    // change. What matters is that each token resolves on the element that
+    // consumes it, because the failure the old comment described is real and
+    // is reached the other way: a declaration deleted from styles.css leaves
+    // the heading inheriting 1.6, which at --text-display is a 12rem line box.
+    //
+    // One element per token, and each is the only place that token is used at
+    // this size on the site.
+    const CONSUMERS = [
+      { path: '/', selector: '.hero-display', token: '--leading-display' },
+      {
+        path: '/work/coachess',
+        selector: '.case-title',
+        token: '--leading-h1',
+      },
+      { path: '/', selector: '.section-heading', token: '--leading-h2' },
+      { path: '/work/coachess', selector: '.prose p', token: '--leading-body' },
+      { path: '/', selector: '.capability-body', token: '--leading-on-color' },
+    ] as const
 
-    for (const [token, value] of Object.entries(LEADING)) {
-      const name = token.replace('--leading-', '')
-      const probe = page.getByTestId(`leading-${name}`)
-      const s = await styleOf(probe, ['line-height', 'font-size'])
+    for (const consumer of CONSUMERS) {
+      await visit(page, consumer.path)
+
+      const element = page.locator(consumer.selector).first()
+      await expect(
+        element,
+        `${consumer.selector} no longer exists on ${consumer.path}, so ` +
+          `${consumer.token} has no shipping consumer to measure`,
+      ).toBeVisible()
+
+      const s = await styleOf(element, ['line-height', 'font-size'])
+      const resolved = parseFloat(s['line-height']) / parseFloat(s['font-size'])
 
       expect(
-        parseFloat(s['line-height']) / parseFloat(s['font-size']),
-        `the leading-${name} utility did not apply ${token}`,
-      ).toBeCloseTo(value, 2)
+        resolved,
+        `${consumer.selector} on ${consumer.path} resolves to a leading of ` +
+          `${resolved.toFixed(3)} rather than ${consumer.token}. A missing ` +
+          `line-height declaration inherits 1.6, which at --text-display is a ` +
+          `12rem line box`,
+      ).toBeCloseTo(LEADING[consumer.token], 2)
     }
   })
 })
