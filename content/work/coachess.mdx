@@ -1,0 +1,53 @@
+---
+title: CoaChess
+summary: A chess coaching platform with three distinct product surfaces and self-hosted live video.
+role: CTO and co-founder
+period: 2022 to present
+order: 3
+surfaces:
+  - label: coachess.net
+    href: https://coachess.net
+  - label: app.coachess.net
+    href: https://app.coachess.net
+  - label: live.coachess.net
+    href: https://live.coachess.net
+cover: /work/coachess.png
+---
+
+Chess coaching is a synchronous craft. A coach and a student share a board, the
+coach draws on it, and the value is in the conversation happening over the
+position. Most learning platforms are built for asynchronous content, so they
+model the lesson as a video with a comment thread underneath.
+
+CoaChess is built the other way round.
+
+## Three surfaces, three jobs
+
+The marketing site is where a player finds a bootcamp, a group, or a coach for
+one to one work. The application is where practice happens between sessions:
+lessons, puzzles, challenges and games. The live classroom is the session
+itself, with a shared board, video, real time annotation and replays afterwards.
+
+They are separate products with separate rhythms, sharing one identity and one
+data model.
+
+## Video that had to be owned
+
+The live classroom is not a video call with a chessboard beside it. Annotation,
+board state and speech have to stay in step, and a session has to be
+recoverable afterwards as a replay. That ruled out embedding a hosted meeting
+widget and made the real time layer something to run and operate directly,
+recording included.
+
+Operating it is the cost. Owning it is what makes replays and synchronised
+annotation possible at all.
+
+## Architecture over time
+
+The platform began as a set of small services, which is a reasonable shape for
+a team exploring a domain and an expensive one for a team shipping a product.
+It was consolidated into a typed front end and a Python service layer, which is
+where it runs today.
+
+The interesting part of that migration was not the rewrite. It was deciding
+which boundaries were real and which were organisational accidents.

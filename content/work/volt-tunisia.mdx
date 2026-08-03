@@ -1,0 +1,43 @@
+---
+title: VoltTunisia
+summary: The national electric vehicle companion for Tunisia, built around the tariff and tax rules drivers actually face.
+role: Designer and engineer
+period: 2026
+order: 1
+surfaces: []
+cover: /work/volt-tunisia.png
+---
+
+Buying an electric car in Tunisia means answering questions the international
+comparison sites cannot. What does a charge actually cost on the national
+tariff. Does the VAT exemption apply to this model. Is there a charger between
+here and Sfax, and will it be open.
+
+VoltTunisia answers those questions with the real rules rather than generic
+approximations.
+
+## The domain is the hard part
+
+Electricity is billed on a progressive national tariff with four tiers, so the
+cost of a charge depends on total household consumption that month, not on a
+flat rate per kilowatt hour. Electric vehicles are VAT exempt, which changes
+the comparison against a petrol equivalent. Both rules are encoded directly,
+with the unlimited top tier handled as a genuine edge case rather than a large
+number.
+
+The catalog scores vehicles for local conditions instead of reprinting
+manufacturer range figures. The charging map records access policy, because a
+charger that exists but requires a phone call is not the same as a public one.
+
+## Arabic first
+
+The interface is built Arabic first, with French and English secondary. That is
+a structural decision, not a translation pass. Layout, iconography and numeric
+formatting all follow from it.
+
+## How it is built
+
+React and TypeScript throughout, a Postgres data layer, map rendering over
+vector tiles, and collectors that keep vehicle and charger data current. The
+product is specification driven: behaviour is written down before it is built,
+and the end to end suite tests against those specifications.

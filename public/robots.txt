@@ -1,0 +1,19 @@
+# mehby.com
+#
+# Nothing on this site is closed to a crawler, and the empty Disallow below is
+# the way to say that rather than an oversight. The whole build is shaped
+# around a client that does not run JavaScript being able to read the proof:
+# seven prerendered documents, because the owner's recent source is private and
+# the pages themselves have to carry the evidence. A Disallow here would be
+# working against the reason any of that exists.
+#
+# The Sitemap line is absolute because the specification requires it, and it
+# names the same host as SITE in src/routes/-seo.ts. Those two are the only
+# places the origin is written down, and tests/e2e/prerender.spec.ts asserts
+# they agree and that something was actually emitted at the address this
+# claims.
+
+User-agent: *
+Disallow:
+
+Sitemap: https://mehby.com/sitemap.xml

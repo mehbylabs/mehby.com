@@ -3,11 +3,37 @@ node_modules
 dist
 dist-ssr
 *.local
+# RESEND_API_KEY lives in one of these and is never committed. `.env` alone
+# covers the file people mean to write and not the three they actually write,
+# so the glob is here too, with an escape for a checked-in example that holds
+# names and no values.
 .env
+.env.*
+!.env.example
+# direnv. Not covered by the globs above, and it is the other file people
+# actually put `export RESEND_API_KEY=` in.
+.envrc
 .nitro
 .tanstack
 .wrangler
 .output
+# The vercel preset's build directory. `.vercel/` also holds the project link
+# `vercel` writes on first deploy, which carries the project and org ids; both
+# halves stay out of the repository.
+.vercel
+
+# Generated share images. A pure function of the case study frontmatter,
+# public/fonts/archivo.woff2 and scripts/og.mjs, all of which are committed.
+# Checking the PNGs in would be caching a derived artefact that no reviewer can
+# read: a binary diff cannot show that a card still names last week's title.
+# `bun run build` regenerates them before vite copies public/.
+public/og
 .vinxi
 __unconfig*
 todos.json
+
+# test artefacts
+test-results
+playwright-report
+blob-report
+.playwright

@@ -10,33 +10,102 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AboutRouteImport } from './routes/about'
+import { Route as ContactRouteImport } from './routes/contact'
+import { Route as WorkSlugRouteImport } from './routes/work/$slug'
+import { Route as WritingIndexRouteImport } from './routes/writing/index'
+import { Route as WritingFeedDotxmlRouteImport } from './routes/writing/feed[.]xml'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AboutRoute = AboutRouteImport.update({
+  id: '/about',
+  path: '/about',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ContactRoute = ContactRouteImport.update({
+  id: '/contact',
+  path: '/contact',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WorkSlugRoute = WorkSlugRouteImport.update({
+  id: '/work/$slug',
+  path: '/work/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WritingIndexRoute = WritingIndexRouteImport.update({
+  id: '/writing/',
+  path: '/writing/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WritingFeedDotxmlRoute = WritingFeedDotxmlRouteImport.update({
+  id: '/writing/feed.xml',
+  path: '/writing/feed.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
+  '/contact': typeof ContactRoute
+  '/work/$slug': typeof WorkSlugRoute
+  '/writing/feed.xml': typeof WritingFeedDotxmlRoute
+  '/writing/': typeof WritingIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
+  '/contact': typeof ContactRoute
+  '/work/$slug': typeof WorkSlugRoute
+  '/writing/feed.xml': typeof WritingFeedDotxmlRoute
+  '/writing': typeof WritingIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
+  '/contact': typeof ContactRoute
+  '/work/$slug': typeof WorkSlugRoute
+  '/writing/feed.xml': typeof WritingFeedDotxmlRoute
+  '/writing/': typeof WritingIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/about'
+    | '/contact'
+    | '/work/$slug'
+    | '/writing/feed.xml'
+    | '/writing/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/about'
+    | '/contact'
+    | '/work/$slug'
+    | '/writing/feed.xml'
+    | '/writing'
+  id:
+    | '__root__'
+    | '/'
+    | '/about'
+    | '/contact'
+    | '/work/$slug'
+    | '/writing/feed.xml'
+    | '/writing/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AboutRoute: typeof AboutRoute
+  ContactRoute: typeof ContactRoute
+  WorkSlugRoute: typeof WorkSlugRoute
+  WritingFeedDotxmlRoute: typeof WritingFeedDotxmlRoute
+  WritingIndexRoute: typeof WritingIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +117,51 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/about': {
+      id: '/about'
+      path: '/about'
+      fullPath: '/about'
+      preLoaderRoute: typeof AboutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/contact': {
+      id: '/contact'
+      path: '/contact'
+      fullPath: '/contact'
+      preLoaderRoute: typeof ContactRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/work/$slug': {
+      id: '/work/$slug'
+      path: '/work/$slug'
+      fullPath: '/work/$slug'
+      preLoaderRoute: typeof WorkSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/writing/': {
+      id: '/writing/'
+      path: '/writing'
+      fullPath: '/writing/'
+      preLoaderRoute: typeof WritingIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/writing/feed.xml': {
+      id: '/writing/feed.xml'
+      path: '/writing/feed.xml'
+      fullPath: '/writing/feed.xml'
+      preLoaderRoute: typeof WritingFeedDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AboutRoute: AboutRoute,
+  ContactRoute: ContactRoute,
+  WorkSlugRoute: WorkSlugRoute,
+  WritingFeedDotxmlRoute: WritingFeedDotxmlRoute,
+  WritingIndexRoute: WritingIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

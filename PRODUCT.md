@@ -18,7 +18,7 @@ software rather than talking about it.
 open-source work, and recruiters. They read more slowly and care about how decisions were
 made, not just what was built.
 
-The job to be done: *decide, quickly and with confidence, whether to start a conversation.*
+The job to be done: _decide, quickly and with confidence, whether to start a conversation._
 
 ## Product Purpose
 

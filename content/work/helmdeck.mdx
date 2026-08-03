@@ -1,0 +1,40 @@
+---
+title: Helmdeck
+summary: Open-source mission control for AI coding agents, built on the open Agent Client Protocol.
+role: Designer and engineer
+period: 2026
+order: 2
+surfaces: []
+source: https://github.com/MohamedElhedi-BenYedder/helmdeck
+cover: /work/helmdeck.png
+---
+
+Coding agents multiplied faster than the tooling around them. Each one arrived
+with its own interface, its own history, its own idea of what a session is.
+Running more than one means holding the state of all of them in your head.
+
+Helmdeck is one workspace for any agent: projects, conversations, diffs and an
+inbox, over the open Agent Client Protocol rather than a per vendor
+integration.
+
+## Why a protocol rather than adapters
+
+Writing an adapter per agent is a treadmill. Every new tool is new work and
+every upgrade is a breakage. Building against a protocol moves that cost into
+a boundary that can be tested once. The protocol layer is isolated in its own
+package so the rest of the application never learns which agent it is talking
+to.
+
+## Local first
+
+Sessions, projects and history stay on the machine that ran them. Nothing
+requires a hosted service, and the whole thing is self-hostable. Sync is an
+optional addition rather than a precondition, which keeps the default posture
+private.
+
+## How it is built
+
+A TypeScript monorepo: the web application, a protocol isolation layer, a
+domain package with no user interface, and a shared design system. Apache 2.0,
+with the product research and architecture kept in the repository alongside the
+code.
