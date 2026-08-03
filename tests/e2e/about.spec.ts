@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { BODY_TEXT, NON_TEXT, TOKENS, installProbes } from './support/probes'
+import { installProbes } from './support/probes'
 
 // /about carries the one rule on this site that is easiest to break by being
 // helpful: PRODUCT.md forbids invented content of any kind, and a timeline is
@@ -13,8 +13,13 @@ test.beforeEach(async ({ page }) => {
 })
 
 test.describe('the page', () => {
-  test('is headed About, once', async ({ page }) => {
-    await expect(page.getByRole('heading', { level: 1 })).toHaveText('About')
+  test('opens with the whoami answer, once', async ({ page }) => {
+    // The page opens with a prompt running `whoami`; the answer, the owner's
+    // name, is the document title in the accessibility tree and in search
+    // results.
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText(
+      'Mohamed Elhedi Ben Yedder',
+    )
     await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1)
   })
 
@@ -171,43 +176,11 @@ test.describe('the portrait', () => {
     ).toBeGreaterThan(box.width)
   })
 })
-
-test.describe('the grounds', () => {
-  test('sets its own text colour on every coloured band', async ({ page }) => {
-    // The inheritance hazard DESIGN.md names: a field that sets only a
-    // background inherits --color-ink at 3.02 and fails body text across the
-    // drenched half of the site.
-    for (const field of await page
-      .getByTestId('section-field-ultramarine')
-      .all()) {
-      const color = await field.evaluate((el) => getComputedStyle(el).color)
-      const ratio = await page.evaluate(([a, b]) => window.contrast(a, b), [
-        color,
-        TOKENS.ultramarine,
-      ] as const)
-
-      expect(ratio).toBeGreaterThanOrEqual(BODY_TEXT)
-    }
-  })
-
-  test('draws the timeline dividers in a colour that survives the ground', async ({
-    page,
-  }) => {
-    const row = page.getByRole('table').getByRole('row').first()
-    const { color, background } = await row.evaluate((el) => {
-      const s = getComputedStyle(el)
-      return {
-        color: s.borderBlockEndColor,
-        background: getComputedStyle(el.closest('section')!).backgroundColor,
-      }
-    })
-
-    // --color-rule-strong measures 1.57 on ultramarine. This is the assertion
-    // that catches a table styled against paper and dropped onto a colour band.
-    const ratio = await page.evaluate(([a, b]) => window.contrast(a, b), [
-      color,
-      background,
-    ] as const)
-    expect(ratio).toBeGreaterThanOrEqual(NON_TEXT)
-  })
-})
+// DELETED: "the grounds". Both tests measured the two-colour band architecture
+// of the previous design: that every ultramarine field set its own text
+// colour, and that the timeline dividers survived the drenched ground. The
+// terminal design stands on one warm near-black ground for the whole document
+// and paints no coloured bands, so there is no inheritance hazard to guard and
+// no on-colour divider to survive. The single-ground equivalents are measured
+// elsewhere: text on bg by tests/e2e/tokens.spec.ts, and table borders by
+// tests/e2e/spec-table.spec.ts.

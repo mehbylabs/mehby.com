@@ -30,8 +30,7 @@ export const Route = createFileRoute('/')({
       description:
         'I build and ship full stack products end to end, from an empty repository to something people use. CTO and co-founder of CoaChess, available for freelance work.',
       path: '/',
-      imageAlt:
-        'Mohamed Elhedi Ben Yedder, full stack product engineer',
+      imageAlt: 'Mohamed Elhedi Ben Yedder, full stack product engineer',
     }),
 })
 

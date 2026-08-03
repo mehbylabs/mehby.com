@@ -27,19 +27,19 @@ and used nowhere else.
 All values are OKLCH. No pure black, no pure white. Every neutral is tinted warm toward
 hue 70.
 
-| Token         | OKLCH                 | Hex       | Role                                          |
-| ------------- | --------------------- | --------- | --------------------------------------------- |
-| `--bg`        | `oklch(0.145 0.01 70)`| `#0d0906` | Ground, the whole document                    |
-| `--panel`     | `oklch(0.185 0.012 70)`| `#16120d` | Cards, placeholders, chip fills               |
-| `--panel-lift`| `oklch(0.225 0.014 70)`| `#201b15` | Hover grounds, shadcn secondary               |
-| `--text`      | `oklch(0.93 0.012 75)` | `#ede7df` | Body and headings on ground                   |
-| `--muted`     | `oklch(0.64 0.02 72)`  | `#948a7f` | Metadata, log lines, secondary copy           |
-| `--orange`    | `oklch(0.66 0.2 45)`   | `#f05d00` | The one accent: fills, links, display type    |
-| `--amber`     | `oklch(0.85 0.13 85)`  | `#f5c761` | Prompt glyphs, path codes, small highlights   |
-| `--green`     | `oklch(0.75 0.16 150)` | `#55c975` | Live status only                              |
-| `--red`       | `oklch(0.6 0.2 25)`    | `#de3b3d` | Offline status only                           |
-| `--edge`      | `oklch(0.35 0.015 70)` | `#403932` | Decorative rules, row dividers                |
-| `--edge-strong`| `oklch(0.52 0.02 70)` | `#71675d` | Structural borders, focus boundaries          |
+| Token           | OKLCH                   | Hex       | Role                                        |
+| --------------- | ----------------------- | --------- | ------------------------------------------- |
+| `--bg`          | `oklch(0.145 0.01 70)`  | `#0d0906` | Ground, the whole document                  |
+| `--panel`       | `oklch(0.185 0.012 70)` | `#16120d` | Cards, placeholders, chip fills             |
+| `--panel-lift`  | `oklch(0.225 0.014 70)` | `#201b15` | Hover grounds, shadcn secondary             |
+| `--text`        | `oklch(0.93 0.012 75)`  | `#ede7df` | Body and headings on ground                 |
+| `--muted`       | `oklch(0.64 0.02 72)`   | `#948a7f` | Metadata, log lines, secondary copy         |
+| `--orange`      | `oklch(0.66 0.2 45)`    | `#f05d00` | The one accent: fills, links, display type  |
+| `--amber`       | `oklch(0.85 0.13 85)`   | `#f5c761` | Prompt glyphs, path codes, small highlights |
+| `--green`       | `oklch(0.75 0.16 150)`  | `#55c975` | Live status only                            |
+| `--red`         | `oklch(0.6 0.2 25)`     | `#de3b3d` | Offline status only                         |
+| `--edge`        | `oklch(0.35 0.015 70)`  | `#403932` | Decorative rules, row dividers              |
+| `--edge-strong` | `oklch(0.52 0.02 70)`   | `#71675d` | Structural borders, focus boundaries        |
 
 ### Colour rules
 
@@ -62,21 +62,21 @@ enforces, stated so nobody has to rediscover them from the numbers:
 Measured, not estimated. WCAG 2.2, body text threshold 4.5, large text and non text
 threshold 3.0.
 
-| Pair                    | Ratio | Verdict                         |
-| ----------------------- | ----- | ------------------------------- |
-| text on bg              | 16.10 | PASS body                       |
-| muted on bg             | 5.87  | PASS body                       |
-| text on panel           | 15.17 | PASS body                       |
-| muted on panel          | 5.53  | PASS body                       |
-| amber on bg             | 12.45 | PASS body                       |
-| green on bg             | 9.47  | PASS body                       |
-| red on bg               | 4.54  | PASS body                       |
-| bg on orange            | 5.90  | PASS body (button label)        |
-| orange on bg            | 5.90  | PASS large / non-text (display) |
-| orange on panel         | 5.56  | PASS non-text                   |
-| edge-strong on bg       | 3.58  | PASS non-text                   |
-| edge-strong on panel    | 3.38  | PASS non-text                   |
-| edge on bg              | 1.75  | Decorative only, never structural |
+| Pair                 | Ratio | Verdict                           |
+| -------------------- | ----- | --------------------------------- |
+| text on bg           | 16.10 | PASS body                         |
+| muted on bg          | 5.87  | PASS body                         |
+| text on panel        | 15.17 | PASS body                         |
+| muted on panel       | 5.53  | PASS body                         |
+| amber on bg          | 12.45 | PASS body                         |
+| green on bg          | 9.47  | PASS body                         |
+| red on bg            | 4.54  | PASS body                         |
+| bg on orange         | 5.90  | PASS body (button label)          |
+| orange on bg         | 5.90  | PASS large / non-text (display)   |
+| orange on panel      | 5.56  | PASS non-text                     |
+| edge-strong on bg    | 3.58  | PASS non-text                     |
+| edge-strong on panel | 3.38  | PASS non-text                     |
+| edge on bg           | 1.75  | Decorative only, never structural |
 
 Any new colour pair must be measured before use. The verification script lives in
 `scripts/contrast.mjs`.
@@ -105,15 +105,15 @@ No display serif anywhere. No italic display. No all caps body.
 
 Modular, ratio 1.333, fluid via `clamp()`.
 
-| Step    | Size                            | Use                              |
-| ------- | ------------------------------- | -------------------------------- |
-| display | `clamp(2.6rem, 7vw, 5.8rem)`    | Hero statement, one line, Archivo Expanded |
-| h1      | `clamp(2.1rem, 4.2vw, 3.4rem)`  | Page titles                      |
-| h2      | `clamp(1.6rem, 2.6vw, 2.3rem)`  | Section heads                    |
-| h3      | `1.25rem`                       | Subsections, card titles         |
-| body    | `1.0625rem`                     | Reading copy                     |
-| data    | `0.9375rem`                     | Martian Mono, tabular figures    |
-| fine    | `0.8125rem`                     | Captions, paths, table meta      |
+| Step    | Size                           | Use                                        |
+| ------- | ------------------------------ | ------------------------------------------ |
+| display | `clamp(2.6rem, 7vw, 5.8rem)`   | Hero statement, one line, Archivo Expanded |
+| h1      | `clamp(2.1rem, 4.2vw, 3.4rem)` | Page titles                                |
+| h2      | `clamp(1.6rem, 2.6vw, 2.3rem)` | Section heads                              |
+| h3      | `1.25rem`                      | Subsections, card titles                   |
+| body    | `1.0625rem`                    | Reading copy                               |
+| data    | `0.9375rem`                    | Martian Mono, tabular figures              |
+| fine    | `0.8125rem`                    | Captions, paths, table meta                |
 
 Body measure capped at 68ch.
 
@@ -121,12 +121,12 @@ Body measure capped at 68ch.
 everything would otherwise inherit the body value of 1.65. At `--text-display`, which
 reaches 5.8rem, that produces a 9.6rem line box and the hero falls apart.
 
-| Token                | Value | Applies to                          |
-| -------------------- | ----- | ----------------------------------- |
-| `--leading-display`  | 1.02  | `--text-display`                    |
-| `--leading-h1`       | 1.08  | `--text-h1`                         |
-| `--leading-h2`       | 1.2   | `--text-h2`, `--text-h3`            |
-| `--leading-body`     | 1.65  | Reading copy                        |
+| Token               | Value | Applies to               |
+| ------------------- | ----- | ------------------------ |
+| `--leading-display` | 1.02  | `--text-display`         |
+| `--leading-h1`      | 1.08  | `--text-h1`              |
+| `--leading-h2`      | 1.2   | `--text-h2`, `--text-h3` |
+| `--leading-body`    | 1.65  | Reading copy             |
 
 Hierarchy comes from scale and weight contrast, not from colour or from repeated small
 tracked labels above every heading.

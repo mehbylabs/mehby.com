@@ -113,8 +113,7 @@ const edgeRatio = contrast(rgb.edge, rgb.bg)
 console.log(
   `
 Note: --edge on bg is ${edgeRatio.toFixed(2)}:1. Decorative outlines only.
-` +
-    'Any border a user must perceive uses --edge-strong.',
+` + 'Any border a user must perceive uses --edge-strong.',
 )
 
 if (failed > 0) {

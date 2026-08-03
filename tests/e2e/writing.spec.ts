@@ -53,7 +53,7 @@ test('fills the viewport rather than reading as a render that stopped', async ({
   page,
 }) => {
   const height = await page
-    .getByTestId('section-field-ultramarine')
+    .locator('main')
     .evaluate((el) => el.getBoundingClientRect().height)
   const viewport = page.viewportSize()!.height
 

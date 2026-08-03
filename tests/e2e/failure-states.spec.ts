@@ -13,30 +13,35 @@ test.describe('an address that does not exist', () => {
     await page.goto('/no-such-page')
   })
 
-  test('says so, as a specification', async ({ page }) => {
+  test('says so, in the terminal register', async ({ page }) => {
+    // The 404 is a terse register line: an error title, a status, and the
+    // address that was asked for. The register replaces the old specification
+    // table, but the three facts it carried are still all here.
     await expect(page.getByTestId('failure-title')).toHaveText(
-      'No page at this address',
+      'error: page not found',
     )
 
-    const table = page.getByRole('table')
-    await expect(table).toHaveAccessibleName(/does not exist/)
-    await expect(table.getByRole('rowheader')).toHaveCount(4)
-    await expect(table.getByRole('row').first()).toContainText('404')
+    const failure = page.getByTestId('failure')
+    await expect(failure).toContainText('404')
+    await expect(failure).toContainText('no route on this site matches it')
   })
 
   test('prints the address that was asked for', async ({ page }) => {
     // A 404 that does not name what it could not find leaves a visitor unable
     // to tell a typing slip from a dead link somebody else published.
-    await expect(page.getByRole('table')).toContainText('/no-such-page')
+    await expect(page.getByTestId('failure')).toContainText('/no-such-page')
 
     await page.goto('/work/not-a-study/deeper')
-    await expect(page.getByRole('table')).toContainText(
+    await expect(page.getByTestId('failure')).toContainText(
       '/work/not-a-study/deeper',
     )
   })
 
   test('leads home', async ({ page }) => {
-    const home = page.getByRole('link', { name: 'Home' })
+    // Home is the work index, so the way home is the mono path for it. The
+    // nav and footer carry the same path, so the failure page's own link is
+    // the first one in reading order.
+    const home = page.getByRole('link', { name: '~/work' }).first()
 
     await expect(home).toHaveAttribute('href', '/')
     await home.click()
@@ -58,8 +63,11 @@ test.describe('an address that does not exist', () => {
   test('fills the viewport rather than reading as a render that stopped', async ({
     page,
   }) => {
+    // The failure state stands at least two thirds of a viewport tall, so a
+    // short error over empty ground cannot read as a render that stopped
+    // halfway.
     const height = await page
-      .getByTestId('section-field-ultramarine')
+      .locator('main')
       .evaluate((el) => el.getBoundingClientRect().height)
 
     expect(height).toBeGreaterThan(page.viewportSize()!.height * 0.6)

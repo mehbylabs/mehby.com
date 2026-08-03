@@ -29,8 +29,8 @@ export function Hero() {
           Mohamed Elhedi Ben Yedder
         </h1>
         <p className="log-line" style={{ marginTop: '0.5rem' }}>
-          <b>CTO and co-founder of CoaChess</b> / available for freelance product
-          engineering
+          <b>CTO and co-founder of CoaChess</b> / available for freelance
+          product engineering
         </p>
       </div>
 

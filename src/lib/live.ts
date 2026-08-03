@@ -38,7 +38,9 @@ async function ping(url: string): Promise<LiveStatus> {
 export const checkLive = createServerFn({ method: 'GET' }).handler(async () => {
   const { getCaseStudies } = await import('#/lib/content')
   const urls = [
-    ...new Set(getCaseStudies().flatMap((study) => study.surfaces.map((s) => s.href))),
+    ...new Set(
+      getCaseStudies().flatMap((study) => study.surfaces.map((s) => s.href)),
+    ),
   ]
   return Promise.all(urls.map(ping))
 })

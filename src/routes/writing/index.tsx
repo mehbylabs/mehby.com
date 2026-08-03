@@ -71,7 +71,15 @@ export const Route = createFileRoute('/writing/')({
 function Writing() {
   return (
     <main>
-      <section className="shell section">
+      <section
+        className="shell section"
+        style={{
+          minHeight: '65vh',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+        }}
+      >
         <div className="section-path">
           <span className="section-path-code">~/writing</span>
           <h1 className="page-title">Writing</h1>

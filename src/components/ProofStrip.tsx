@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
-import { checkLive, type LiveStatus } from '#/lib/live'
+import { checkLive } from '#/lib/live'
+import type { LiveStatus } from '#/lib/live'
 
 // Three live URLs, directly under the hero, and the one place the site is
 // allowed to assert "live".
@@ -24,10 +25,11 @@ export type ProofStripProps = {
   surfaces: ReadonlyArray<ProofLink>
 }
 
-const initial: Record<string, LiveStatus | 'pending'> = {}
+const initial: Record<string, LiveStatus | 'pending' | undefined> = {}
 
 export function ProofStrip({ surfaces }: ProofStripProps) {
-  const [states, setStates] = useState<Record<string, LiveStatus | 'pending'>>(initial)
+  const [states, setStates] =
+    useState<Record<string, LiveStatus | 'pending' | undefined>>(initial)
 
   useEffect(() => {
     let alive = true

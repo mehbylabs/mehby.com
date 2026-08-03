@@ -162,7 +162,7 @@ function NotFound() {
       <section
         className="shell section"
         style={{
-          minHeight: '60vh',
+          minHeight: '65vh',
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'center',

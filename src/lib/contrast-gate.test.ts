@@ -20,13 +20,10 @@ test('the contrast gate fails, non-zero, when a pair drops below threshold', () 
   // Runs a mutated copy rather than editing the real script, so this test can
   // never leave a poisoned token behind if it is interrupted.
   const source = readFileSync(SCRIPT, 'utf8')
-  const mutated = source.replace(
-    'signal: [0.56, 0.16, 45]',
-    'signal: [0.62, 0.16, 45]',
-  )
+  const mutated = source.replace('red: [0.6, 0.2, 25]', 'red: [0.45, 0.2, 25]')
   expect(
     mutated,
-    'the signal token literal moved; update this test to match scripts/contrast.mjs',
+    'the red token literal moved; update this test to match scripts/contrast.mjs',
   ).not.toBe(source)
 
   const file = join(mkdtempSync(join(tmpdir(), 'contrast-')), 'contrast.mjs')

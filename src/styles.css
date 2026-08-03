@@ -67,7 +67,6 @@
   --color-primary-foreground: var(--color-bg);
   --color-secondary: var(--color-panel-lift);
   --color-secondary-foreground: var(--color-text);
-  --color-muted: var(--color-panel-lift);
   --color-muted-foreground: var(--color-muted);
   --color-accent: var(--color-panel-lift);
   --color-accent-foreground: var(--color-text);
@@ -124,11 +123,13 @@
     color: var(--color-bg);
   }
 
-  /* Orange on every ground. The ring is a box shadow around the
-     element, so it always sits on the page background, never on a
-     filled button. On bg it measures 5.90. */
+  /* Orange on every ground. The outline sits outside the element, so it
+     always draws on the page background, never on a filled button. On bg it
+     measures 5.90. Important, because shadcn components carry Tailwind's
+     `outline-none` utility to make room for their own ring, and the site's
+     focus contract is the orange outline on every focusable element. */
   :focus-visible {
-    outline: 2px solid var(--color-orange);
+    outline: 2px solid var(--color-orange) !important;
     outline-offset: 2px;
   }
 

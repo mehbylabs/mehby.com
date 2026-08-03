@@ -118,9 +118,7 @@ try {
   // Loud, and before anything is written. satori falls back to no font at all
   // rather than to a system face, so the alternative to failing here is a set
   // of cards with a correct ground and no type on them.
-  console.error(
-    `Cannot read the share image font: ${cause.message}`,
-  )
+  console.error(`Cannot read the share image font: ${cause.message}`)
   process.exit(1)
 }
 

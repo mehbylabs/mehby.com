@@ -4,17 +4,14 @@ import type { Page } from '@playwright/test'
 
 // The three widths, and what each one is standing in for.
 //
-// DESIGN.md's grid ladder is 3 columns, then 6 at 48rem, then 12 at 64rem, so
-// each of these sits in a different tier and the set exercises all three
-// rather than three points inside one.
+//   375   a phone, where every layout collapses to one column
+//   768   a tablet, where the case study layout's wide-screen step is still off
+//   1280  a desktop, where the 12-column case study layout is active
 //
-//   375   a phone, below the first breakpoint, 3 columns
-//   768   exactly 48rem, the first breakpoint, 6 columns
-//   1280  above 64rem, 12 columns
-//
-// 768 is deliberately the breakpoint value itself and not a pixel either side
-// of it. `(width >= 48rem)` is inclusive, and a ladder written with a `>` or
-// with an off-by-one boundary is correct everywhere except exactly here.
+// 768 is deliberately the breakpoint value of the wide-screen step and not a
+// pixel either side of it. `(width >= 64rem)` is inclusive, and a layout
+// written with a `>` or with an off-by-one boundary is correct everywhere
+// except exactly here.
 const WIDTHS = [
   { width: 375, columns: 3, label: 'phone' },
   { width: 768, columns: 6, label: 'the first breakpoint' },
@@ -125,7 +122,9 @@ test.describe('the hero display line', () => {
           '[data-testid="hero-display"]',
         )!
         const box = el.getBoundingClientRect()
-        const field = el.closest<HTMLElement>('.section-field')!
+        // The shell is the single column every section hangs off; its own
+        // padding is the inset the content is meant to respect.
+        const field = el.closest<HTMLElement>('.shell')!
         const bounds = field.getBoundingClientRect()
         const style = getComputedStyle(field)
         return {
@@ -211,26 +210,9 @@ test.describe('the specification table is readable on a phone', () => {
     })
   }
 })
-
-test.describe('the grid ladder steps where DESIGN.md says it does', () => {
-  // 3 at a phone, 6 at 48rem, 12 above 64rem. Read from the browser's own
-  // resolved track list rather than from the custom property, so a ladder that
-  // sets --grid-columns and fails to apply it is caught.
-  for (const { width, columns, label } of WIDTHS) {
-    test(`${columns} columns at ${width} (${label})`, async ({ page }) => {
-      await visit(page, '/', width)
-
-      const tracks = await page.evaluate(
-        () =>
-          getComputedStyle(
-            document.querySelector<HTMLElement>('[data-testid="grid"]')!,
-          ).gridTemplateColumns.split(' ').length,
-      )
-
-      expect(
-        tracks,
-        `the grid resolves to ${tracks} columns at ${width}px`,
-      ).toBe(columns)
-    })
-  }
-})
+// DELETED: "the grid ladder steps where DESIGN.md says it does". It read the
+// resolved 3/6/12 track ladder off `[data-testid="grid"]`, the Grid component
+// the terminal design deleted. The 3/6/12 ladder belonged to the drawn-grid
+// layout, which is gone; the terminal layout is one fluid column that steps to
+// 12 on wide screens for the case study layout only, and the no-overflow tests
+// above still hold every page at every width.
