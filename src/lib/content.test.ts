@@ -137,16 +137,37 @@ describe('getCaseStudies', () => {
   })
 
   it('returns entries sorted by order, whatever the filenames are', () => {
-    const entries = getCaseStudies()
+    // Driven by a fixture, deliberately. This used to assert the real slugs in
+    // their real sequence, which made it a change detector: it failed the day
+    // the owner reordered his own case studies, an editorial decision and not
+    // a regression.
+    //
+    // The fixture is what actually proves the claim in the test's name. The
+    // filenames here sort alphabetically to a/b/c while `order` sorts them to
+    // c/a/b, so a loader returning directory order fails and a loader sorting
+    // correctly passes. Real content could never prove that, because its
+    // filenames and its order can happen to agree.
+    const dir = fixtureDir({
+      'a.mdx': frontmatter({ order: 2 }),
+      'b.mdx': frontmatter({ order: 3 }),
+      'c.mdx': frontmatter({ order: 1 }),
+    })
+
+    const entries = getCaseStudies(dir)
 
     expect(entries.map((e) => e.order)).toEqual([1, 2, 3])
-    // Filename order is not order order. If the loader ever returns directory
-    // order this assertion is what notices.
-    expect(entries.map((e) => e.slug)).toEqual([
-      'volt-tunisia',
-      'helmdeck',
-      'coachess',
-    ])
+    expect(entries.map((e) => e.slug)).toEqual(['c', 'a', 'b'])
+  })
+
+  it('sorts the real content by its declared order', () => {
+    const entries = getCaseStudies()
+
+    // The sequence itself is editorial and is not asserted here. What is
+    // asserted is that whatever the content declares is what the loader
+    // returns, in ascending order and with no duplicates.
+    const orders = entries.map((e) => e.order)
+    expect(orders).toEqual([...orders].sort((a, b) => a - b))
+    expect(new Set(orders).size).toBe(orders.length)
   })
 
   it('derives the slug from the filename', () => {

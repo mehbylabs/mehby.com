@@ -36,7 +36,7 @@ const STUDIES = [
     period: '2026',
     section: 'Why a protocol rather than adapters',
     surfaces: [],
-    source: 'https://github.com/MohamedElhedi-BenYedder/helmdeck',
+    source: 'https://github.com/mehbylabs/helmdeck',
     stack: 'TypeScript, Agent Client Protocol',
   },
   {

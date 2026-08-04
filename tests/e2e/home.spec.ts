@@ -33,11 +33,15 @@ const PROOF_LINKS = getCaseStudies().flatMap((study) => study.surfaces)
 
 // Content order, from the `order` field in content/work/*.mdx. Restated rather
 // than loaded, so a loader that stopped sorting fails here.
-const PILLARS = [
-  { slug: 'volt-tunisia', title: 'VoltTunisia' },
-  { slug: 'helmdeck', title: 'Helmdeck' },
-  { slug: 'coachess', title: 'CoaChess' },
-]
+// Derived from the `order` field in content/work/*.mdx, never restated. A
+// hardcoded copy is a change detector: it fails when the owner reorders his
+// own case studies, which is an editorial decision and not a regression. What
+// still matters, and is asserted below, is that the page paints them in the
+// order the content declares.
+const PILLARS = getCaseStudies().map((study) => ({
+  slug: study.slug,
+  title: study.title,
+}))
 
 const CAPABILITIES = [
   'Product engineering',

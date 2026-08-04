@@ -163,7 +163,7 @@ This is the item most likely to look like an outage. Read it before it happens.
 https://coachess.net
 https://app.coachess.net
 https://live.coachess.net
-https://github.com/MohamedElhedi-BenYedder/helmdeck
+https://github.com/mehbylabs/helmdeck
 ```
 
 **If any of them cannot be shown to be live, the build fails and the deploy does not ship.**

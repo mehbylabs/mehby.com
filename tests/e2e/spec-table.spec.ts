@@ -93,8 +93,8 @@ const STUDIES = {
     period: '2026',
     rows: ['Role', 'Period', 'Source', 'Stack'],
     source: {
-      href: 'https://github.com/MohamedElhedi-BenYedder/helmdeck',
-      shown: 'github.com/MohamedElhedi-BenYedder/helmdeck',
+      href: 'https://github.com/mehbylabs/helmdeck',
+      shown: 'github.com/mehbylabs/helmdeck',
     },
     stack: 'TypeScript, Agent Client Protocol',
   },

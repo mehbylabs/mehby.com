@@ -162,12 +162,18 @@ test.describe('the hero display line', () => {
 test.describe('the specification table is readable on a phone', () => {
   // The signature component, at the width it is most likely to fail.
   //
-  // Not hypothetical: /work/helmdeck rendered its table 343px wide inside a
-  // 327px column at 375px, because `github.com/MohamedElhedi-BenYedder/
-  // helmdeck` set in Martian Mono has no break opportunity in it and so set
-  // the table's minimum width. The fix is `overflow-wrap: anywhere` on the
-  // data column, which is counted when the browser computes min-content width
-  // where `break-word` is not.
+  // Not hypothetical: /work/helmdeck once rendered its table 343px wide inside
+  // a 327px column at 375px, because the source URL set in Martian Mono has no
+  // break opportunity in it and so set the table's minimum width. The fix is
+  // `overflow-wrap: anywhere` on the data column, which is counted when the
+  // browser computes min-content width where `break-word` is not.
+  //
+  // That measurement is now historical. The account was renamed and the URL
+  // went from 43 characters to 29, so this case no longer reproduces and these
+  // tests pass without exercising it. The fix stays because it is defensive
+  // and correct, and because the next long unbreakable value in a data cell
+  // will hit exactly the same wall. Do not read a green run here as proof that
+  // the hard case is covered; it is not, until a long value ships again.
   for (const slug of ['coachess', 'helmdeck', 'volt-tunisia']) {
     test(`/work/${slug} at 375`, async ({ page }) => {
       await visit(page, `/work/${slug}`, 375)

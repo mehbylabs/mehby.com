@@ -1,216 +1,98 @@
-Welcome to your new TanStack Start app!
+# mehby.com
 
-# Getting Started
+My portfolio. A prerendered TanStack Start site where two gates block the build:
+every colour pair must clear WCAG 2.2 AA, and every product the site claims is
+live must actually answer.
 
-To run this application:
+**Live:** https://mehby.com
+
+## Why this repository is worth a look
+
+The site sells full stack product engineering, so it is built the way I would
+build a client's product rather than the way portfolios usually get built.
+
+**The build refuses to ship a lie.** The homepage claims four products are
+live. `scripts/verify-links.mjs` reads those URLs from case study frontmatter,
+requests each one, and exits non-zero if any is unreachable. A 4xx fails
+immediately; a connection failure is retried twice and then fails. There is an
+offline escape hatch, and it is refused when `CI` is set, because the danger is
+not a developer using it on a train, it is it leaking into the deploy
+environment where nobody notices the gate stopped running.
+
+**Colour is measured, not eyeballed.** `scripts/contrast.mjs` holds every design
+token as OKLCH and asserts twelve pairs against WCAG thresholds. It caught four
+real defects during development, including a focus ring that measured **1.00:1**
+against its own background, which is to say invisible, across a third of the
+site.
+
+**The proof strip checks itself at request time.** The hero pings the same
+frontmatter URLs through a server function and renders `LIVE · 200`, `offline`,
+or `checking…`. Green is earned by a real response and used nowhere else in the
+design.
+
+**Tests are mutation tested.** Assertions were deliberately broken to confirm
+each one fails for the right reason. That process found tests of my own that
+passed against broken implementations, including an end-to-end test that was
+asserting against an unrelated service on a shared port, and a font test that
+would have passed while the page rendered in a fallback typeface.
+
+## Stack
+
+TanStack Start, React 19, TypeScript, Tailwind CSS 4, shadcn/ui, Vite, Nitro,
+MDX for case studies, Playwright and Vitest, deployed on Vercel.
+
+## Running it
 
 ```bash
 bun install
-bun run dev
+bun run dev          # http://localhost:3001
 ```
 
-# Building For Production
-
-To build this application for production:
-
-```bash
-bun run build
-```
-
-## Styling
-
-This project uses [Tailwind CSS](https://tailwindcss.com/) for styling.
-
-### Removing Tailwind CSS
-
-If you prefer not to use Tailwind CSS:
-
-1. Remove the demo pages in `src/routes/demo/`
-2. Replace the Tailwind import in `src/styles.css` with your own styles
-3. Remove `tailwindcss()` from the plugins array in `vite.config.ts`
-4. Remove `@tailwindcss/vite` and `tailwindcss` from `package.json`
-
-## Linting & Formatting
-
-This project uses [eslint](https://eslint.org/) and [prettier](https://prettier.io/) for linting and formatting. Eslint is configured using [tanstack/eslint-config](https://tanstack.com/config/latest/docs/eslint). The following scripts are available:
+Port 3001, not 3000, because 3000 is occupied on my machine by an unrelated
+service that answers 200. Both `dev` and `preview` use `--strictPort` so a
+conflict fails loudly instead of drifting to another port and producing tests
+that pass against the wrong application.
 
 ```bash
+bun run test         # 96 unit tests
+bun run test:e2e     # 298 end-to-end tests
+bun run build        # runs both gates, then prerenders 8 pages
 bun run lint
-bun run format
-bun run check
+bun run check        # formatting
 ```
 
-## Testing
+`bun run build && bun run test:e2e` is the real gate. Several specs read the
+built output from disk and fail, rather than skip, when it is absent.
 
-Unit tests run on [Vitest](https://vitest.dev/) (`src/**/*.test.{ts,tsx}`), end-to-end tests on [Playwright](https://playwright.dev/) (`tests/e2e/`). Playwright needs a one-time browser download before its first run.
+One-time setup for end-to-end tests:
 
 ```bash
-bunx playwright install chromium   # one-time setup
-bun run test                       # unit
-bun run test:e2e                   # end-to-end
+bunx playwright install chromium
 ```
 
-`test:e2e` starts the dev server itself. Note that `dev` and `preview` bind port **3001**, not the usual 3000, because port 3000 is already occupied on this machine by an unrelated service that answers HTTP 200, and pointing tests at it produces passes against the wrong application. Both scripts use `--strictPort` so a port conflict fails loudly instead of silently drifting to another port.
-
-## Deploy
-
-Vercel, via Nitro's `vercel` preset, which is pinned in `vite.config.ts` rather than left to
-auto-detection so a local build and a build on Vercel produce the same thing. `bun run build`
-writes Vercel's Build Output API layout:
+## Layout
 
 ```
-.vercel/output/config.json                  routing, filesystem before the catch-all
-.vercel/output/static/                      the seven prerendered pages, assets, sitemap
-.vercel/output/functions/__server.func/     the SSR handler, for anything that misses
+content/work/*.mdx      case studies: frontmatter plus narrative
+scripts/contrast.mjs    the WCAG gate
+scripts/verify-links.mjs the proof-link gate
+scripts/og.mjs          share images, generated at build time
+src/lib/live.ts         the request-time live check
+src/components/         hand-built components
+src/components/ui/      shadcn/ui
+tests/e2e/              Playwright
+docs/DEPLOY.md          the deploy runbook
+PRODUCT.md, DESIGN.md   product context and the design system
 ```
 
-**The full runbook is [docs/DEPLOY.md](docs/DEPLOY.md)**: environment variables, first-time DNS
-for `mehby.com`, and the two build behaviours that look like outages if you meet them cold.
+## Environment
 
-## Routing
+See `.env.example`. Two variables, both server side, neither prefixed `VITE_`:
+`RESEND_API_KEY` for the contact form, and `CONTACT_FROM` for the sender
+address. Without the first, the form fails visibly rather than pretending an
+enquiry was sent.
 
-This project uses [TanStack Router](https://tanstack.com/router) with file-based routing. Routes are managed as files in `src/routes`.
+## Licence
 
-### Adding A Route
-
-To add a new route to your application just add a new file in the `./src/routes` directory.
-
-TanStack will automatically generate the content of the route file for you.
-
-Now that you have two routes you can use a `Link` component to navigate between them.
-
-### Adding Links
-
-To use SPA (Single Page Application) navigation you will need to import the `Link` component from `@tanstack/react-router`.
-
-```tsx
-import { Link } from '@tanstack/react-router'
-```
-
-Then anywhere in your JSX you can use it like so:
-
-```tsx
-<Link to="/about">About</Link>
-```
-
-This will create a link that will navigate to the `/about` route.
-
-More information on the `Link` component can be found in the [Link documentation](https://tanstack.com/router/v1/docs/framework/react/api/router/linkComponent).
-
-### Using A Layout
-
-In the File Based Routing setup the layout is located in `src/routes/__root.tsx`. Anything you add to the root route will appear in all the routes. The route content will appear in the JSX where you render `{children}` in the `shellComponent`.
-
-Here is an example layout that includes a header:
-
-```tsx
-import { HeadContent, Scripts, createRootRoute } from '@tanstack/react-router'
-
-export const Route = createRootRoute({
-  head: () => ({
-    meta: [
-      { charSet: 'utf-8' },
-      { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-      { title: 'My App' },
-    ],
-  }),
-  shellComponent: ({ children }) => (
-    <html lang="en">
-      <head>
-        <HeadContent />
-      </head>
-      <body>
-        <header>
-          <nav>
-            <Link to="/">Home</Link>
-            <Link to="/about">About</Link>
-          </nav>
-        </header>
-        {children}
-        <Scripts />
-      </body>
-    </html>
-  ),
-})
-```
-
-More information on layouts can be found in the [Layouts documentation](https://tanstack.com/router/latest/docs/framework/react/guide/routing-concepts#layouts).
-
-## Server Functions
-
-TanStack Start provides server functions that allow you to write server-side code that seamlessly integrates with your client components.
-
-```tsx
-import { createServerFn } from '@tanstack/react-start'
-
-const getServerTime = createServerFn({
-  method: 'GET',
-}).handler(async () => {
-  return new Date().toISOString()
-})
-
-// Use in a component
-function MyComponent() {
-  const [time, setTime] = useState('')
-
-  useEffect(() => {
-    getServerTime().then(setTime)
-  }, [])
-
-  return <div>Server time: {time}</div>
-}
-```
-
-## API Routes
-
-You can create API routes by using the `server` property in your route definitions:
-
-```tsx
-import { createFileRoute } from '@tanstack/react-router'
-import { json } from '@tanstack/react-start'
-
-export const Route = createFileRoute('/api/hello')({
-  server: {
-    handlers: {
-      GET: () => json({ message: 'Hello, World!' }),
-    },
-  },
-})
-```
-
-## Data Fetching
-
-There are multiple ways to fetch data in your application. You can use TanStack Query to fetch data from a server. But you can also use the `loader` functionality built into TanStack Router to load the data for a route before it's rendered.
-
-For example:
-
-```tsx
-import { createFileRoute } from '@tanstack/react-router'
-
-export const Route = createFileRoute('/people')({
-  loader: async () => {
-    const response = await fetch('https://swapi.dev/api/people')
-    return response.json()
-  },
-  component: PeopleComponent,
-})
-
-function PeopleComponent() {
-  const data = Route.useLoaderData()
-  return (
-    <ul>
-      {data.results.map((person) => (
-        <li key={person.name}>{person.name}</li>
-      ))}
-    </ul>
-  )
-}
-```
-
-Loaders simplify your data fetching logic dramatically. Check out more information in the [Loader documentation](https://tanstack.com/router/latest/docs/framework/react/guide/data-loading#loader-parameters).
-
-# Learn More
-
-You can learn more about all of the offerings from TanStack in the [TanStack documentation](https://tanstack.com).
-
-For TanStack Start specific documentation, visit [TanStack Start](https://tanstack.com/start).
+The code is available to read and learn from. The content, copy, case studies
+and imagery are mine and are not licensed for reuse.
