@@ -46,10 +46,22 @@ const canonicalOf = (html: string) =>
     .filter((tag) => /rel="canonical"/.test(tag))
     .map((tag) => decode(tag.match(/href="([^"]*)"/)?.[1] ?? ''))
 
-const titleOf = (html: string) =>
-  [...html.matchAll(/<title[^>]*>([\s\S]*?)<\/title>/g)].map(([, inner]) =>
-    decode(inner),
+// The document title, which means the one in the head.
+//
+// Scoped there deliberately. <title> is not unique to HTML: it is also how an
+// inline <svg> carries its accessible name, and the architecture diagrams on
+// every case study use one. Matching the whole document counted those as
+// second document titles and failed a page whose head is perfectly correct.
+//
+// The assertion this feeds still means what it meant: exactly one title in the
+// head, because two is a document where a stale default was never removed and
+// which one a crawler honours is not ours to decide.
+const titleOf = (html: string) => {
+  const head = /<head[^>]*>([\s\S]*?)<\/head>/i.exec(html)?.[1] ?? ''
+  return [...head.matchAll(/<title[^>]*>([\s\S]*?)<\/title>/g)].map(
+    ([, inner]) => decode(inner),
   )
+}
 
 // The shipped copy, pinned. Written out here rather than imported from the
 // route files on purpose: importing the source would make this test agree with
