@@ -90,10 +90,21 @@ export const Route = createRootRoute({
 
 // The navigation, rendered by the shell so the failure states get it too: a
 // 404 with no way onward is the page that needs navigation most.
+// ~/writing is deliberately absent, and the footer still carries it.
+//
+// Nothing is published, so it was a third of the primary navigation leading to
+// a page whose entire content is one sentence saying there is nothing there.
+// For the visitor PRODUCT.md describes, arriving with about two minutes and
+// scanning for evidence, that is a wasted click out of three.
+//
+// The page is honest and stays exactly as it is; what was wrong was promoting
+// it. PRODUCT.md's honest-scope rule says unfinished work is described
+// accurately or omitted, and the same judgement applies to how prominently it
+// is advertised. The footer keeps it reachable, the feed stays discoverable
+// from its own head, and it returns here when there is something to read.
 const NAV = [
   { to: '/', label: '~/work', exact: true },
   { to: '/about', label: '~/about', exact: false },
-  { to: '/writing', label: '~/writing', exact: false },
 ] as const
 
 // WCAG 2.4.1, Bypass Blocks. Every page on this site put three navigation
