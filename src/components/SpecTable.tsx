@@ -64,6 +64,22 @@ type Row = {
 const displayUrl = (href: string) =>
   href.replace(/^https?:\/\//, '').replace(/\/$/, '')
 
+// Every link in this table leaves the site. The evidence should not also be
+// the exit: a visitor who opens a surface to check it, and finds the case
+// study replaced by somebody else's product, has no route back that does not
+// involve the browser's history.
+//
+// `rel` is not optional with a named target. `noopener` denies the opened page
+// a handle on this one, and `noreferrer` keeps the visit out of the
+// destination's referrer log, which is the same privacy position the rest of
+// the site takes by serving its own fonts.
+//
+// No "opens in a new tab" text. That warning is WCAG 3.2.5, which is AAA, and
+// the site targets AA. In a specification table where every cell value is an
+// address, appending the same sentence to each one turns a data table into
+// prose and costs a screen reader user more than it tells them.
+const AWAY = { target: '_blank', rel: 'noopener noreferrer' } as const
+
 export function SpecTable({
   caption,
   role,
@@ -88,7 +104,9 @@ export function SpecTable({
         <ul className="spec-list">
           {surfaces.map((surface) => (
             <li key={surface.href}>
-              <a href={surface.href}>{surface.label}</a>
+              <a href={surface.href} {...AWAY}>
+                {surface.label}
+              </a>
             </li>
           ))}
         </ul>
@@ -99,7 +117,11 @@ export function SpecTable({
   if (source) {
     rows.push({
       label: 'Source',
-      value: <a href={source}>{displayUrl(source)}</a>,
+      value: (
+        <a href={source} {...AWAY}>
+          {displayUrl(source)}
+        </a>
+      ),
     })
   }
 

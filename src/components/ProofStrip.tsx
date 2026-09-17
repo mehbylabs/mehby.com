@@ -101,10 +101,18 @@ export function ProofStrip({ surfaces }: ProofStripProps) {
 
           return (
             <li key={link.href}>
+              {/* Opens away. This strip is the site's evidence and it was also
+                  its highest traffic exit: four addresses that replaced the
+                  portfolio with somebody else's product and left no route
+                  back. `noopener` denies the opened page a handle on this one,
+                  `noreferrer` keeps the visit out of the destination's
+                  referrer log. */}
               <a
                 className="tcard tcard-chip"
                 data-testid="proof-link"
                 href={link.href}
+                target="_blank"
+                rel="noopener noreferrer"
               >
                 <span className={cls} data-testid="proof-status">
                   <span className="status-dot" aria-hidden="true" />

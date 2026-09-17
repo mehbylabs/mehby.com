@@ -372,6 +372,19 @@ test.describe('proof strip', () => {
     ).toBeLessThanOrEqual(820)
   })
 
+  test('opens its addresses away from the site', async ({ page }) => {
+    // The strip is the evidence and it was also the exit. Four links that
+    // replaced the portfolio with somebody else's product, on the page whose
+    // job is to keep a visitor long enough to write.
+    for (const link of await page.getByTestId('proof-link').all()) {
+      await expect(link).toHaveAttribute('target', '_blank')
+      // Mandatory with a named target: noopener denies the opened page a
+      // handle on this one, noreferrer keeps the visit out of its logs.
+      await expect(link).toHaveAttribute('rel', /noopener/)
+      await expect(link).toHaveAttribute('rel', /noreferrer/)
+    }
+  })
+
   test('sets the addresses as data', async ({ page }) => {
     // DESIGN.md: Martian Mono strictly for data, and it lists link URLs among
     // the places data type belongs.
