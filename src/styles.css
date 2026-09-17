@@ -231,8 +231,17 @@
     font-size: var(--text-data);
   }
 
+  /* Not green. PRODUCT.md names green on black as anti-reference number one,
+     the generic terminal the site exists not to be, and DESIGN.md says green
+     is reserved for live status and used nowhere else. This rule broke both:
+     a green user@host glyph is the single most recognisable mark of a default
+     bash prompt, it shipped in the hero, on /about, in the footer of every
+     page and on both failure pages, and it was the first coloured pixel a
+     visitor saw.
+
+     The amber dollar is what carries the prompt. The name is a name. */
   .prompt-user {
-    color: var(--color-green);
+    color: var(--color-text);
   }
 
   .prompt-host {
