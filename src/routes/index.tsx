@@ -58,7 +58,11 @@ const CAPABILITIES = [
 
 function Home() {
   const studies = Route.useLoaderData()
-  const surfaces = studies.flatMap((study) => study.surfaces)
+  // Each address carries the case study it belongs to, so the proof strip can
+  // name what it is proving rather than printing a bare count.
+  const surfaces = studies.flatMap((study) =>
+    study.surfaces.map((surface) => ({ ...surface, project: study.title })),
+  )
   const featured = studies.find((study) => study.featured)
   const rest = studies.filter((study) => study !== featured)
 

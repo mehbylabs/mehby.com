@@ -26,6 +26,8 @@ import type { LiveStatus } from '#/lib/live'
 export type ProofLink = {
   label: string
   href: string
+  /** The case study this address belongs to. Named, not counted. */
+  project: string
 }
 
 export type ProofStripProps = {
@@ -66,12 +68,27 @@ export function ProofStrip({ surfaces }: ProofStripProps) {
   if (surfaces.length === 0) return null
 
   const responding = surfaces.filter((link) => states[link.href]?.ok).length
-  const summary =
+
+  // Where these addresses come from, said plainly.
+  //
+  // The label used to read "4 surfaces", which implied four things shipped.
+  // They are four surfaces of one platform, and the two most recent case
+  // studies declare none at all, so the strip was showing breadth it did not
+  // have while saying nothing about the depth it did. Naming the platform is
+  // both more honest and better evidence than an anonymous count: four live
+  // surfaces of one product is a harder thing to build than four addresses.
+  const projects = [...new Set(surfaces.map((link) => link.project))]
+  const provenance =
+    projects.length === 1
+      ? `${surfaces.length} surfaces of ${projects[0]}`
+      : `${surfaces.length} surfaces across ${projects.length} projects`
+
+  const status =
     phase === 'answered'
-      ? `${responding} of ${surfaces.length} responding`
+      ? `${responding} responding`
       : phase === 'unreachable'
-        ? `the check did not complete, open them and see`
-        : `checking ${surfaces.length} addresses`
+        ? 'the check did not complete, open them and see'
+        : 'checking'
 
   return (
     // Last in the hero's entrance sequence: prompt, identity, statement,
@@ -95,7 +112,7 @@ export function ProofStrip({ surfaces }: ProofStripProps) {
         role="status"
         aria-live="polite"
       >
-        <b># live</b> {summary}
+        <b># live</b> {provenance}, {status}
       </p>
       <ul className="proof-list" aria-labelledby="proof-label">
         {surfaces.map((link) => {

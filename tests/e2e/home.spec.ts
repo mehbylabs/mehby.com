@@ -330,8 +330,44 @@ test.describe('proof strip', () => {
       /checking|answered|unreachable/,
     )
     await expect(label).toHaveText(
-      /checking \d+ addresses|\d+ of \d+ responding|the check did not complete/,
+      /, (checking|\d+ responding|the check did not complete)/,
     )
+  })
+
+  test('names what it is proving instead of counting anonymously', async ({
+    page,
+  }) => {
+    // The label read "4 surfaces", which implies four things shipped. They are
+    // four surfaces of one platform, and the two most recent case studies
+    // declare no live addresses at all, so the strip showed breadth it did not
+    // have while saying nothing about the depth it did.
+    //
+    // Naming the platform is both more honest and better evidence: four live
+    // surfaces of one product is a harder thing to have built than four
+    // addresses.
+    const label = page.getByTestId('proof-label')
+    const projects = [
+      ...new Set(
+        getCaseStudies()
+          .filter((study) => study.surfaces.length > 0)
+          .map((study) => study.title),
+      ),
+    ]
+
+    expect(
+      projects.length,
+      'no case study declares a live surface, so there is nothing to prove',
+    ).toBeGreaterThan(0)
+
+    if (projects.length === 1) {
+      await expect(label).toContainText(
+        `${PROOF_LINKS.length} surfaces of ${projects[0]}`,
+      )
+    } else {
+      await expect(label).toContainText(
+        `${PROOF_LINKS.length} surfaces across ${projects.length} projects`,
+      )
+    }
   })
 
   test('lands in the first screen of a laptop', async ({ page }) => {
