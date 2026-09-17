@@ -246,13 +246,33 @@
     padding-block-start: 0;
   }
 
-  /* Section headers as paths. The mono prefix is the terminal voice,
-     the Archivo line is the statement. */
+  /* A page's address, paired with its title. The mono prefix is the terminal
+     voice, the Archivo line is the statement.
+
+     Page identity only, and that restraint is the point. This used to sit
+     above every section heading on the site, nine of them, with no
+     exceptions, which is the pattern PRODUCT.md bans in as many words: "small
+     tracked uppercase labels above every section". Swapping the tracked caps
+     for a mono path passed the letter of the rule and failed it completely.
+
+     A session has one prompt and one address per page, not one per paragraph.
+     The home page's terminal presence is its prompt; interior headings are
+     the output, and output does not restate the address it came from. */
   .section-path {
     display: flex;
     align-items: baseline;
     gap: var(--space-sm);
-    margin-bottom: 2rem;
+    margin-bottom: var(--space-2xl);
+  }
+
+  /* An interior section heading, standing on its own. */
+  .section-title {
+    margin: 0 0 var(--space-2xl);
+    font-family: var(--font-display);
+    font-size: var(--text-h2);
+    font-weight: 700;
+    line-height: var(--leading-h2);
+    letter-spacing: -0.02em;
   }
 
   .section-path-code {

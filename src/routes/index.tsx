@@ -70,10 +70,7 @@ function Home() {
       </section>
 
       <section className="shell section" data-testid="work-section">
-        <div className="section-path">
-          <span className="section-path-code">~/work</span>
-          <h2 className="section-path-title">Work that ships</h2>
-        </div>
+        <h2 className="section-title">Work that ships</h2>
 
         {/* The featured study is a different object, not a wider card.
             
@@ -138,10 +135,7 @@ function Home() {
       </section>
 
       <section className="shell section" data-testid="capability-section">
-        <div className="section-path">
-          <span className="section-path-code">~/what-i-do</span>
-          <h2 className="section-path-title">What I actually do</h2>
-        </div>
+        <h2 className="section-title">What I actually do</h2>
 
         {CAPABILITIES.map((capability) => (
           <div
@@ -159,10 +153,7 @@ function Home() {
       </section>
 
       <section className="shell section" data-testid="contact">
-        <div className="section-path">
-          <span className="section-path-code">~/contact</span>
-          <h2 className="section-path-title">Start a conversation</h2>
-        </div>
+        <h2 className="section-title">Start a conversation</h2>
         <p className="hero-subline">
           Tell me what you are building and what is in the way. I reply to
           everything.

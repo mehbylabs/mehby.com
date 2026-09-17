@@ -72,10 +72,7 @@ function About() {
       </section>
 
       <section className="shell section section-continues">
-        <div className="section-path">
-          <span className="section-path-code">~/who-is-this</span>
-          <h2 className="section-path-title">The short version</h2>
-        </div>
+        <h2 className="section-title">The short version</h2>
 
         <div className="grid gap-6 lg:grid-cols-12">
           <div className="prose lg:col-span-8" data-testid="about-body">
@@ -115,10 +112,7 @@ function About() {
       </section>
 
       <section className="shell section section-continues">
-        <div className="section-path">
-          <span className="section-path-code">~/timeline</span>
-          <h2 className="section-path-title">Timeline</h2>
-        </div>
+        <h2 className="section-title">Timeline</h2>
 
         {/* A real table, with real row headers. The period is the data and the
             row header, so it is set in mono and amber exactly as a terminal

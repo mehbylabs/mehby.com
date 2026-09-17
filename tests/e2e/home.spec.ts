@@ -459,11 +459,57 @@ test.describe('selected work', () => {
     expect(new Set(rows.map(Math.round)).size).toBe(1)
   })
 
-  test('heads the section with its path', async ({ page }) => {
+  test('heads the section with a statement, and nothing above it', async ({
+    page,
+  }) => {
     await expect(
       page.getByRole('heading', { name: 'Work that ships', exact: true }),
     ).toHaveCount(1)
   })
+})
+
+test.describe('the terminal is a session, not a stencil', () => {
+  test('addresses the page once, and never labels a section', async ({
+    page,
+  }) => {
+    // PRODUCT.md bans "small tracked uppercase labels above every section",
+    // and brand practice calls repeating a kicker as section grammar AI
+    // scaffolding. A mono ~/path above all nine section headings on the site
+    // passed the letter of that rule and failed it completely: swap the path
+    // for tracked caps and it is the banned pattern exactly.
+    //
+    // A session has one prompt and one address per page, not one per
+    // paragraph. The home page's terminal presence is its prompt; everything
+    // below is output, and output does not restate the address it came from.
+    const paths = page.locator('.section-path-code')
+
+    await expect(
+      paths,
+      'the home page labels a section with a path again',
+    ).toHaveCount(0)
+
+    // The prompt is still there, and is still doing the work.
+    await expect(page.getByTestId('hero-prompt')).toHaveCount(1)
+  })
+
+  for (const path of ['/about', '/contact', '/writing', '/work/coachess']) {
+    test(`${path} carries at most one address, beside its title`, async ({
+      page,
+    }) => {
+      await page.goto(path)
+
+      const labels = page.locator('.section-path-code')
+      await expect(labels).toHaveCount(path === '/about' ? 0 : 1)
+
+      // Where there is one, it names the page and sits with the h1.
+      if (path !== '/about') {
+        await expect(
+          page.locator('.section-path').locator('h1'),
+          `${path} puts its address somewhere other than beside its title`,
+        ).toHaveCount(1)
+      }
+    })
+  }
 })
 
 test.describe('capabilities', () => {

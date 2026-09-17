@@ -137,7 +137,10 @@ test.describe('the leading tokens reach the elements that ship', () => {
   const CONSUMERS = [
     { path: '/', selector: '.hero-display', token: '--leading-display' },
     { path: '/about', selector: '.page-title', token: '--leading-h1' },
-    { path: '/', selector: '.section-path-title', token: '--leading-h2' },
+    // .section-title, not .section-path-title. The path label is page
+    // identity now and appears only beside an h1; an interior section heading
+    // stands on its own.
+    { path: '/', selector: '.section-title', token: '--leading-h2' },
     { path: '/work/coachess', selector: '.prose p', token: '--leading-body' },
   ] as const
 
