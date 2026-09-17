@@ -154,8 +154,27 @@ test.describe('hero', () => {
       hero.getByRole('link', { name: 'See the work', exact: true }),
     ).toHaveAttribute('href', '/work/coachess')
     await expect(
-      hero.getByRole('link', { name: 'Hire me', exact: true }),
+      hero.getByRole('link', { name: 'Start a conversation', exact: true }),
     ).toHaveAttribute('href', '/contact')
+  })
+
+  test('puts exactly one filled action on the page', async ({ page }) => {
+    // Two orange fills within 200 vertical pixels, pointing at different
+    // destinations, is not a hierarchy: it is two primaries. The larger one
+    // used to go to the exploratory action while the conversion was
+    // simultaneously the small filled thing in the nav and the large hollow
+    // thing in the hero.
+    //
+    // Counted by the variant the button component records, rather than by
+    // colour, because the assertion is about intent and one fill is the
+    // intent.
+    const filled = page.locator('[data-slot="button"][data-variant="default"]')
+
+    await expect(
+      filled,
+      'more than one action on the home page is styled as the primary',
+    ).toHaveCount(1)
+    await expect(filled).toHaveAccessibleName('See the work')
   })
 
   test('separates its two actions instead of welding them together', async ({

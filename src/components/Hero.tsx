@@ -55,13 +55,29 @@ export function Hero() {
         data-testid="hero-actions"
         style={step(3)}
       >
+        {/* One orange fill on the page, and it belongs to the work.
+            
+            Both of these used to be `variant="default"`, which put two orange
+            fills within 200 vertical pixels pointing at different
+            destinations, and the larger of the two went to the exploratory
+            action. A visitor could not tell which one was the site's ask.
+            
+            The work keeps the fill because exploration is the correct first
+            action for a two minute scan: PRODUCT.md's visitor is deciding
+            whether this person ships, and the evidence is what answers that.
+            The conversation sits beside it as the outline, and is the fill on
+            the page where it is the only thing being asked for. */}
         <Button asChild size="lg">
           <Link to="/work/$slug" params={{ slug: 'coachess' }}>
             See the work
           </Link>
         </Button>
+        {/* "Hire me" presumed the decision. PRODUCT.md defines the job as
+            deciding whether to start a conversation, and says the voice does
+            not sell; the site already owned the right phrase and had it on
+            zero buttons. */}
         <Button asChild variant="outline" size="lg">
-          <Link to="/contact">Hire me</Link>
+          <Link to="/contact">Start a conversation</Link>
         </Button>
       </div>
     </header>

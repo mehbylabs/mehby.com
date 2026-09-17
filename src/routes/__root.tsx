@@ -116,8 +116,16 @@ function SiteNav() {
             ))}
           </ul>
         </nav>
-        <Button asChild size="sm">
-          <Link to="/contact">Hire me</Link>
+        {/* Outline, not fill. The hero carries the page's one orange fill, and
+            a second one in the navigation competed with it on every scroll
+            position. Still a button rather than a fourth ~/path link, because
+            this is the only conversion affordance that survives a long scroll.
+            
+            "Contact" rather than the hero's "Start a conversation": this is
+            navigation, where the register is a destination and not an
+            invitation, and the longer phrase overflows the bar at 375px. */}
+        <Button asChild variant="outline" size="sm">
+          <Link to="/contact">Contact</Link>
         </Button>
       </div>
     </header>
