@@ -697,9 +697,18 @@ test.describe('images and placeholders carry meaningful alternative text', () =>
             .map((el) => ({
               tag: el.tagName.toLowerCase(),
               // The alt attribute for a real image, the label for anything
-              // standing in for one.
+              // standing in for one, and the referenced text for a drawing
+              // that names itself from its own <title> and <desc>.
               name:
-                el.getAttribute('alt') ?? el.getAttribute('aria-label') ?? null,
+                (el.getAttribute('alt') ??
+                  el.getAttribute('aria-label') ??
+                  (el.getAttribute('aria-labelledby') ?? '')
+                    .split(/\s+/)
+                    .filter(Boolean)
+                    .map((id) => document.getElementById(id)?.textContent ?? '')
+                    .join(' ')
+                    .trim()) ||
+                null,
               decorative:
                 el.getAttribute('alt') === '' ||
                 el.getAttribute('aria-hidden') === 'true',

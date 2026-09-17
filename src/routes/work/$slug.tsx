@@ -6,7 +6,7 @@ import {
   useRouterState,
 } from '@tanstack/react-router'
 import { createServerFn } from '@tanstack/react-start'
-import { Placeholder } from '#/components/Placeholder'
+import { DIAGRAMS } from '#/components/diagrams'
 import { SpecTable } from '#/components/SpecTable'
 import { getCaseStudies } from '#/lib/content'
 import { pageHead } from '../-seo'
@@ -100,6 +100,7 @@ export const Route = createFileRoute('/work/$slug')({
 function CaseStudy() {
   const study = Route.useLoaderData()
   const Narrative = NARRATIVES[study.slug]
+  const Architecture = DIAGRAMS[study.slug]
 
   return (
     <main id="content" tabIndex={-1}>
@@ -118,13 +119,23 @@ function CaseStudy() {
 
       <section className="shell section section-continues">
         <div className="grid gap-6 lg:grid-cols-12">
-          {/* No cover image exists for any of the three. PRODUCT.md: ship a
-              labelled placeholder that is obviously one, never an invented
-              substitute, and reserve the space the real asset will take so the
-              reflow does not land on the day nobody is watching. */}
-          <div className="lg:col-span-7">
-            <Placeholder label={`${study.title} cover`} ratio={16 / 9} />
-          </div>
+          {/* The architecture, drawn.
+              
+              This was a dashed PLACEHOLDER box, and it was the largest element
+              on every case study: a site selling product engineering, showing
+              a labelled absence where the evidence goes. The placeholder was
+              the right answer to a missing asset and the wrong answer to the
+              question a visitor arrived with.
+              
+              Screenshots still need the owner. Diagrams do not: each one draws
+              only what the narrative below it already says in prose, which is
+              also what keeps CoaChess's discretion rule intact. A study with
+              no diagram still falls back to the honest placeholder. */}
+          {Architecture ? (
+            <div className="lg:col-span-7">
+              <Architecture />
+            </div>
+          ) : null}
 
           {/* The specification table, above the narrative on purpose. A visitor
               with two minutes reads the table; the prose is for the second

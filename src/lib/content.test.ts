@@ -19,7 +19,6 @@ const valid = {
   featured: true,
   surfaces: [{ label: 'coachess.net', href: 'https://coachess.net' }],
   source: 'https://github.com/example/repo',
-  cover: '/work/coachess.png',
 }
 
 describe('caseStudySchema', () => {
@@ -344,6 +343,6 @@ describe('the mdx pipeline', () => {
     const out = await transform.call({}, readFileSync(file, 'utf8'), file)
 
     expect(out.code).not.toContain('role: Designer and engineer')
-    expect(out.code).not.toContain('cover: /work/helmdeck.png')
+    expect(out.code).not.toContain('source: https://github.com')
   })
 })

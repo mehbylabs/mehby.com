@@ -730,6 +730,98 @@
     }
   }
 
+  /* Architecture diagrams. Drawn in the tokens rather than exported as files,
+     so they cannot drift from the palette the contrast gate measures, cost no
+     request, and reserve their own box from the viewBox.
+
+     Every value here is a token. A diagram that invented a colour would be the
+     one place on the site painting something the gate has never seen. */
+  .diagram {
+    margin: 0;
+  }
+
+  .diagram-canvas {
+    inline-size: 100%;
+    block-size: auto;
+    border: 1px solid var(--color-edge-strong);
+    border-radius: 0.375rem;
+    background: var(--color-panel);
+    /* SVG's initial fill is pure black, which DESIGN.md bans outright, and
+       every element that does not set its own inherits it: the groups, and
+       the <title> and <desc> that carry the accessible name. None of those
+       paint, so the black never reached a pixel, but a subtree whose default
+       is a banned colour is one declaration away from painting it. The
+       default is a token now, and tests/e2e/diagram.spec.ts measures every
+       resolved fill and stroke against the palette to keep it that way. */
+    fill: var(--color-text);
+  }
+
+  .diagram-caption {
+    margin-block-start: var(--space-sm);
+  }
+
+  .diagram-box {
+    fill: var(--color-panel-lift);
+    stroke: var(--color-edge-strong);
+    stroke-width: 1;
+  }
+
+  .diagram-box.is-accent {
+    fill: none;
+    stroke: var(--color-orange);
+  }
+
+  .diagram-box.is-dashed {
+    stroke-dasharray: 5 4;
+  }
+
+  /* 13 user units against a 640 unit viewBox, which lands near the fine step
+     once the canvas is scaled into a case study column. */
+  .diagram-label {
+    fill: var(--color-text);
+    font-family: var(--font-data);
+    font-size: 13px;
+  }
+
+  .diagram-label.is-accent {
+    fill: var(--color-orange);
+  }
+
+  .diagram-note {
+    fill: var(--color-muted);
+    font-family: var(--font-data);
+    font-size: 12px;
+  }
+
+  .diagram-note.is-accent {
+    fill: var(--color-amber);
+  }
+
+  .diagram-link {
+    fill: none;
+    stroke: var(--color-edge-strong);
+    stroke-width: 1;
+  }
+
+  .diagram-link.is-accent {
+    stroke: var(--color-orange);
+  }
+
+  .diagram-axis {
+    stroke: var(--color-edge);
+    stroke-width: 1;
+  }
+
+  .diagram-step {
+    fill: none;
+    stroke: var(--color-edge-strong);
+    stroke-width: 1.5;
+  }
+
+  .diagram-step.is-accent {
+    stroke: var(--color-orange);
+  }
+
   /* The placeholder: a ruled box that is unmistakably not content. */
   .placeholder {
     display: flex;

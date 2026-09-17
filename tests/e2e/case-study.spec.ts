@@ -192,18 +192,22 @@ for (const study of STUDIES) {
       )
     })
 
-    test('stands a labelled placeholder in for the cover', async ({ page }) => {
-      // PRODUCT.md, Standing Rules: an asset that has not been supplied ships
-      // as an obvious placeholder, never as an invented substitute. None of
-      // the three cover images exist.
-      const cover = page.getByTestId('placeholder')
-
-      await expect(cover).toHaveCount(1)
-      await expect(
-        cover,
-        'the placeholder does not say what is missing, so it reads as an ' +
-          'intentionally empty panel',
-      ).toHaveAccessibleName(/Placeholder: .*cover.*Asset not supplied\./i)
+    test('shows the architecture rather than a labelled absence', async ({
+      page,
+    }) => {
+      // This slot used to hold a PLACEHOLDER box, correctly, because no cover
+      // image was ever supplied and PRODUCT.md's standing rule is that a gap
+      // is declared rather than filled with an invention.
+      //
+      // The rule has not changed; the gap has. A screenshot still needs the
+      // owner, but the architecture does not: each drawing states only what
+      // the narrative under it already states in prose, which is also what
+      // keeps the CoaChess discretion rule intact.
+      //
+      // tests/e2e/diagram.spec.ts holds the drawings themselves to their
+      // accessible name, their palette and their reserved box.
+      await expect(page.getByTestId('diagram')).toHaveCount(1)
+      await expect(page.getByTestId('placeholder')).toHaveCount(0)
     })
 
     test('offers the way back to the rest of the work', async ({ page }) => {

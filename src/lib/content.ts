@@ -32,7 +32,6 @@ export const caseStudySchema = z.object({
   featured: z.boolean().default(false),
   surfaces: z.array(z.object({ label: z.string(), href: z.url() })).default([]),
   source: z.url().optional(),
-  cover: z.string().optional(),
 })
 
 export type CaseStudy = z.infer<typeof caseStudySchema>
