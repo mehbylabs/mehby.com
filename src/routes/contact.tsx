@@ -172,11 +172,6 @@ function Contact() {
           noValidate
           aria-busy={pending || undefined}
           onSubmit={onSubmit}
-          style={{
-            maxInlineSize: '42rem',
-            display: 'grid',
-            gap: '1.5rem',
-          }}
         >
           {/* Mounted from the first render, always, and never conditionally
               rendered. A live region inserted into the DOM at the same moment

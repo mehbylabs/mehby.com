@@ -151,8 +151,7 @@ function About() {
           data-testid="timeline-note"
           style={{ marginTop: '1.5rem' }}
         >
-          <b className="note-label">PLACEHOLDER</b> Earlier roles and education
-          pending.
+          <b>PLACEHOLDER</b> Earlier roles and education pending.
         </p>
       </section>
     </main>

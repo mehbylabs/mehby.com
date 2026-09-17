@@ -149,15 +149,7 @@ function Failure({
 }) {
   return (
     <main data-testid="failure">
-      <section
-        className="shell section"
-        style={{
-          minHeight: '65vh',
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'center',
-        }}
-      >
+      <section className="shell section page-centered">
         <p className="prompt" data-testid="failure-prompt">
           <span className="prompt-user">mehby</span>
           <span className="prompt-host">@dev:~$</span>

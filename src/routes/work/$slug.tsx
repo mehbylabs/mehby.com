@@ -159,15 +159,7 @@ function NotFound() {
 
   return (
     <main data-testid="not-found">
-      <section
-        className="shell section"
-        style={{
-          minHeight: '65vh',
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'center',
-        }}
-      >
+      <section className="shell section page-centered">
         <div className="section-path">
           <span className="section-path-code">{`~/work${pathname}`}</span>
           <h1 className="page-title">No case study here</h1>

@@ -61,18 +61,7 @@ export function ProofStrip({ surfaces }: ProofStripProps) {
       <p className="log-line" id="proof-label" style={{ marginBottom: '1rem' }}>
         <b># live</b> {surfaces.length} surfaces, checked just now
       </p>
-      <ul
-        className="proof-list"
-        aria-labelledby="proof-label"
-        style={{
-          listStyle: 'none',
-          margin: 0,
-          padding: 0,
-          display: 'flex',
-          flexWrap: 'wrap',
-          gap: '0.75rem',
-        }}
-      >
+      <ul className="proof-list" aria-labelledby="proof-label">
         {surfaces.map((link) => {
           const state = states[link.href]
           const live = state !== undefined && state !== 'pending' && state.ok
@@ -89,19 +78,6 @@ export function ProofStrip({ surfaces }: ProofStripProps) {
                 className="tcard tcard-chip"
                 data-testid="proof-link"
                 href={link.href}
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '0.75rem',
-                  padding: '0.55rem 1rem',
-                  border: '1px solid var(--color-edge-strong)',
-                  borderRadius: '0.375rem',
-                  background: 'var(--color-panel)',
-                  textDecoration: 'none',
-                  color: 'var(--color-text)',
-                  fontFamily: 'var(--font-data)',
-                  fontSize: 'var(--text-data)',
-                }}
               >
                 <span className={cls} data-testid="proof-status">
                   <span className="status-dot" aria-hidden="true" />

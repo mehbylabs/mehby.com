@@ -371,6 +371,28 @@
     transform: scale(0.98);
   }
 
+  /* The proof chip is a tcard turned on its side: same panel, same border, same
+     hover contract, laid out as a row because it holds a status and a hostname
+     rather than a stack of metadata. Declared here rather than inline on the
+     element, so the hover and active rules above actually reach it. */
+  .tcard-chip {
+    flex-direction: row;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.55rem 1rem;
+    font-family: var(--font-data);
+    font-size: var(--text-data);
+  }
+
+  .proof-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
   .tcard-path {
     font-family: var(--font-data);
     font-size: var(--text-fine);
@@ -592,6 +614,28 @@
     font-size: var(--text-body);
   }
 
+  /* A row of actions. Both children are inline-flex buttons and JSX strips the
+     newline between them, so without this rule they render welded together at
+     exactly 0px. That shipped, on the home page, above the fold, for the whole
+     life of the design system. src/lib/class-registry.test.ts is what stops a
+     class like this one going missing again. */
+  .hero-actions,
+  .page-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  /* The failure states and the empty case study: short pages whose content
+     should sit at the optical centre rather than clinging to the nav. */
+  .page-centered {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-block-size: 65vh;
+  }
+
   /* Sticky navigation. The blur keeps long panels from crashing into the
      links as the page scrolls; the ground stays bg at high opacity, so the
      mono links keep their measured contrast. */
@@ -679,6 +723,12 @@
   /* Contact form. Fields are a mono label with an amber `$` glyph, a shadcn
      control, and a mono error line. Error text is amber, not red: red is
      reserved for live status. */
+  .contact-form {
+    display: grid;
+    gap: 1.5rem;
+    max-inline-size: 42rem;
+  }
+
   .field {
     display: grid;
     gap: 0.5rem;
