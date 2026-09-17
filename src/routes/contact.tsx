@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
 import { Button } from '#/components/ui/button'
 import { Input } from '#/components/ui/input'
@@ -58,8 +58,11 @@ const errorId = (field: ContactField) => `contact-${field}-error`
 // wrong" is not something a visitor can act on.
 const summarise = (outcome: ContactOutcome | null) => {
   if (outcome === null) return ''
-  if (outcome.status === 'sent')
-    return 'Message sent. I will reply to the address you gave.'
+  // The sent case is deliberately silent here. It is the one outcome that
+  // replaces the form with a panel of its own, and focus moves to that panel,
+  // which assistive technology reads on arrival. Announcing the same sentence
+  // from the live region as well says it twice.
+  if (outcome.status === 'sent') return ''
   if (outcome.status === 'invalid')
     return 'Nothing was sent. The fields marked below need attention.'
   return outcome.reason
@@ -68,6 +71,8 @@ const summarise = (outcome: ContactOutcome | null) => {
 function Contact() {
   const [pending, setPending] = useState(false)
   const [outcome, setOutcome] = useState<ContactOutcome | null>(null)
+  const [sentTo, setSentTo] = useState('')
+  const sentPanel = useRef<HTMLDivElement>(null)
   // False on the server and through the first client render, true once React
   // has hydrated. See the two comments on the submit button for what it is
   // for: without it there is a real window, measured in this build and not
@@ -78,6 +83,15 @@ function Contact() {
 
   const errors = outcome?.status === 'invalid' ? outcome.errors : {}
   const summary = summarise(outcome)
+  const sent = outcome?.status === 'sent'
+
+  // Focus follows the content. The Send button the visitor pressed is gone
+  // once the panel replaces the form, and focus left on a removed element
+  // falls to the body, which drops a keyboard user to the top of the document
+  // with no announcement of what happened.
+  useEffect(() => {
+    if (sent) sentPanel.current?.focus()
+  }, [sent])
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -117,6 +131,10 @@ function Contact() {
     setOutcome(result)
 
     if (result.status === 'sent') {
+      // Kept so the confirmation can name the address the reply is going to.
+      // A visitor who mistyped their own email should be able to see that from
+      // the confirmation rather than from the silence that follows.
+      setSentTo(read('email'))
       form.reset()
       return
     }
@@ -187,6 +205,35 @@ function Contact() {
             {summary}
           </p>
 
+          {/* The peak-end moment of the site's only flow.
+              
+              It used to be this: the form emptied itself, focus stayed on the
+              Send button, and the sole confirmation was the line above at
+              --text-fine in --color-muted, which is the smallest type size on
+              the site in its lowest contrast text colour. A sighted keyboard
+              user saw three cleared fields and no visible reason, and a screen
+              reader user heard one sentence and was left in a form that no
+              longer held anything they had written.
+              
+              So the form is replaced rather than reset in place, the
+              confirmation is set at the same step as a subsection heading, and
+              it names the address the reply is going to so a visitor who
+              mistyped their own email finds out now rather than never. */}
+          {sent ? (
+            <div
+              className="form-sent"
+              data-testid="contact-sent"
+              ref={sentPanel}
+              tabIndex={-1}
+            >
+              <p className="form-sent-headline">Message sent.</p>
+              <p className="form-sent-detail">
+                I reply to everything, and the reply goes to{' '}
+                <b>{sentTo || 'the address you gave'}</b>.
+              </p>
+            </div>
+          ) : null}
+
           {outcome?.status === 'failed' ? (
             // The retry affordance is the Send button, which is never disabled
             // after a failure, plus the address for a visitor who has had
@@ -198,81 +245,90 @@ function Contact() {
             </p>
           ) : null}
 
-          <div className="field">
-            <Label htmlFor="contact-name" className="field-label">
-              <span className="label-glyph" aria-hidden="true">
-                $
-              </span>{' '}
-              Name
-            </Label>
-            <Input
-              {...field('name')}
-              className={invalidStyle}
-              type="text"
-              autoComplete="name"
-            />
-            {errors.name ? (
-              <p className="field-error" id={errorId('name')}>
-                {errors.name}
-              </p>
-            ) : null}
-          </div>
+          {/* Everything a visitor fills in, gone once they have sent it. An
+              emptied form under a confirmation invites a second send nobody
+              asked for and reads as though the first one was discarded. */}
+          {sent ? null : (
+            <>
+              <div className="field">
+                <Label htmlFor="contact-name" className="field-label">
+                  <span className="label-glyph" aria-hidden="true">
+                    $
+                  </span>{' '}
+                  Name
+                </Label>
+                <Input
+                  {...field('name')}
+                  className={invalidStyle}
+                  type="text"
+                  autoComplete="name"
+                />
+                {errors.name ? (
+                  <p className="field-error" id={errorId('name')}>
+                    {errors.name}
+                  </p>
+                ) : null}
+              </div>
 
-          <div className="field">
-            <Label htmlFor="contact-email" className="field-label">
-              <span className="label-glyph" aria-hidden="true">
-                $
-              </span>{' '}
-              Email
-            </Label>
-            <Input
-              {...field('email')}
-              className={invalidStyle}
-              type="email"
-              autoComplete="email"
-            />
-            {errors.email ? (
-              <p className="field-error" id={errorId('email')}>
-                {errors.email}
-              </p>
-            ) : null}
-          </div>
+              <div className="field">
+                <Label htmlFor="contact-email" className="field-label">
+                  <span className="label-glyph" aria-hidden="true">
+                    $
+                  </span>{' '}
+                  Email
+                </Label>
+                <Input
+                  {...field('email')}
+                  className={invalidStyle}
+                  type="email"
+                  autoComplete="email"
+                />
+                {errors.email ? (
+                  <p className="field-error" id={errorId('email')}>
+                    {errors.email}
+                  </p>
+                ) : null}
+              </div>
 
-          <div className="field">
-            <Label htmlFor="contact-message" className="field-label">
-              <span className="label-glyph" aria-hidden="true">
-                $
-              </span>{' '}
-              What are you building?
-            </Label>
-            <Textarea {...field('message')} className={invalidStyle} rows={7} />
-            {errors.message ? (
-              <p className="field-error" id={errorId('message')}>
-                {errors.message}
-              </p>
-            ) : null}
-          </div>
+              <div className="field">
+                <Label htmlFor="contact-message" className="field-label">
+                  <span className="label-glyph" aria-hidden="true">
+                    $
+                  </span>{' '}
+                  What are you building?
+                </Label>
+                <Textarea
+                  {...field('message')}
+                  className={invalidStyle}
+                  rows={7}
+                />
+                {errors.message ? (
+                  <p className="field-error" id={errorId('message')}>
+                    {errors.message}
+                  </p>
+                ) : null}
+              </div>
 
-          {/* The honeypot. Off screen rather than `display: none`, because a
+              {/* The honeypot. Off screen rather than `display: none`, because a
               bot that parses CSS skips a hidden field and fills a visible
               one. tabIndex -1 keeps it out of the keyboard path, and
               aria-hidden keeps it out of the accessibility tree: together
               those are what stop it being a trap for the people it is not
               aimed at. Named `company`, which is a field a form filler
               expects to exist. */}
-          <div className="honeypot" aria-hidden="true">
-            <label htmlFor="contact-company">Company</label>
-            <input
-              id="contact-company"
-              name="company"
-              type="text"
-              tabIndex={-1}
-              autoComplete="off"
-              aria-hidden="true"
-            />
-          </div>
+              <div className="honeypot" aria-hidden="true">
+                <label htmlFor="contact-company">Company</label>
+                <input
+                  id="contact-company"
+                  name="company"
+                  type="text"
+                  tabIndex={-1}
+                  autoComplete="off"
+                  aria-hidden="true"
+                />
+              </div>
 
-          {/* Two disabled states, two mechanisms, and they are not
+              {/* Two disabled states, two mechanisms, and they are not
               interchangeable.
 
               Before hydration the button is really `disabled`, because
@@ -287,18 +343,20 @@ function Contact() {
               the double submit is refused in the handler. A real `disabled`
               here would move focus to the body mid-request and drop a
               keyboard user out of the form they are using. */}
-          <div>
-            <Button
-              type="submit"
-              data-testid="contact-submit"
-              data-ready={ready || undefined}
-              data-pending={pending || undefined}
-              disabled={!ready}
-              aria-disabled={pending || undefined}
-            >
-              {pending ? 'Sending' : 'Send'}
-            </Button>
-          </div>
+              <div>
+                <Button
+                  type="submit"
+                  data-testid="contact-submit"
+                  data-ready={ready || undefined}
+                  data-pending={pending || undefined}
+                  disabled={!ready}
+                  aria-disabled={pending || undefined}
+                >
+                  {pending ? 'Sending' : 'Send'}
+                </Button>
+              </div>
+            </>
+          )}
         </form>
       </section>
     </main>

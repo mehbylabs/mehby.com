@@ -260,7 +260,7 @@ test.describe('a bot that fills the honeypot', () => {
     await submit(page)
 
     await expect(status(page)).toHaveAttribute('data-status', 'sent')
-    await expect(status(page)).toContainText('Message sent')
+    await expect(page.getByTestId('contact-sent')).toContainText('Message sent')
   })
 
   test('gets a success that could not have involved a send', async ({
@@ -277,20 +277,89 @@ test.describe('a bot that fills the honeypot', () => {
     await submit(page)
 
     await expect(status(page)).toHaveAttribute('data-status', 'sent')
-    await expect(
-      page.getByLabel('$ Email', { exact: true }),
-    ).not.toHaveAttribute('aria-invalid', 'true')
+    // No field is marked, and no field message is rendered. A rejection aimed
+    // at the bad email would teach the bot which field is the trap.
+    await expect(page.locator('.field-error')).toHaveCount(0)
+    await expect(page.locator('[aria-invalid="true"]')).toHaveCount(0)
   })
 
-  test('clears the form the way a real success does', async ({ page }) => {
+  test('is given the same confirmation a real success gets', async ({
+    page,
+  }) => {
     await fill(page, {})
     await page
       .locator('#contact-company')
       .evaluate((el: HTMLInputElement) => (el.value = 'Acme'))
     await submit(page)
 
+    // The form is replaced rather than reset in place, so what the bot typed
+    // is gone along with every field. Identical to the real path, which is the
+    // point: nothing here tells it what happened.
     await expect(status(page)).toHaveAttribute('data-status', 'sent')
-    await expect(page.getByLabel('$ Name', { exact: true })).toHaveValue('')
+    await expect(page.getByTestId('contact-sent')).toBeVisible()
+    await expect(page.getByLabel('$ Name', { exact: true })).toHaveCount(0)
+  })
+
+  test('is told the reply is going to the address it typed', async ({
+    page,
+  }) => {
+    // The confirmation names the address so a visitor who mistyped their own
+    // email learns it now rather than from the silence that follows.
+    await fill(page, { email: 'someone@example.com' })
+    await page
+      .locator('#contact-company')
+      .evaluate((el: HTMLInputElement) => (el.value = 'Acme'))
+    await submit(page)
+
+    await expect(page.getByTestId('contact-sent')).toContainText(
+      'someone@example.com',
+    )
+  })
+
+  test('lands focus on the confirmation, not on nothing', async ({ page }) => {
+    // The Send button the visitor pressed is removed with the form. Focus left
+    // on a removed element falls to the body, which drops a keyboard user at
+    // the top of the document with no announcement of what happened.
+    await fill(page, {})
+    await page
+      .locator('#contact-company')
+      .evaluate((el: HTMLInputElement) => (el.value = 'Acme'))
+    await submit(page)
+
+    await expect(page.getByTestId('contact-sent')).toBeFocused()
+  })
+
+  test('confirms at a size a visitor can actually see', async ({ page }) => {
+    // The regression: the only confirmation used to be .form-status, which is
+    // --text-fine in --color-muted. The smallest type on the site, in its
+    // lowest contrast text colour, as the sole evidence that the one action
+    // the site asks for had worked.
+    await fill(page, {})
+    await page
+      .locator('#contact-company')
+      .evaluate((el: HTMLInputElement) => (el.value = 'Acme'))
+    await submit(page)
+
+    const headline = page.getByTestId('contact-sent').locator('p').first()
+    const measured = await headline.evaluate((el) => {
+      const s = getComputedStyle(el)
+      const body = getComputedStyle(document.body)
+      return {
+        size: parseFloat(s.fontSize),
+        body: parseFloat(body.fontSize),
+        colour: s.color,
+        text: body.color,
+      }
+    })
+
+    expect(
+      measured.size,
+      `the confirmation is ${measured.size}px against a ${measured.body}px body`,
+    ).toBeGreaterThan(measured.body)
+    expect(
+      measured.colour,
+      'the confirmation is not set in the full text colour',
+    ).toBe(measured.text)
   })
 })
 
