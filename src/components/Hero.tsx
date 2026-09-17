@@ -55,6 +55,7 @@ export function Hero() {
 
       <div
         className="hero-actions rise-in"
+        data-testid="hero-actions"
         style={{ ...step(3), marginTop: '2rem' }}
       >
         <Button asChild size="lg">

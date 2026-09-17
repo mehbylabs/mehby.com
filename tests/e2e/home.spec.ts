@@ -158,6 +158,41 @@ test.describe('hero', () => {
     ).toHaveAttribute('href', '/contact')
   })
 
+  test('separates its two actions instead of welding them together', async ({
+    page,
+  }) => {
+    // The regression this exists for: `.hero-actions` was referenced by the
+    // hero and defined nowhere. Both buttons are inline-flex, JSX strips the
+    // newline between them, and a div with no display and no gap leaves them
+    // touching at exactly 0px. It shipped above the fold on the home page and
+    // every existing assertion passed, because they all asked what the buttons
+    // said rather than where they were.
+    //
+    // Measured from the painted boxes rather than from the computed `gap`, so
+    // any future layout that separates them correctly passes and any that runs
+    // them together fails, whatever properties it used to get there.
+    const actions = page.getByTestId('hero-actions')
+    const buttons = actions.getByRole('link')
+
+    await expect(buttons).toHaveCount(2)
+
+    const first = await buttons.nth(0).boundingBox()
+    const second = await buttons.nth(1).boundingBox()
+    expect(first, 'the first hero action has no painted box').not.toBeNull()
+    expect(second, 'the second hero action has no painted box').not.toBeNull()
+
+    // Wrapped onto two lines on a narrow viewport is a pass: the check is that
+    // they are separated on the axis they share, not that they sit side by side.
+    const wrapped = second!.y >= first!.y + first!.height
+    const horizontal = second!.x - (first!.x + first!.width)
+
+    expect(
+      wrapped || horizontal >= 8,
+      `the hero actions are ${horizontal.toFixed(1)}px apart. Two adjacent ` +
+        `buttons with no gap read as one two-tone slab`,
+    ).toBe(true)
+  })
+
   test('keeps its statement legible on the ground it stands on', async ({
     page,
   }) => {
