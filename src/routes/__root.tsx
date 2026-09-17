@@ -260,6 +260,43 @@ function ErrorState({ error, reset }: ErrorComponentProps) {
   )
 }
 
+// Route transitions report themselves, or a cold connection looks broken.
+//
+// Every page here is prerendered and the cache is warm in development, so a
+// navigation is usually instant and this never appears. On a cold connection
+// it is the difference between a site that is working and a site where the
+// button did nothing: the browser's own spinner does not run for a client side
+// navigation, so without this there is no feedback at all until the new page
+// paints.
+//
+// A bar rather than a spinner, and only after 200ms. A spinner that flashes on
+// every instant navigation is worse than nothing, and the delay is what keeps
+// this invisible in the common case.
+//
+// aria-hidden, and deliberately. The router moves focus and announces the new
+// document on arrival; a live region narrating "loading" over the top of that
+// is two announcements for one event.
+function RouteProgress() {
+  // `isLoading`, not `status === 'pending'`. Measured: `status` is 'pending'
+  // on this router from the first paint and stays there, so keying off it
+  // mounted the bar on every page and never removed it. `isLoading` is the
+  // flag that actually tracks a navigation in flight, and `isTransitioning`
+  // covers the React transition the router wraps it in.
+  const isLoading = useRouterState({
+    select: (state) => state.isLoading || state.isTransitioning,
+  })
+
+  if (!isLoading) return null
+
+  return (
+    <div
+      className="route-progress"
+      data-testid="route-progress"
+      aria-hidden="true"
+    />
+  )
+}
+
 function RootDocument({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
@@ -273,6 +310,7 @@ function RootDocument({ children }: { children: ReactNode }) {
             chrome belongs to the contentinfo and banner landmarks, not the
             main one. Rendered by the shell, so the failure states get them
             too. */}
+        <RouteProgress />
         <SiteNav />
         {children}
         <SiteFooter />

@@ -1008,6 +1008,41 @@
     backdrop-filter: blur(10px);
   }
 
+  /* The route transition bar. Above the sticky navigation, which is z-index
+     40, because it reports on the whole document rather than on the bar.
+
+     Held back 200ms before it appears. Every page here is prerendered, so a
+     navigation is usually instant, and an indicator that flashes on every
+     instant one is noise rather than feedback. Transform and opacity only, and
+     the base layer's reduced-motion reset collapses both, which leaves a
+     static bar: still an answer, just not an animated one. */
+  @keyframes route-progress {
+    0% {
+      opacity: 0;
+      transform: scaleX(0);
+    }
+
+    12% {
+      opacity: 1;
+    }
+
+    100% {
+      opacity: 1;
+      transform: scaleX(1);
+    }
+  }
+
+  .route-progress {
+    position: fixed;
+    inset-block-start: 0;
+    inset-inline: 0;
+    z-index: 60;
+    block-size: 2px;
+    background: var(--color-orange);
+    transform-origin: left center;
+    animation: route-progress 2.4s var(--ease-out) 200ms both;
+  }
+
   /* Off screen until it is focused, then the first thing on the page.
      
      Moved rather than hidden: display:none and visibility:hidden both take an
