@@ -2,8 +2,13 @@ import { expect, test } from '@playwright/test'
 import { hydrated } from './support/probes'
 import type { Page } from '@playwright/test'
 
-// The three widths, and what each one is standing in for.
+// The four widths, and what each one is standing in for.
 //
+//   360   the narrowest phone still in real use, and the width at which every
+//         fluid minimum on the site is pinned to its floor at once: the shell
+//         inset, the display step, and the hero's measure. It was not tested,
+//         so the floor of every clamp on the site was the one configuration
+//         nothing had ever loaded.
 //   375   a phone, where every layout collapses to one column
 //   768   a tablet, where the case study layout's wide-screen step is still off
 //   1280  a desktop, where the 12-column case study layout is active
@@ -13,6 +18,7 @@ import type { Page } from '@playwright/test'
 // written with a `>` or with an off-by-one boundary is correct everywhere
 // except exactly here.
 const WIDTHS = [
+  { width: 360, columns: 3, label: 'the narrowest phone' },
   { width: 375, columns: 3, label: 'phone' },
   { width: 768, columns: 6, label: 'the first breakpoint' },
   { width: 1280, columns: 12, label: 'desktop' },

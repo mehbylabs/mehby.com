@@ -541,6 +541,27 @@
     list-style: none;
   }
 
+  /* On the narrowest phones a chip is wider than the column it sits in: the
+     status word is reserved to its longest spelling and the addresses run to
+     seventeen characters of Martian Mono, which is a wide face. Measured at
+     360px, a row-wrapped chip overflowed by 10px.
+     
+     Stacked rather than shrunk. These are addresses and they are the evidence,
+     so truncating one is worse than the extra height, and a column of four
+     reads better on a phone than a ragged two-by-two anyway. */
+  @media (width < 30rem) {
+    .proof-list {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .tcard-chip {
+      inline-size: 100%;
+      flex-wrap: wrap;
+      overflow-wrap: anywhere;
+    }
+  }
+
   .tcard-path {
     font-family: var(--font-data);
     font-size: var(--text-fine);

@@ -299,6 +299,13 @@ describe('case study bodies', () => {
   )
 })
 
+// Importing vite.config resolves the whole plugin pipeline, which is real work
+// and is the only thing in this file that does any. Under parallel load it has
+// measured over vitest's 5000ms default and flaked the suite; run alone it
+// settles in about 1.2s. The assertions are sound, so the fix is a budget that
+// reflects what the work costs rather than a retry that hides it.
+const PIPELINE_TIMEOUT = 30_000
+
 describe('the mdx pipeline', () => {
   const plugins = async () => {
     const config = (await import('../../vite.config')).default
@@ -307,42 +314,54 @@ describe('the mdx pipeline', () => {
       .filter((p): p is { name: string } => Boolean(p && p.name))
   }
 
-  it('registers mdx ahead of the react plugin', async () => {
-    const names = (await plugins()).map((p) => p.name)
-    const mdx = names.indexOf('@mdx-js/rollup')
-    const react = names.findIndex((n) => n.startsWith('vite:react'))
+  it(
+    'registers mdx ahead of the react plugin',
+    async () => {
+      const names = (await plugins()).map((p) => p.name)
+      const mdx = names.indexOf('@mdx-js/rollup')
+      const react = names.findIndex((n) => n.startsWith('vite:react'))
 
-    expect(
-      mdx,
-      `mdx plugin missing from vite.config.ts: ${names}`,
-    ).toBeGreaterThan(-1)
-    expect(react).toBeGreaterThan(-1)
-    expect(mdx).toBeLessThan(react)
-  })
+      expect(
+        mdx,
+        `mdx plugin missing from vite.config.ts: ${names}`,
+      ).toBeGreaterThan(-1)
+      expect(react).toBeGreaterThan(-1)
+      expect(mdx).toBeLessThan(react)
+    },
+    PIPELINE_TIMEOUT,
+  )
 
-  it('compiles a shipped case study to a component', async () => {
-    const plugin: any = (await plugins()).find(
-      (p) => p.name === '@mdx-js/rollup',
-    )
-    const file = resolve(WORK_DIR, 'helmdeck.mdx')
-    const transform = plugin.transform.handler ?? plugin.transform
+  it(
+    'compiles a shipped case study to a component',
+    async () => {
+      const plugin: any = (await plugins()).find(
+        (p) => p.name === '@mdx-js/rollup',
+      )
+      const file = resolve(WORK_DIR, 'helmdeck.mdx')
+      const transform = plugin.transform.handler ?? plugin.transform
 
-    const out = await transform.call({}, readFileSync(file, 'utf8'), file)
+      const out = await transform.call({}, readFileSync(file, 'utf8'), file)
 
-    expect(out.code).toContain('MDXContent')
-    expect(out.code).toContain('Why a protocol rather than adapters')
-  })
+      expect(out.code).toContain('MDXContent')
+      expect(out.code).toContain('Why a protocol rather than adapters')
+    },
+    PIPELINE_TIMEOUT,
+  )
 
-  it('strips frontmatter instead of rendering it as prose', async () => {
-    const plugin: any = (await plugins()).find(
-      (p) => p.name === '@mdx-js/rollup',
-    )
-    const file = resolve(WORK_DIR, 'helmdeck.mdx')
-    const transform = plugin.transform.handler ?? plugin.transform
+  it(
+    'strips frontmatter instead of rendering it as prose',
+    async () => {
+      const plugin: any = (await plugins()).find(
+        (p) => p.name === '@mdx-js/rollup',
+      )
+      const file = resolve(WORK_DIR, 'helmdeck.mdx')
+      const transform = plugin.transform.handler ?? plugin.transform
 
-    const out = await transform.call({}, readFileSync(file, 'utf8'), file)
+      const out = await transform.call({}, readFileSync(file, 'utf8'), file)
 
-    expect(out.code).not.toContain('role: Designer and engineer')
-    expect(out.code).not.toContain('source: https://github.com')
-  })
+      expect(out.code).not.toContain('role: Designer and engineer')
+      expect(out.code).not.toContain('source: https://github.com')
+    },
+    PIPELINE_TIMEOUT,
+  )
 })
