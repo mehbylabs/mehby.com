@@ -297,7 +297,12 @@ test.describe('the prerendered HTML is real content', () => {
   test('shows every case study with JavaScript disabled', async ({ page }) => {
     await page.goto('/')
 
-    const pillars = page.getByTestId('pillar-link')
+    // The featured study and the cards are different elements, so the count is
+    // taken across both. Every declared case study has to be in the document
+    // the server sent, not assembled after hydration.
+    const pillars = page.locator(
+      '[data-testid="featured-link"], [data-testid="pillar-link"]',
+    )
     await expect(pillars).toHaveCount(STUDY_COUNT)
     for (const title of ['VoltTunisia', 'Helmdeck', 'CoaChess']) {
       await expect(

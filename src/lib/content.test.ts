@@ -16,6 +16,7 @@ const valid = {
   role: 'CTO and co-founder',
   period: '2022 to present',
   order: 3,
+  featured: true,
   surfaces: [{ label: 'coachess.net', href: 'https://coachess.net' }],
   source: 'https://github.com/example/repo',
   cover: '/work/coachess.png',
@@ -30,6 +31,12 @@ describe('caseStudySchema', () => {
     const { surfaces: _dropped, ...withoutSurfaces } = valid
 
     expect(caseStudySchema.parse(withoutSurfaces).surfaces).toEqual([])
+  })
+
+  it('defaults featured to false, so the index has at most one by intent', () => {
+    const { featured: _dropped, ...withoutFeatured } = valid
+
+    expect(caseStudySchema.parse(withoutFeatured).featured).toBe(false)
   })
 
   it('rejects an em dash in the summary', () => {
@@ -157,6 +164,24 @@ describe('getCaseStudies', () => {
 
     expect(entries.map((e) => e.order)).toEqual([1, 2, 3])
     expect(entries.map((e) => e.slug)).toEqual(['c', 'a', 'b'])
+  })
+
+  it('refuses a second featured case study', () => {
+    // Two featured studies is a content error, not a layout preference. It
+    // throws rather than resolving to the first, because taking the first
+    // silently is the failure nobody notices: the owner marks a new project as
+    // the one to read first, the index keeps showing the old one, and nothing
+    // anywhere says why.
+    const dir = fixtureDir({
+      'a.mdx': frontmatter({ order: 1, featured: true }),
+      'b.mdx': frontmatter({ order: 2, featured: true }),
+    })
+
+    expect(() => getCaseStudies(dir)).toThrow(/featured/)
+  })
+
+  it('features exactly one of the real case studies', () => {
+    expect(getCaseStudies().filter((e) => e.featured)).toHaveLength(1)
   })
 
   it('sorts the real content by its declared order', () => {

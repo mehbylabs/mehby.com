@@ -25,6 +25,11 @@ export const caseStudySchema = z.object({
   role: z.string(),
   period: scalarString,
   order: z.number().int(),
+  // The work index gives one case study a larger treatment. Declared in
+  // content rather than inferred from array position: the treatment used to
+  // key off `i === 0`, so it followed whatever happened to sort first and
+  // said nothing about which project the owner wants read.
+  featured: z.boolean().default(false),
   surfaces: z.array(z.object({ label: z.string(), href: z.url() })).default([]),
   source: z.url().optional(),
   cover: z.string().optional(),
@@ -64,6 +69,26 @@ const explain = (error: z.ZodError) =>
  * it is the failure nobody notices.
  */
 export function getCaseStudies(dir: string = CASE_STUDY_DIR): CaseStudyEntry[] {
+  const studies = readStudies(dir)
+
+  // The work index gives exactly one study the featured treatment, so two of
+  // them is a content error and not a layout preference. Thrown rather than
+  // resolved by taking the first, because silently ignoring the second is the
+  // failure nobody notices: the owner marks a new project as the one to read
+  // first, the page keeps showing the old one, and nothing says why.
+  const featured = studies.filter((study) => study.featured)
+  if (featured.length > 1) {
+    throw new Error(
+      `${dir} marks ${featured.length} case studies as featured ` +
+        `(${featured.map((study) => study.slug).join(', ')}). ` +
+        `The work index features one.`,
+    )
+  }
+
+  return studies
+}
+
+function readStudies(dir: string): CaseStudyEntry[] {
   return readdirSync(dir)
     .filter((file) => file.endsWith('.mdx'))
     .sort()

@@ -12,14 +12,17 @@ import { pageHead } from './-seo'
 // and the capabilities are a log of what this person actually does.
 
 const listCaseStudies = createServerFn({ method: 'GET' }).handler(() =>
-  getCaseStudies().map(({ slug, title, summary, role, period, surfaces }) => ({
-    slug,
-    title,
-    summary,
-    role,
-    period,
-    surfaces,
-  })),
+  getCaseStudies().map(
+    ({ slug, title, summary, role, period, surfaces, featured }) => ({
+      slug,
+      title,
+      summary,
+      role,
+      period,
+      surfaces,
+      featured,
+    }),
+  ),
 )
 
 export const Route = createFileRoute('/')({
@@ -56,6 +59,8 @@ const CAPABILITIES = [
 function Home() {
   const studies = Route.useLoaderData()
   const surfaces = studies.flatMap((study) => study.surfaces)
+  const featured = studies.find((study) => study.featured)
+  const rest = studies.filter((study) => study !== featured)
 
   return (
     <main id="content" tabIndex={-1}>
@@ -70,23 +75,57 @@ function Home() {
           <h2 className="section-path-title">Work that ships</h2>
         </div>
 
-        <div
-          style={{
-            display: 'grid',
-            gap: '1.25rem',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-          }}
-        >
-          {studies.map((study, i) => (
+        {/* The featured study is a different object, not a wider card.
+            
+            It used to be `i === 0 ? { gridColumn: '1 / -1' }` against an
+            auto-fit grid, which at 1440px resolved to three columns: one card
+            spanning all three, two filling the row below, and the third cell
+            of that row empty. Nothing about it changed except its width, so a
+            1168px box holding a 20px title read as a card that got stretched
+            rather than as the work the owner wants read first, and the visible
+            hole underneath read as something failing to load.
+            
+            Now it carries its own layout, its own type scale, and its own
+            metadata column, and which study gets it comes from the content. */}
+        {featured ? (
+          <Link
+            className="tfeature"
+            data-testid="featured-link"
+            to="/work/$slug"
+            params={{ slug: featured.slug }}
+          >
+            <div>
+              <span className="tcard-path">{`~/work/${featured.slug}`}</span>
+              <h3 className="tfeature-title">{featured.title}</h3>
+              <p className="tfeature-summary">{featured.summary}</p>
+            </div>
+            <div className="tfeature-meta">
+              <p className="log-line">
+                <b>role</b> {featured.role}
+              </p>
+              <p className="log-line">
+                <b>period</b> {featured.period}
+              </p>
+              {featured.surfaces.length > 0 ? (
+                <p className="log-line">
+                  <b>surfaces</b> {featured.surfaces.length}
+                </p>
+              ) : null}
+              <span className="tcard-action">read the case study →</span>
+            </div>
+          </Link>
+        ) : null}
+
+        <div className="work-grid">
+          {rest.map((study) => (
             <Link
               key={study.slug}
               className="tcard"
               data-testid="pillar-link"
               to="/work/$slug"
               params={{ slug: study.slug }}
-              style={i === 0 ? { gridColumn: '1 / -1' } : undefined}
             >
-              <span className="tcard-path">{`# ${study.slug}/`}</span>
+              <span className="tcard-path">{`~/work/${study.slug}`}</span>
               <h3 className="tcard-title">{study.title}</h3>
               <p className="tcard-meta">
                 {study.role} · {study.period}

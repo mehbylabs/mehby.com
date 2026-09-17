@@ -404,18 +404,59 @@ test.describe('proof strip', () => {
 })
 
 test.describe('selected work', () => {
-  test('links the three pillars, in content order', async ({ page }) => {
-    const links = page.getByTestId('pillar-link')
+  test('links every case study, in content order', async ({ page }) => {
+    // The featured study and the rest are different elements on the page, so
+    // the index is asserted as the sequence of work links rather than as one
+    // locator's children. What matters is that every declared study reaches
+    // the page, once, in the order the content loader returns.
+    const hrefs = await page
+      .locator('[data-testid="featured-link"], [data-testid="pillar-link"]')
+      .evaluateAll((nodes) => nodes.map((n) => n.getAttribute('href')))
 
-    await expect(links).toHaveCount(PILLARS.length)
+    expect(hrefs).toEqual(PILLARS.map((pillar) => `/work/${pillar.slug}`))
+  })
 
-    for (const [i, pillar] of PILLARS.entries()) {
-      await expect(
-        links.nth(i),
-        `pillar ${i} is not in the order the content loader returns`,
-      ).toHaveAttribute('href', `/work/${pillar.slug}`)
-      await expect(links.nth(i)).toContainText(pillar.title)
-    }
+  test('features one study, and gives it a different shape', async ({
+    page,
+  }) => {
+    // The featured treatment used to be `i === 0 ? gridColumn: 1 / -1`, so it
+    // followed whatever happened to sort first and changed nothing but width:
+    // a 1168px box holding a 20px title, with a visibly empty grid cell below
+    // it. Now it comes from the content and it is a different object.
+    const featured = page.getByTestId('featured-link')
+    await expect(featured).toHaveCount(1)
+
+    const titles = await page.evaluate(() => {
+      const size = (sel: string) => {
+        const el = document.querySelector(sel)
+        return el ? parseFloat(getComputedStyle(el).fontSize) : null
+      }
+      return {
+        featured: size('[data-testid="featured-link"] h3'),
+        card: size('[data-testid="pillar-link"] h3'),
+      }
+    })
+
+    expect(
+      titles.featured,
+      'the featured study is set at the same step as the cards, so it is a ' +
+        'wider card rather than a different object',
+    ).toBeGreaterThan(titles.card!)
+  })
+
+  test('leaves no empty cell in the work grid', async ({ page }) => {
+    // The regression: at 1440px the auto-fit grid resolved to three columns,
+    // the stretched first card spanned all three, and the two below it left
+    // the third cell empty. A hole reads as something failing to load.
+    await page.setViewportSize({ width: 1440, height: 900 })
+    await page.goto('/')
+
+    const rows = await page
+      .getByTestId('pillar-link')
+      .evaluateAll((nodes) => nodes.map((n) => n.getBoundingClientRect().top))
+
+    // Every remaining card sits on one row, so the row is full by definition.
+    expect(new Set(rows.map(Math.round)).size).toBe(1)
   })
 
   test('heads the section with its path', async ({ page }) => {
