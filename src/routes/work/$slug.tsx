@@ -109,14 +109,14 @@ function CaseStudy() {
           <h1 className="page-title">{study.title}</h1>
         </div>
         <p className="hero-subline">{study.summary}</p>
-        <p style={{ marginTop: '1.25rem' }}>
+        <p className="page-back">
           <Link className="nav-link" to="/">
             All work
           </Link>
         </p>
       </section>
 
-      <section className="shell section" style={{ paddingTop: 0 }}>
+      <section className="shell section section-continues">
         <div className="grid gap-6 lg:grid-cols-12">
           {/* No cover image exists for any of the three. PRODUCT.md: ship a
               labelled placeholder that is obviously one, never an invented
@@ -168,7 +168,7 @@ function NotFound() {
           That address does not match any of the work on this site. It may have
           been a typing slip, or a link that was never real.
         </p>
-        <p style={{ marginTop: '1.25rem' }}>
+        <p className="page-back">
           <Link className="nav-link" to="/">
             All work
           </Link>

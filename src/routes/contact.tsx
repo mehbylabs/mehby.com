@@ -175,14 +175,14 @@ function Contact() {
           Tell me what you are building and what is in the way. I reply to
           everything.
         </p>
-        <p style={{ marginTop: '1rem' }}>
+        <p className="page-back">
           <a className="contact-address" href={`mailto:${CONTACT_DESTINATION}`}>
             {CONTACT_DESTINATION}
           </a>
         </p>
       </section>
 
-      <section className="shell section" style={{ paddingTop: 0 }}>
+      <section className="shell section section-continues">
         <form
           className="contact-form"
           data-testid="contact-form"

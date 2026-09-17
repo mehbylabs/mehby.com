@@ -183,30 +183,22 @@ function Failure({
 }) {
   return (
     <main id="content" tabIndex={-1} data-testid="failure">
-      <section className="shell section page-centered">
+      <section className="shell section page-centered page-head">
         <p className="prompt" data-testid="failure-prompt">
           <span className="prompt-user">mehby</span>
           <span className="prompt-host">@dev:~$</span>
           <span>echo</span>
           <span className="cursor" aria-hidden="true" />
         </p>
-        <h1
-          className="page-title"
-          data-testid="failure-title"
-          style={{ marginTop: '1rem' }}
-        >
+        <h1 className="page-title" data-testid="failure-title">
           {title}
         </h1>
         {lines.map((line) => (
-          <p
-            className="log-line"
-            key={line.label}
-            style={{ marginTop: '0.25rem' }}
-          >
+          <p className="log-line" key={line.label}>
             <b>{line.label}</b> {line.value}
           </p>
         ))}
-        <div className="page-actions" style={{ marginTop: '1.5rem' }}>
+        <div className="page-actions">
           <Link className="nav-link" to="/">
             ~/work
           </Link>

@@ -33,7 +33,7 @@ const DESTINATIONS = [
 export function SiteFooter() {
   return (
     <footer className="site-footer" data-testid="site-footer">
-      <div className="shell" style={{ paddingBlock: 'clamp(2rem, 4vw, 3rem)' }}>
+      <div className="shell footer-inner">
         <p className="prompt">
           <span className="prompt-user">mehby</span>
           <span className="prompt-host">@dev:~$</span>
@@ -43,7 +43,7 @@ export function SiteFooter() {
         {/* Named, because a page with two navigations and no names on them
             announces both as "navigation" and leaves a screen reader user to
             guess. */}
-        <nav aria-label="Site" style={{ marginTop: '1.25rem' }}>
+        <nav aria-label="Site" className="footer-nav">
           <ul className="footer-list">
             {DESTINATIONS.map((destination) => (
               <li key={destination.to}>
@@ -65,7 +65,7 @@ export function SiteFooter() {
           </ul>
         </nav>
 
-        <p className="footer-address" style={{ marginTop: '1.25rem' }}>
+        <p className="footer-address">
           <a className="contact-address" href={`mailto:${CONTACT_DESTINATION}`}>
             {CONTACT_DESTINATION}
           </a>

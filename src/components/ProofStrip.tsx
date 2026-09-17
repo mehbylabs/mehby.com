@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import type { CSSProperties } from 'react'
 import { checkLive } from '#/lib/live'
 import type { LiveStatus } from '#/lib/live'
 
@@ -73,7 +74,14 @@ export function ProofStrip({ surfaces }: ProofStripProps) {
         : `checking ${surfaces.length} addresses`
 
   return (
-    <div className="proof-strip rise-in" data-testid="proof-strip">
+    // Last in the hero's entrance sequence: prompt, identity, statement,
+    // actions, then the evidence under them. The index is per-element data
+    // rather than style, which is why it is inline.
+    <div
+      className="proof-strip rise-in"
+      data-testid="proof-strip"
+      style={{ '--stagger-index': 4 } as CSSProperties}
+    >
       {/* The summary is the live region, not the list. A list of four chips
           that each mutate announces four fragments and a result nobody
           assembled; one sentence announces the answer. Mounted from the first

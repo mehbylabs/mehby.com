@@ -79,7 +79,7 @@ function Writing() {
         <p className="page-intro" data-testid="writing-empty">
           Nothing published yet. Notes on the work in progress will appear here.
         </p>
-        <p style={{ marginTop: '1.5rem' }}>
+        <p className="page-back">
           <Link className="nav-link" to="/">
             ~/work
           </Link>

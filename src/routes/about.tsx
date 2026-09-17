@@ -58,22 +58,20 @@ export const Route = createFileRoute('/about')({
 function About() {
   return (
     <main id="content" tabIndex={-1}>
-      <section className="shell section">
+      <section className="shell section section-opening page-head">
         <p className="prompt">
           <span className="prompt-user">mehby</span>
           <span className="prompt-host">@dev:~$</span>
           <span>whoami</span>
           <span className="cursor" aria-hidden="true" />
         </p>
-        <h1 className="page-title" style={{ marginTop: '1rem' }}>
-          Mohamed Elhedi Ben Yedder
-        </h1>
-        <p className="log-line" style={{ marginTop: '0.5rem' }}>
+        <h1 className="page-title">Mohamed Elhedi Ben Yedder</h1>
+        <p className="log-line">
           <b>Full stack product engineer</b> / CTO and co-founder of CoaChess
         </p>
       </section>
 
-      <section className="shell section" style={{ paddingTop: 0 }}>
+      <section className="shell section section-continues">
         <div className="section-path">
           <span className="section-path-code">~/who-is-this</span>
           <h2 className="section-path-title">The short version</h2>
@@ -116,7 +114,7 @@ function About() {
         </div>
       </section>
 
-      <section className="shell section" style={{ paddingTop: 0 }}>
+      <section className="shell section section-continues">
         <div className="section-path">
           <span className="section-path-code">~/timeline</span>
           <h2 className="section-path-title">Timeline</h2>
@@ -125,7 +123,7 @@ function About() {
         {/* A real table, with real row headers. The period is the data and the
             row header, so it is set in mono and amber exactly as a terminal
             prints a timestamp. */}
-        <Table className="spec-table" style={{ maxInlineSize: '52rem' }}>
+        <Table className="spec-table timeline-table">
           <TableCaption className="spec-caption">
             Timeline: what has been built, and when
           </TableCaption>
@@ -146,11 +144,7 @@ function About() {
             record is short rather than the career. Same register as the asset
             placeholders, deliberately: both are gaps, and both are labelled
             the same way so a reader learns to read the label once. */}
-        <p
-          className="log-line"
-          data-testid="timeline-note"
-          style={{ marginTop: '1.5rem' }}
-        >
+        <p className="log-line" data-testid="timeline-note">
           <b>PLACEHOLDER</b> Earlier roles and education pending.
         </p>
       </section>
