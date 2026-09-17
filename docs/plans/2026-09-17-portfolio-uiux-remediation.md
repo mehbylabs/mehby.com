@@ -250,17 +250,17 @@ progressive tariff computation.
 
 ## Phase 5: Hygiene
 
-| Task | Change |
-| --- | --- |
-| 5.1 | Delete four unused shadcn primitives. They keep `.uppercase`, `.italic`, and `.animate-pulse` in the shipped CSS, all three banned by DESIGN.md |
-| 5.2 | Remove six dead tokens and the two `text-white` literals, the only untokenised colour in the codebase and invisible to the contrast gate |
-| 5.3 | `contrast.mjs` duplicates the token values with nothing keeping them in sync, while its header calls it the single source of truth. Parse them from `styles.css` |
-| 5.4 | `content.test.ts` flakes at the default 5000ms timeout and passes in 1.2s isolated |
-| 5.5 | Add 360px to the responsive matrix |
-| 5.6 | The four surfaces are four subdomains of one company, while two case studies declare none. The strip shows breadth it lacks |
-| 5.7 | `/writing` is a third of the primary nav and contains one sentence saying nothing is there |
-| 5.8 | Success is defined as a qualified enquiry and nothing in the interface qualifies |
-| 5.9 | No route transition pending state |
+| Task | Change                                                                                                                                                           |
+| ---- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 5.1  | Delete four unused shadcn primitives. They keep `.uppercase`, `.italic`, and `.animate-pulse` in the shipped CSS, all three banned by DESIGN.md                  |
+| 5.2  | Remove six dead tokens and the two `text-white` literals, the only untokenised colour in the codebase and invisible to the contrast gate                         |
+| 5.3  | `contrast.mjs` duplicates the token values with nothing keeping them in sync, while its header calls it the single source of truth. Parse them from `styles.css` |
+| 5.4  | `content.test.ts` flakes at the default 5000ms timeout and passes in 1.2s isolated                                                                               |
+| 5.5  | Add 360px to the responsive matrix                                                                                                                               |
+| 5.6  | The four surfaces are four subdomains of one company, while two case studies declare none. The strip shows breadth it lacks                                      |
+| 5.7  | `/writing` is a third of the primary nav and contains one sentence saying nothing is there                                                                       |
+| 5.8  | Success is defined as a qualified enquiry and nothing in the interface qualifies                                                                                 |
+| 5.9  | No route transition pending state                                                                                                                                |
 
 ---
 
