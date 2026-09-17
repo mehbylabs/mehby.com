@@ -103,17 +103,42 @@ No display serif anywhere. No italic display. No all caps body.
 
 ### Scale
 
-Modular, ratio 1.333, fluid via `clamp()`.
+Two things, not one ladder. Treating them as one ladder is what produced a
+scale that claimed a single ratio and delivered 1.13 across half its steps.
 
-| Step    | Size                           | Use                                        |
-| ------- | ------------------------------ | ------------------------------------------ |
-| display | `clamp(2.6rem, 7vw, 5.8rem)`   | Hero statement, one line, Archivo Expanded |
-| h1      | `clamp(2.1rem, 4.2vw, 3.4rem)` | Page titles                                |
-| h2      | `clamp(1.6rem, 2.6vw, 2.3rem)` | Section heads                              |
-| h3      | `1.25rem`                      | Subsections, card titles                   |
-| body    | `1.0625rem`                    | Reading copy                               |
-| data    | `0.9375rem`                    | Martian Mono, tabular figures              |
-| fine    | `0.8125rem`                    | Captions, paths, table meta                |
+**The heading ladder**, h3 through display, fluid via `clamp()`. This is where
+hierarchy is the whole job and the ratio has to hold: every step clears 1.25
+at the reference size, and the ladder never inverts at the narrow end.
+
+| Step    | Size                           | Ratio over previous | Use                                        |
+| ------- | ------------------------------ | ------------------- | ------------------------------------------ |
+| display | `clamp(2.6rem, 7vw, 5.8rem)`   | 1.71                | Hero statement, one line, Archivo Expanded |
+| h1      | `clamp(2.1rem, 4.2vw, 3.4rem)` | 1.48                | Page titles                                |
+| h2      | `clamp(1.6rem, 2.6vw, 2.3rem)` | 1.67                | Section heads                              |
+| h3      | `1.375rem`                     | 1.29 over body      | Subsections, card titles                   |
+
+**The registers**, which are parallel rather than stacked: a caption, a line of
+mono data, and reading copy. They sit close together on purpose and are told
+apart by family and colour rather than by size. `fine` and `data` are only ever
+Martian Mono; `h3` upward is only ever Archivo. Forcing 1.25 between them would
+set captions at a size that competes with the prose.
+
+| Register | Size        | Use                           |
+| -------- | ----------- | ----------------------------- |
+| body     | `1.0625rem` | Reading copy                  |
+| data     | `0.9375rem` | Martian Mono, tabular figures |
+| fine     | `0.8125rem` | Captions, paths, table meta   |
+
+`body` to `h3` is the seam between the two, and it is the step that was wrong.
+At 1.25rem, h3 was 1.18 over body, which put three pixels between a work card's
+title and the sentence under it, on the most scannable evidence the site has.
+
+The clamp minimums compress deliberately. At 360px the constraint is the width
+of the column, not the ratio, and a ladder holding 1.333 through six steps does
+not fit on a phone. What the minimums may never do is invert.
+
+`src/lib/type-scale.test.ts` asserts the ratio where it is meant to hold and
+records where it deliberately does not.
 
 Body measure capped at 68ch.
 

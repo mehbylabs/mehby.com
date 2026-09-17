@@ -46,7 +46,7 @@ const TOKENS: Record<string, string> = {
   '--text-display': 'clamp(2.6rem, 7vw, 5.8rem)',
   '--text-h1': 'clamp(2.1rem, 4.2vw, 3.4rem)',
   '--text-h2': 'clamp(1.6rem, 2.6vw, 2.3rem)',
-  '--text-h3': '1.25rem',
+  '--text-h3': '1.375rem',
   '--text-body': '1.0625rem',
   '--text-data': '0.9375rem',
   '--text-fine': '0.8125rem',
