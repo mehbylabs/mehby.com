@@ -54,7 +54,7 @@ for (const slug of STUDIES) {
         const ids = (el.getAttribute('aria-labelledby') ?? '').split(/\s+/)
         return ids
           .filter(Boolean)
-          .map((id) => document.getElementById(id)?.textContent?.trim() ?? '')
+          .map((id) => document.getElementById(id)?.textContent.trim() ?? '')
       })
 
       expect(
@@ -112,7 +112,7 @@ for (const slug of STUDIES) {
         TOKENS as unknown as Record<string, string>,
       )
 
-      const known = Object.values(palette).map((c) => (c as number[]).join(','))
+      const known = Object.values(palette).map((c) => c.join(','))
 
       for (const { colour, rgba } of used) {
         if (rgba[3] === 0) continue
