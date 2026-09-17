@@ -96,9 +96,35 @@ const NAV = [
   { to: '/writing', label: '~/writing', exact: false },
 ] as const
 
+// WCAG 2.4.1, Bypass Blocks. Every page on this site put three navigation
+// links and a button between the top of the document and the first word of
+// content, so a keyboard or switch user paid four stops on every navigation to
+// reach the thing they came for. SiteFooter.tsx already shows the care taken
+// over 2.4.5 Multiple Ways; this is the criterion next to it.
+//
+// Off screen until it takes focus, then the first thing on the page. It is the
+// first element in the body, because a skip link that is not first is a link
+// to skip the things you have already tabbed through.
+//
+// The target is `#content`, which every route's <main> carries.
+//
+// Inside the banner rather than a bare first child of <body>, which is the
+// more common placement. It is still the first focusable element in the
+// document, which is the only property that matters, and it keeps every
+// focusable element on the site inside one of the three landmarks the
+// accessibility suite walks.
+function SkipLink() {
+  return (
+    <a className="skip-link" href="#content" data-testid="skip-link">
+      Skip to content
+    </a>
+  )
+}
+
 function SiteNav() {
   return (
     <header className="site-nav" data-testid="site-nav">
+      <SkipLink />
       <div className="shell site-nav-inner">
         <nav aria-label="Main">
           <ul className="nav-list">
@@ -156,7 +182,7 @@ function Failure({
   children?: ReactNode
 }) {
   return (
-    <main data-testid="failure">
+    <main id="content" tabIndex={-1} data-testid="failure">
       <section className="shell section page-centered">
         <p className="prompt" data-testid="failure-prompt">
           <span className="prompt-user">mehby</span>

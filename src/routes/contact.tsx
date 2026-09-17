@@ -165,7 +165,7 @@ function Contact() {
     'aria-invalid:border-amber aria-invalid:border-2 aria-invalid:ring-amber/20'
 
   return (
-    <main>
+    <main id="content" tabIndex={-1}>
       <section className="shell section">
         <div className="section-path">
           <span className="section-path-code">~/contact</span>

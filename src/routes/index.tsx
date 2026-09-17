@@ -58,7 +58,7 @@ function Home() {
   const surfaces = studies.flatMap((study) => study.surfaces)
 
   return (
-    <main>
+    <main id="content" tabIndex={-1}>
       <section className="shell section section-opening">
         <Hero />
         <ProofStrip surfaces={surfaces} />

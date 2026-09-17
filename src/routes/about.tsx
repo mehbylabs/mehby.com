@@ -57,7 +57,7 @@ export const Route = createFileRoute('/about')({
 
 function About() {
   return (
-    <main>
+    <main id="content" tabIndex={-1}>
       <section className="shell section">
         <p className="prompt">
           <span className="prompt-user">mehby</span>

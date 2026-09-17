@@ -425,6 +425,79 @@ test.describe('the focus ring is visible on the ground it lands on', () => {
   }
 })
 
+test.describe('bypassing the navigation', () => {
+  // WCAG 2.4.1, Bypass Blocks. Three navigation links and a button stood
+  // between the top of every page and its first word, so a keyboard or switch
+  // user paid four stops on every single navigation to reach what they came
+  // for.
+  for (const { path, label } of PAGES) {
+    test(`${label} (${path}) offers a skip link as its first stop`, async ({
+      page,
+    }) => {
+      await visit(page, path)
+      await page.evaluate(() => document.body.focus())
+      await page.keyboard.press('Tab')
+
+      const skip = page.getByTestId('skip-link')
+      await expect(
+        skip,
+        'the first thing a keyboard reaches is not the skip link',
+      ).toBeFocused()
+
+      // Hidden by being moved, never by display or visibility: both of those
+      // take it out of the tab order, which deletes the link rather than
+      // concealing it. So it has to be on screen once it is focused.
+      //
+      // Polled, because it travels back under a transition and the first frame
+      // after focus is still off screen by design.
+      await expect
+        .poll(async () => (await skip.boundingBox())?.y ?? null, {
+          message: 'the skip link never travelled back on screen',
+        })
+        .toBeGreaterThanOrEqual(0)
+
+      await expect(skip).toHaveAttribute('href', '#content')
+      await expect(page.locator('main#content')).toHaveCount(1)
+    })
+
+    test(`${label} (${path}) lands focus on content, clear of the bar`, async ({
+      page,
+    }) => {
+      // WCAG 2.2 SC 2.4.11, Focus Not Obscured. The navigation is sticky with
+      // a backdrop blur, so anything scrolled flush to the top of the viewport
+      // is drawn underneath it, focus ring included.
+      //
+      // Axe cannot see this: the wcag22aa tag selects exactly one rule in
+      // axe-core 4.12.1 and it is target-size, which is why this assertion is
+      // written by hand next to the focus ring walk.
+      await visit(page, path)
+      await page.evaluate(() => document.body.focus())
+      await page.keyboard.press('Tab')
+      await page.keyboard.press('Enter')
+
+      const landed = await page.evaluate(() => {
+        const active = document.activeElement as HTMLElement | null
+        const nav = document.querySelector('header.site-nav')
+        return {
+          id: active?.id ?? null,
+          top: active?.getBoundingClientRect().top ?? null,
+          navBottom: nav?.getBoundingClientRect().bottom ?? 0,
+        }
+      })
+
+      expect(
+        landed.id,
+        'following the skip link did not move focus to the content',
+      ).toBe('content')
+      expect(
+        landed.top,
+        `content is at ${landed.top}px with the bar ending at ` +
+          `${landed.navBottom}px, so the focused element is behind it`,
+      ).toBeGreaterThanOrEqual(landed.navBottom)
+    })
+  }
+})
+
 test.describe('the keyboard', () => {
   for (const { path, label } of PAGES) {
     test(`${label} (${path}) is traversable and traps nothing`, async ({

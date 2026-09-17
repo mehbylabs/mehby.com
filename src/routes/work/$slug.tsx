@@ -102,7 +102,7 @@ function CaseStudy() {
   const Narrative = NARRATIVES[study.slug]
 
   return (
-    <main>
+    <main id="content" tabIndex={-1}>
       <section className="shell section">
         <div className="section-path">
           <span className="section-path-code">{`~/work/${study.slug}`}</span>
@@ -158,7 +158,7 @@ function NotFound() {
   })
 
   return (
-    <main data-testid="not-found">
+    <main id="content" tabIndex={-1} data-testid="not-found">
       <section className="shell section page-centered">
         <div className="section-path">
           <span className="section-path-code">{`~/work${pathname}`}</span>

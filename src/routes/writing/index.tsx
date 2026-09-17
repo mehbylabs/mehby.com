@@ -70,7 +70,7 @@ export const Route = createFileRoute('/writing/')({
 
 function Writing() {
   return (
-    <main>
+    <main id="content" tabIndex={-1}>
       <section className="shell section page-centered">
         <div className="section-path">
           <span className="section-path-code">~/writing</span>
