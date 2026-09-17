@@ -268,18 +268,79 @@ test.describe('proof strip', () => {
     // and offline are both legitimate outcomes on a real network.
     for (const link of await strip.getByTestId('proof-link').all()) {
       await expect(link.getByTestId('proof-status')).toHaveText(
-        /LIVE · \d+|offline|checking…/,
+        /LIVE|offline|checking|unchecked/,
       )
     }
   })
 
-  test('labels itself, and sets the addresses as data', async ({ page }) => {
-    const strip = page.getByTestId('proof-strip')
+  test('claims nothing has been checked until something has', async ({
+    page,
+  }) => {
+    // PRODUCT.md's proof-over-claim rule, applied to the element that exists
+    // to carry the proof. The label used to read "4 surfaces, checked just
+    // now" in the prerendered document, above four chips that all said
+    // checking. Nothing had been checked. The phrase was a claim about work
+    // that had not happened yet, on the one element whose credibility is the
+    // entire strategic argument for the site.
+    const label = page.getByTestId('proof-label')
 
-    await expect(
-      strip.getByText('surfaces, checked just now', { exact: false }),
-    ).toHaveCount(1)
+    await expect(label).not.toContainText('checked just now')
 
+    // The summary is the live region, so a screen reader user gets one
+    // assembled answer rather than four chip fragments nobody put together.
+    await expect(label).toHaveAttribute('aria-live', 'polite')
+    await expect(label).toHaveAttribute('role', 'status')
+
+    // Whatever the network did, the phase is one of the three the component
+    // knows how to say, and the label agrees with it.
+    await expect(label).toHaveAttribute(
+      'data-phase',
+      /checking|answered|unreachable/,
+    )
+    await expect(label).toHaveText(
+      /checking \d+ addresses|\d+ of \d+ responding|the check did not complete/,
+    )
+  })
+
+  test('lands in the first screen of a laptop', async ({ page }) => {
+    // PRODUCT.md's strategic premise: the owner's recent work is private, a
+    // visitor who checks GitHub is misled, and "the site therefore has to
+    // carry the proof itself, through live links". A visitor with two minutes
+    // decides on the first screen, so proof that arrives after a scroll is
+    // proof that arrives after the decision.
+    //
+    // 1440x745 is a 13 inch laptop with a bookmarks bar, which is the smallest
+    // laptop viewport worth designing for. The strip used to begin at 851px
+    // here, wholly off-screen, because it borrowed the section padding token
+    // inside a parent that already carried it and sat under a hero whose
+    // identity block also carried it.
+    //
+    // The bar is that the evidence is legible without scrolling, not that
+    // every chip in a wrapped row is. The label plus the first row of chips is
+    // what a two minute scan actually reads.
+    await page.setViewportSize({ width: 1440, height: 745 })
+    await page.goto('/')
+
+    const box = await page.getByTestId('proof-strip').boundingBox()
+    expect(box, 'the proof strip has no painted box').not.toBeNull()
+
+    expect(
+      box!.y,
+      `the proof strip starts at ${box!.y.toFixed(0)}px on a 745px viewport. ` +
+        `The evidence has to be on the screen where the decision is made`,
+    ).toBeLessThanOrEqual(745 - 80)
+
+    // And on an ordinary laptop it is there in full.
+    await page.setViewportSize({ width: 1440, height: 820 })
+    const roomy = await page.getByTestId('proof-strip').boundingBox()
+    expect(
+      roomy!.y + roomy!.height,
+      `the proof strip ends at ${(roomy!.y + roomy!.height).toFixed(0)}px on ` +
+        `an 820px viewport`,
+    ).toBeLessThanOrEqual(820)
+  })
+
+  test('sets the addresses as data', async ({ page }) => {
     // DESIGN.md: Martian Mono strictly for data, and it lists link URLs among
     // the places data type belongs.
     const family = (

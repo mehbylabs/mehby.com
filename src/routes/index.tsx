@@ -58,7 +58,7 @@ function Home() {
 
   return (
     <main>
-      <section className="shell section">
+      <section className="shell section section-opening">
         <Hero />
         <ProofStrip surfaces={surfaces} />
       </section>

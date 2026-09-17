@@ -32,14 +32,11 @@ export function Hero() {
         <span className="cursor" aria-hidden="true" />
       </p>
 
-      <div
-        className="section rise-in"
-        style={{ ...step(1), paddingBlock: '1.5rem' }}
-      >
+      <div className="hero-identity rise-in" style={step(1)}>
         <h1 className="hero-name" data-testid="hero-name">
           Mohamed Elhedi Ben Yedder
         </h1>
-        <p className="log-line" style={{ marginTop: '0.5rem' }}>
+        <p className="hero-credential log-line">
           <b>CTO and co-founder of CoaChess</b> / available for freelance
           product engineering
         </p>
@@ -56,7 +53,7 @@ export function Hero() {
       <div
         className="hero-actions rise-in"
         data-testid="hero-actions"
-        style={{ ...step(3), marginTop: '2rem' }}
+        style={step(3)}
       >
         <Button asChild size="lg">
           <Link to="/work/$slug" params={{ slug: 'coachess' }}>

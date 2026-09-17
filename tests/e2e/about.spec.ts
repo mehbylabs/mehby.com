@@ -135,7 +135,13 @@ test.describe('the timeline', () => {
     // Labelled, in the same register as every other placeholder on the site.
     // Without the label this is a closing remark; with it, it is a declared
     // absence.
-    await expect(note.locator('.note-label')).toHaveText('PLACEHOLDER')
+    //
+    // Located by the emphasis element rather than by a class. It used to carry
+    // `.note-label`, which was referenced here and in the markup and defined in
+    // no stylesheet: `.log-line b` already renders it amber and mono, so the
+    // class named a rule that never existed and this assertion passed on a
+    // selector that matched an element styled by something else entirely.
+    await expect(note.locator('b')).toHaveText('PLACEHOLDER')
   })
 
   test('sets the note in Martian Mono at the fine step', async ({ page }) => {

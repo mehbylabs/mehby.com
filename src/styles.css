@@ -175,6 +175,15 @@
     padding-block: clamp(3rem, 7vw, 6rem);
   }
 
+  /* The first section of a document, which is not the same shape as one in the
+     middle of it. A section's generous top padding exists to separate it from
+     the section above; the opening one has a 57px navigation above it instead,
+     and inheriting the full token pushes everything below it down by 96px for
+     no separation at all. */
+  .section-opening {
+    padding-block-start: clamp(1.5rem, 3vw, 3rem);
+  }
+
   /* Section headers as paths. The mono prefix is the terminal voice,
      the Archivo line is the statement. */
   .section-path {
@@ -280,6 +289,13 @@
     transition: background-color 200ms var(--ease-out);
   }
 
+  /* Sized to `unchecked`, the longest word a status can carry. The type is
+     monospace, so 9ch is exactly that word and never an approximation. */
+  .status-label {
+    display: inline-block;
+    min-inline-size: 9ch;
+  }
+
   .status-live .status-dot {
     background: var(--color-green);
     box-shadow: 0 0 0 0 color-mix(in oklch, var(--color-green) 60%, transparent);
@@ -316,11 +332,33 @@
     }
   }
 
+  /* The hero's vertical rhythm, declared in one place rather than as four
+     inline marginTop literals.
+     
+     It reads as a session, so the spacing is the session's own: the prompt, a
+     beat, the answer, a beat, the statement, then the actions and the evidence
+     under them. Tight between things that belong together, and the generous
+     separation is saved for the gap before the next section. The identity
+     block used to carry `.section`, which is a section's spacing applied to a
+     block that is not one. */
+  .hero-identity {
+    margin-block-start: 1rem;
+  }
+
+  .hero-credential {
+    margin-block-start: 0.5rem;
+  }
+
+  .hero-actions {
+    margin-block-start: 2rem;
+  }
+
   /* The hero statement. Size, width axis, leading and measure are set
      together; each one is invisible when omitted. */
   .hero-display {
     max-inline-size: 18ch;
     margin: 0;
+    margin-block-start: 1.5rem;
     font-family: var(--font-display);
     font-size: var(--text-display);
     font-stretch: 112%;
@@ -369,6 +407,25 @@
 
   .tcard:active {
     transform: scale(0.98);
+  }
+
+  /* The proof strip sits directly under the hero's actions, and "directly" is
+     load bearing. It used to carry `.section`, which meant up to 96px of
+     padding-block inside a parent that already had the same token: measured
+     from the tokens, the chips began around 830px on a 1440px viewport, and a
+     13 inch laptop has roughly 745px of usable height. The one element that
+     carries the site's entire credibility argument was below the fold.
+
+     So it gets its own spacing, and the spacing is the argument: tight against
+     the statement it proves, and the generous separation is saved for the gap
+     before ~/work. That is the varied rhythm DESIGN.md asks for and a single
+     uniform section token cannot express. */
+  .proof-strip {
+    margin-block-start: 2.5rem;
+  }
+
+  .proof-label {
+    margin-block-end: 1rem;
   }
 
   /* The proof chip is a tcard turned on its side: same panel, same border, same
