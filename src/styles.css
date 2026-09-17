@@ -761,8 +761,19 @@
     font-size: var(--text-data);
   }
 
+  /* The conversion block at the end of the home page. The button is the ask
+     and the address is the alternative, in that order and at that weight. */
+  .contact-actions {
+    margin-block-start: 1.5rem;
+  }
+
+  .contact-direct {
+    margin-block-start: 0.75rem;
+  }
+
   .footer-address a,
   .contact-address {
+    font-family: var(--font-data);
     color: var(--color-orange);
     text-decoration: underline;
     text-decoration-thickness: 1px;

@@ -158,23 +158,36 @@ test.describe('hero', () => {
     ).toHaveAttribute('href', '/contact')
   })
 
-  test('puts exactly one filled action on the page', async ({ page }) => {
+  test('puts exactly one filled action in the first screen', async ({
+    page,
+  }) => {
     // Two orange fills within 200 vertical pixels, pointing at different
     // destinations, is not a hierarchy: it is two primaries. The larger one
     // used to go to the exploratory action while the conversion was
     // simultaneously the small filled thing in the nav and the large hollow
     // thing in the hero.
     //
-    // Counted by the variant the button component records, rather than by
-    // colour, because the assertion is about intent and one fill is the
-    // intent.
-    const filled = page.locator('[data-slot="button"][data-variant="default"]')
+    // Per screen, not per document. The home page has a second fill at its
+    // very end, where the conversation is the only thing being asked for, and
+    // the two are never visible together. What is banned is a visitor looking
+    // at one viewport and seeing two things claiming to be the primary.
+    //
+    // Counted by the variant the button component records rather than by
+    // colour, because the assertion is about intent.
+    await page.setViewportSize({ width: 1440, height: 900 })
+    await page.goto('/')
 
-    await expect(
-      filled,
-      'more than one action on the home page is styled as the primary',
-    ).toHaveCount(1)
-    await expect(filled).toHaveAccessibleName('See the work')
+    const filled = page.locator('[data-slot="button"][data-variant="default"]')
+    const inFirstScreen = await filled.evaluateAll((nodes) =>
+      nodes
+        .filter((node) => node.getBoundingClientRect().top < 900)
+        .map((node) => node.textContent),
+    )
+
+    expect(
+      inFirstScreen,
+      'more than one action in the first screen is styled as the primary',
+    ).toEqual(['See the work'])
   })
 
   test('separates its two actions instead of welding them together', async ({
@@ -437,6 +450,45 @@ test.describe('contact', () => {
     await expect(
       contact.getByRole('link', { name: 'hello@mehby.com', exact: true }),
     ).toHaveAttribute('href', 'mailto:hello@mehby.com')
+  })
+
+  test('routes to the form as well as to the mail client', async ({ page }) => {
+    // The section used to offer a mailto and nothing else, so a visitor who
+    // read the whole home page never learned the form existed, and a desktop
+    // with no mail client configured got a link that does nothing at all. The
+    // site has two contact mechanisms and the highest traffic page carried
+    // only the more fragile one.
+    const contact = page.getByTestId('contact')
+
+    await expect(
+      contact.getByRole('link', { name: 'Send a message', exact: true }),
+    ).toHaveAttribute('href', '/contact')
+  })
+
+  test('makes the ask the loudest thing in its own screen', async ({
+    page,
+  }) => {
+    // Peak-end. This is the last thing a visitor sees and the single outcome
+    // the site exists to produce, and it used to be a 20px underlined mailto
+    // carrying less weight than any of the three cards above it.
+    const send = page
+      .getByTestId('contact')
+      .getByRole('link', { name: 'Send a message', exact: true })
+    const address = page
+      .getByTestId('contact')
+      .getByRole('link', { name: 'hello@mehby.com', exact: true })
+
+    const sendBox = await send.boundingBox()
+    const addressBox = await address.boundingBox()
+
+    expect(
+      sendBox!.height,
+      'the primary ask is no taller than the alternative beside it',
+    ).toBeGreaterThan(addressBox!.height)
+
+    // Filled, not hollow: this is the one place on the page where the
+    // conversation is the only thing being asked for.
+    await expect(send).toHaveAttribute('data-variant', 'default')
   })
 })
 

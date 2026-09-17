@@ -2,6 +2,7 @@ import { Link, createFileRoute } from '@tanstack/react-router'
 import { createServerFn } from '@tanstack/react-start'
 import { Hero } from '#/components/Hero'
 import { ProofStrip } from '#/components/ProofStrip'
+import { Button } from '#/components/ui/button'
 import { getCaseStudies } from '#/lib/content'
 import { CONTACT_DESTINATION } from '#/lib/site'
 import { pageHead } from './-seo'
@@ -123,20 +124,39 @@ function Home() {
           <span className="section-path-code">~/contact</span>
           <h2 className="section-path-title">Start a conversation</h2>
         </div>
-        <p className="hero-subline" style={{ marginBottom: '1.5rem' }}>
+        <p className="hero-subline">
           Tell me what you are building and what is in the way. I reply to
           everything.
         </p>
-        <a
-          className="contact-address"
-          href={`mailto:${CONTACT_DESTINATION}`}
-          style={{
-            fontFamily: 'var(--font-data)',
-            fontSize: 'var(--text-h3)',
-          }}
-        >
-          {CONTACT_DESTINATION}
-        </a>
+
+        {/* The end of the page is the conversion moment, and it used to be the
+            quietest pixel in the design system: a 20px underlined mailto, no
+            button, no route to the form, carrying less weight than any of the
+            three cards above it. A visitor who scrolled the home page to its
+            natural end never learned the form existed, and got an address that
+            does nothing on a desktop with no mail client configured.
+            
+            Peak-end: the last thing a visitor sees is the one action the whole
+            site exists to produce, so it is the loudest thing in its own
+            viewport. The hero's fill and this one are never on screen together.
+            
+            The button does not repeat the heading above it. PRODUCT.md bans
+            restated headings, and "Start a conversation" is already the h2. */}
+        <div className="contact-actions">
+          <Button asChild size="lg">
+            <Link to="/contact">Send a message</Link>
+          </Button>
+          <p className="contact-direct log-line">
+            or write to{' '}
+            <a
+              className="contact-address"
+              href={`mailto:${CONTACT_DESTINATION}`}
+            >
+              {CONTACT_DESTINATION}
+            </a>{' '}
+            directly
+          </p>
+        </div>
       </section>
     </main>
   )
