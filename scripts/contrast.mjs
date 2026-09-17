@@ -1,6 +1,10 @@
 #!/usr/bin/env node
 // Verifies every colour pair used in the design system against WCAG 2.2.
-// Tokens here are the source of truth alongside DESIGN.md. Exits non-zero on failure.
+// Reads the tokens out of src/styles.css, which is the source of truth, and
+// exits non-zero on failure. Wired into `bun run build` ahead of vite, so a
+// pair below its threshold stops the build before anything is compiled.
+
+import { readFileSync } from 'node:fs'
 
 const gamma = (t) =>
   t > 0.0031308 ? 1.055 * Math.pow(t, 1 / 2.4) - 0.055 : 12.92 * t
@@ -40,26 +44,43 @@ const hex = (c) =>
     )
     .join('')
 
-const TOKENS = {
-  // Direction: terminal, engineered. Warm near-black ground, one loud orange,
-  // amber prompts, and green and red reserved for live status. Mono carries
-  // the terminal voice, Archivo carries the statements. Deliberately not the
-  // generic green-on-black cliche: the ground is warm, not pure black.
-  bg: [0.145, 0.01, 70],
-  panel: [0.185, 0.012, 70],
-  'panel-lift': [0.225, 0.014, 70],
-  text: [0.93, 0.012, 75],
-  muted: [0.64, 0.02, 72],
-  // Orange is a fill and a display accent. Button labels are always bg, which
-  // measures 5.90, because text on orange is only 2.73.
-  orange: [0.66, 0.2, 45],
-  amber: [0.85, 0.13, 85],
-  green: [0.75, 0.16, 150],
-  red: [0.6, 0.2, 25],
-  // edge is decorative only, 1.75 on bg. Structural borders use edge-strong.
-  edge: [0.35, 0.015, 70],
-  'edge-strong': [0.52, 0.02, 70],
+// Direction: terminal, engineered. Warm near-black ground, one loud orange,
+// amber prompts, and green and red reserved for live status. Mono carries the
+// terminal voice, Archivo carries the statements. Deliberately not the generic
+// green-on-black cliche: the ground is warm, not pure black.
+//
+// Orange is a fill and a display accent. Button labels are always bg, which
+// measures 5.90, because text on orange is only 2.73. edge is decorative only
+// at 1.75 on bg; a border a user must perceive uses edge-strong.
+//
+// Read from the stylesheet rather than restated here. This file's header calls
+// itself the source of truth, and for a while it was a second copy: eleven
+// OKLCH triples duplicated from styles.css with nothing keeping the two lists
+// in sync. Editing one colour in the stylesheet passed a gate still measuring
+// the old value, which is the exact failure a build gate exists to prevent,
+// and it would have passed silently. There is one list now, in the file the
+// browser actually loads.
+// The override exists for one caller: the test that proves this gate fails.
+// It writes a stylesheet with one token pushed under its threshold and points
+// the gate at the copy, so the proof never involves editing the real file and
+// an interrupted run cannot leave a poisoned colour behind.
+const STYLES =
+  process.env.CONTRAST_STYLES ?? new URL('../src/styles.css', import.meta.url)
+
+function readTokens() {
+  const css = readFileSync(STYLES, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '')
+  const tokens = {}
+
+  for (const [, name, L, C, h] of css.matchAll(
+    /--color-([\w-]+):\s*oklch\(\s*([\d.]+)\s+([\d.]+)\s+([\d.]+)\s*\)\s*;/g,
+  )) {
+    tokens[name] = [Number(L), Number(C), Number(h)]
+  }
+
+  return tokens
 }
+
+const TOKENS = readTokens()
 
 // threshold: 4.5 body text, 3.0 large text and non-text UI.
 const PAIRS = [
@@ -81,7 +102,28 @@ const PAIRS = [
   // Structural borders a user must perceive.
   ['edge-strong', 'bg', 3.0],
   ['edge-strong', 'panel', 3.0],
+
+  // panel-lift is the ground under a hover state and under shadcn's secondary
+  // and accent, so text lands on it. It was never measured, which made it the
+  // one ground on the site nothing checked.
+  ['text', 'panel-lift', 4.5],
+  ['muted', 'panel-lift', 4.5],
+  ['orange', 'panel-lift', 3.0],
+  ['edge-strong', 'panel-lift', 3.0],
 ]
+
+// Every token the stylesheet defines has to be reachable by name, or a rename
+// would leave PAIRS silently comparing undefined against undefined.
+const missing = [...new Set(PAIRS.flatMap(([fg, bg]) => [fg, bg]))].filter(
+  (name) => !(name in TOKENS),
+)
+if (missing.length > 0) {
+  console.error(
+    `\nThese pairs name tokens that src/styles.css does not define: ` +
+      `${missing.join(', ')}.`,
+  )
+  process.exit(1)
+}
 
 const rgb = {}
 console.log('Token'.padEnd(18) + 'OKLCH'.padEnd(28) + 'Hex')
