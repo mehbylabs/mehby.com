@@ -1153,11 +1153,25 @@
     color: var(--color-amber);
   }
 
+  /* Guidance, in the muted register. Deliberately not amber: amber is the
+     error colour on this form, and a hint that looks like a warning reads as
+     something already wrong. */
+  .field-hint {
+    margin: 0;
+    font-family: var(--font-data);
+    font-size: var(--text-fine);
+    color: var(--color-muted);
+  }
+
   .field-error {
     margin: 0;
     font-family: var(--font-data);
     font-size: var(--text-fine);
     color: var(--color-amber);
+  }
+
+  .contact-availability {
+    margin-block-start: var(--space-md);
   }
 
   .form-status {

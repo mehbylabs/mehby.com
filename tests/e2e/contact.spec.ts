@@ -75,6 +75,43 @@ test.describe('the page', () => {
     await expect(page.getByRole('dialog')).toHaveCount(0)
   })
 
+  test('says what the work is, so an enquiry can be a qualified one', async ({
+    page,
+  }) => {
+    // PRODUCT.md defines success as a qualified inbound enquiry. The page
+    // asked one open question, said nothing about what kind of work this is
+    // for, and gave no indication of what a useful first message contains, so
+    // it optimised for inbound and left the qualified part to chance.
+    await expect(page.getByTestId('availability')).toContainText(
+      'freelance product engineering',
+    )
+
+    // Guidance, not a required field. Three inputs is the reason anybody
+    // finishes this form, and somebody who only wants to say hello should
+    // still be able to.
+    const message = page.getByLabel('$ What are you building?', {
+      exact: true,
+    })
+    await expect(message).toHaveAccessibleDescription(
+      /what is in the way, and roughly when/i,
+    )
+  })
+
+  test('keeps the hint when the field is also in error', async ({ page }) => {
+    // aria-describedby takes a list. An error that replaced the hint instead
+    // of joining it would take the guidance away at the exact moment the
+    // visitor most needs it.
+    await page.getByLabel('$ Name', { exact: true }).fill('A')
+    await page.getByLabel('$ Email', { exact: true }).fill('not-an-address')
+    await page.getByTestId('contact-submit').click()
+
+    const message = page.getByLabel('$ What are you building?', {
+      exact: true,
+    })
+    await expect(message).toHaveAccessibleDescription(/roughly when/i)
+    await expect(message).toHaveAccessibleDescription(/required|need/i)
+  })
+
   test('writes no em dash anywhere', async ({ page }) => {
     const text = await page.locator('main').innerText()
 

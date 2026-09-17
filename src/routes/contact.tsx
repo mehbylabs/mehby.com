@@ -50,6 +50,20 @@ export const Route = createFileRoute('/contact')({
 const FIELD_ORDER: Array<ContactField> = ['name', 'email', 'message']
 
 const errorId = (field: ContactField) => `contact-${field}-error`
+const hintId = (field: ContactField) => `contact-${field}-hint`
+
+// PRODUCT.md defines success as a qualified inbound enquiry, and the form
+// asked one open question and gave no indication of what a useful answer
+// contains. It optimised for inbound and left the qualified part to chance.
+//
+// Said as guidance rather than as required fields. Three inputs is the reason
+// anyone finishes this form, and a visitor who only wants to say hello should
+// still be able to. What this does is tell somebody with a real project what
+// to put in the first message, so the reply can be useful instead of being a
+// request for the same three facts back.
+const HINTS: Partial<Record<ContactField, string>> = {
+  message: 'What it is, what is in the way, and roughly when you need it.',
+}
 
 // One sentence per outcome, in the live region. The invalid case deliberately
 // does not repeat the field messages: they are already associated with their
@@ -151,12 +165,24 @@ function Contact() {
     }
   }
 
-  const field = (name: ContactField) => ({
-    id: `contact-${name}`,
-    name,
-    'aria-invalid': errors[name] ? (true as const) : undefined,
-    'aria-describedby': errors[name] ? errorId(name) : undefined,
-  })
+  const field = (name: ContactField) => {
+    // A field can be described by its hint, by its error, or by both. Joined
+    // rather than replaced: an error that silently unhooks the hint takes the
+    // guidance away at the exact moment the visitor needs it most.
+    const described = [
+      HINTS[name] ? hintId(name) : null,
+      errors[name] ? errorId(name) : null,
+    ]
+      .filter(Boolean)
+      .join(' ')
+
+    return {
+      id: `contact-${name}`,
+      name,
+      'aria-invalid': errors[name] ? (true as const) : undefined,
+      'aria-describedby': described || undefined,
+    }
+  }
 
   // The invalid state is carried by a thicker amber border, never by red: red
   // is reserved for live status. The width change is what keeps the state
@@ -174,6 +200,14 @@ function Contact() {
         <p className="page-intro">
           Tell me what you are building and what is in the way. I reply to
           everything.
+        </p>
+        {/* What is on offer, stated once. PRODUCT.md's success condition is a
+            qualified enquiry, and the page said nothing anywhere about what
+            kind of work this is for, so every visitor had to infer it. Stated
+            as fact in the log register, not sold. */}
+        <p className="log-line contact-availability" data-testid="availability">
+          <b>available</b> freelance product engineering, from an empty
+          repository or partway into one
         </p>
         <p className="page-back">
           <a className="contact-address" href={`mailto:${CONTACT_DESTINATION}`}>
@@ -297,6 +331,11 @@ function Contact() {
                   </span>{' '}
                   What are you building?
                 </Label>
+                {HINTS.message ? (
+                  <p className="field-hint" id={hintId('message')}>
+                    {HINTS.message}
+                  </p>
+                ) : null}
                 <Textarea
                   {...field('message')}
                   className={invalidStyle}
